@@ -2,13 +2,14 @@
 //  RunTextField.swift
 //  RunProcess
 //
-//  Created by Haoran on 2026/8/19.
+//  Created by Haoran on 2026/8/21.
 //
 
 import SwiftUI
 
 struct RunTextField: NSViewRepresentable {
     @Binding var text: String
+    let onTab: () -> Void
     let onEnter: () -> Void
     
     func makeNSView(context: Context) -> NSTextField {
@@ -19,7 +20,7 @@ struct RunTextField: NSViewRepresentable {
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none
-        field.registerForDraggedTypes([.fileURL])
+        field.registerForDraggedTypes([NSPasteboard.PasteboardType("NSFilenamesPboardType")])
         return field
     }
     
@@ -35,7 +36,6 @@ struct RunTextField: NSViewRepresentable {
     
     class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: RunTextField
-        var lastCompletions: [String] = []
         
         init(_ parent: RunTextField) {
             self.parent = parent
@@ -53,36 +53,23 @@ struct RunTextField: NSViewRepresentable {
             }
             
             if commandSelector == #selector(NSResponder.insertTab(_:)) {
-                performTabCompletion(textView: textView)
+                parent.onTab()
                 return true
             }
             
             return false
         }
-        
-        func performTabCompletion(textView: NSTextView) {
-            let input = textView.string
-            guard input.hasPrefix("/") || input.hasPrefix("~") else { return }
-            
-            let completions = CommandExecutor.shared.pathCompletions(for: input)
-            guard !completions.isEmpty else { return }
-            
-            if let first = completions.first {
-                textView.string = first
-                parent.text = first
-                textView.selectAll(nil)
-            }
-        }
     }
 }
 
-// 自定义 NSTextField 支持拖拽
+// MARK: - CustomTextField
+
 class CustomTextField: NSTextField {
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        guard let board = sender.draggingPasteboard.propertyList(forType: .fileURL) as? [String],
+        let pasteboardType = NSPasteboard.PasteboardType("NSFilenamesPboardType")
+        guard let board = sender.draggingPasteboard.propertyList(forType: pasteboardType) as? [String],
               let path = board.first else { return false }
         
-        // 自动转义空格
         let escaped = path.replacingOccurrences(of: " ", with: "\\ ")
         stringValue = escaped
         (delegate as? RunTextField.Coordinator)?.parent.text = escaped
