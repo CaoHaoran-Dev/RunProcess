@@ -15,9 +15,13 @@ struct Suggestion: Identifiable, Equatable {
     let priority: Int
     
     enum SuggestionType: String {
-        case history = "📜"
-        case command = "⚡"
-        case path = "📁"
+        case history = "clock.arrow.circlepath"   // 📜 → SF Symbol
+        case command = "terminal"                 // ⚡ → SF Symbol
+        case path = "folder"                     // 📁 → SF Symbol
+        
+        var iconName: String {
+            return self.rawValue
+        }
     }
     
     init(text: String, type: SuggestionType) {
@@ -36,7 +40,6 @@ struct Suggestion: Identifiable, Equatable {
     init(text: String, type: SuggestionType, historyCount: Int) {
         self.text = text
         self.type = type
-        // 安全限制：确保 historyCount 不超过 100
         let safeCount = min(max(historyCount, 0), 100)
         switch type {
         case .history:

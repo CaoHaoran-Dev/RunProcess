@@ -13,9 +13,10 @@ struct SuggestionRow: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            // 类型图标
-            Text(suggestion.type.rawValue)
+            // 类型图标（使用 SF Symbol）
+            Image(systemName: suggestion.type.iconName)
                 .font(.system(size: 14))
+                .foregroundColor(isSelected ? .white : .secondary)
                 .frame(width: 20, alignment: .center)
             
             // 命令文本

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import HotKey
 
 @main
 struct RunProcessApp: App {
@@ -22,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow?
     var statusItem: NSStatusItem?
     var viewModel: CommandViewModel?
+    private var hotKey: HotKey?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // 隐藏 Dock 图标
@@ -29,6 +31,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         createWindow()
         setupStatusBar()
+        setupGlobalHotkey()
     }
     
     func createWindow() {
@@ -41,12 +44,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window = NSWindow(contentViewController: hostingController)
         window?.title = "RunProcess"
         window?.setContentSize(NSSize(width: 520, height: 160))
-        window?.styleMask = [.titled, .closable, .miniaturizable, .fullSizeContentView]
+        
+        // ✅ 标准窗口样式：有红绿灯 + 可调整大小
+        window?.styleMask = [
+            .titled,           // 标题栏（显示红绿灯）
+            .closable,         // 关闭按钮
+            .miniaturizable,   // 最小化按钮
+            .resizable,        // 可调整大小（右下角拖拽）
+            .fullSizeContentView
+        ]
         window?.titlebarAppearsTransparent = true
         window?.isMovableByWindowBackground = true
         window?.isOpaque = false
         window?.backgroundColor = .clear
+        
+        // ✅ 居中显示
         window?.center()
+        
+        // ✅ 设置为浮动窗口（类似 Spotlight）
+        window?.level = .floating
+        window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        
+        // ✅ 点击其他区域时不关闭（但可以保持焦点）
         window?.makeKeyAndOrderFront(nil)
         window?.delegate = self
     }
@@ -58,19 +77,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "RunProcess")
             image?.isTemplate = true
             button.image = image
+            button.imagePosition = .imageOnly
             button.action = #selector(toggleMenu)
             button.target = self
         }
+    }
+    
+    // MARK: - 全局快捷键（使用 HotKey 库）
+    
+    private func setupGlobalHotkey() {
+        hotKey = HotKey(key: .r, modifiers: [.command, .option])
+        
+        hotKey?.keyDownHandler = { [weak self] in
+            DispatchQueue.main.async {
+                self?.toggleWindow()
+            }
+        }
+        
+        print("✅ 全局热键注册成功: ⌘⌥R")
     }
     
     @objc func toggleMenu() {
         let menu = NSMenu()
         
         let toggleItem = NSMenuItem(
-            title: window?.isVisible == true ? "显示/隐藏窗口" : "显示窗口",
+            title: "显示/隐藏窗口",
             action: #selector(toggleWindow),
             keyEquivalent: ""
         )
+        toggleItem.keyEquivalentModifierMask = [.command, .option]
+        toggleItem.keyEquivalent = "r"
         menu.addItem(toggleItem)
         
         menu.addItem(NSMenuItem.separator())
@@ -84,11 +120,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(clearItem)
         
         menu.addItem(NSMenuItem.separator())
+        
         let quitItem = NSMenuItem(
             title: "退出",
             action: #selector(quitApp),
             keyEquivalent: "q"
         )
+        quitItem.keyEquivalentModifierMask = .command
         quitItem.target = self
         menu.addItem(quitItem)
         
@@ -101,8 +139,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if window.isVisible {
             window.orderOut(nil)
         } else {
+            // ✅ 显示并激活
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            
+            // ✅ 自动聚焦到输入框
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("FocusTextField"),
+                    object: nil
+                )
+            }
         }
     }
     
@@ -118,6 +165,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func quitApp() {
+        hotKey = nil
         NSApp.terminate(nil)
     }
     
@@ -130,6 +178,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 extension AppDelegate: NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
+        // 点击关闭按钮 → 隐藏窗口而不是退出
         sender.orderOut(nil)
         return false
     }

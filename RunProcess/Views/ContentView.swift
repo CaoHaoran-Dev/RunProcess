@@ -11,10 +11,10 @@ struct ContentView: View {
     @ObservedObject var viewModel: CommandViewModel
     @FocusState private var isFocused: Bool
     
-    // 复选框状态
     @State private var useSudo: Bool = false
     @State private var showSudoPasswordDialog: Bool = false
     @State private var sudoPassword: String = ""
+    @State private var outputHeight: CGFloat = 100
     
     init(viewModel: CommandViewModel) {
         self.viewModel = viewModel
@@ -31,7 +31,9 @@ struct ContentView: View {
                 RunTextField(
                     text: $viewModel.inputText,
                     onTab: viewModel.requestSuggestions,
-                    onEnter: executeCommand
+                    onEnter: executeCommand,
+                    onUp: { viewModel.navigateHistoryUp() },
+                    onDown: { viewModel.navigateHistoryDown() }
                 )
                 .font(.system(size: 18, design: .monospaced))
                 .textFieldStyle(.plain)
@@ -45,8 +47,20 @@ struct ContentView: View {
                     }
                 )
                 
+                // 取消按钮（执行时显示）
+                if viewModel.isRunning && viewModel.canCancel {
+                    Button(action: viewModel.cancelExecution) {
+                        Image(systemName: "stop.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.system(size: 20))
+                    }
+                    .buttonStyle(.plain)
+                    .help("取消执行")
+                }
+                
+                // 执行按钮
                 Button(action: executeCommand) {
-                    Image(systemName: "return")
+                    Image(systemName: viewModel.isRunning ? "ellipsis.circle" : "return")
                         .foregroundColor(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -61,7 +75,7 @@ struct ContentView: View {
                     .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             )
             
-            // 选项行：Sudo 复选框
+            // 选项行
             HStack {
                 Toggle(isOn: $useSudo) {
                     HStack(spacing: 4) {
@@ -78,10 +92,22 @@ struct ContentView: View {
                 
                 Spacer()
                 
+                // 清空输出按钮
+                if !viewModel.outputText.isEmpty {
+                    Button(action: viewModel.clearOutput) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.5))
+                    }
+                    .buttonStyle(.plain)
+                    .help("清空输出")
+                }
+                
                 // 执行状态指示器
                 if viewModel.isRunning {
                     ProgressView()
                         .controlSize(.small)
+                        .padding(.leading, 4)
                 }
             }
             .padding(.horizontal, 4)
@@ -96,20 +122,46 @@ struct ContentView: View {
                         .padding(.horizontal, 4)
                         .textSelection(.enabled)
                 }
-                .frame(maxHeight: 100)
+                .frame(minHeight: 60, maxHeight: 200)
                 .transition(.opacity)
+                .background(
+                    GeometryReader { geometry in
+                        Color.clear
+                            .onChange(of: viewModel.outputText) { _ in
+                                let lines = viewModel.outputText.components(separatedBy: "\n").count
+                                let newHeight = min(max(CGFloat(lines) * 20 + 20, 60), 200)
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    outputHeight = newHeight
+                                }
+                            }
+                            .onAppear {
+                                let lines = viewModel.outputText.components(separatedBy: "\n").count
+                                outputHeight = min(max(CGFloat(lines) * 20 + 20, 60), 200)
+                            }
+                    }
+                )
+                .frame(height: outputHeight)
             } else {
-                HStack {
-                    Text("拖入文件自动填充路径 · Tab 补全 · ⌘W 隐藏")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary.opacity(0.6))
-                    Spacer()
+                // ✅ 底部提示：简洁文字，不加图标
+                HStack(spacing: 16) {
+                    Text("拖入文件")
+                    Text("·")
+                    Text("Tab 补全")
+                    Text("·")
+                    Text("↑↓ 历史")
+                    Text("·")
+                    Text("⌘⌥R 全局")
+                    Text("·")
+                    Text("⌘W 隐藏")
                 }
+                .font(.system(size: 11))
+                .foregroundColor(.secondary.opacity(0.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)
             }
         }
         .padding(20)
-        .frame(width: 520, height: viewModel.outputText.isEmpty ? 160 : 240)
+        .frame(width: 520, height: viewModel.outputText.isEmpty ? 160 : 240 + (outputHeight - 100))
         .background(
             VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
                 .ignoresSafeArea()
@@ -117,7 +169,11 @@ struct ContentView: View {
         .onExitCommand {
             viewModel.closeSuggestions()
         }
-        // 密码对话框
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FocusTextField"))) { _ in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isFocused = true
+            }
+        }
         .sheet(isPresented: $showSudoPasswordDialog) {
             SudoPasswordDialog(
                 password: $sudoPassword,
@@ -135,12 +191,10 @@ struct ContentView: View {
     func executeCommand() {
         guard !viewModel.inputText.isEmpty else { return }
         
-        // 如果勾选了 sudo，弹出密码对话框
         if useSudo {
             showSudoPasswordDialog = true
             sudoPassword = ""
         } else {
-            // 直接执行
             viewModel.executeCommand { _ in
                 viewModel.closeSuggestions()
             }
@@ -150,13 +204,11 @@ struct ContentView: View {
     func executeWithSudo() {
         showSudoPasswordDialog = false
         
-        // 构建带 sudo 的命令
         let command = viewModel.inputText
-        let sudoCommand = "echo '\(sudoPassword)' | sudo -S \(command)"
+        let password = sudoPassword
         sudoPassword = ""
         
-        // 执行
-        viewModel.executeCommandWithSudo(sudoCommand) { _ in
+        viewModel.executeCommandWithSudo(command, password: password) { _ in
             viewModel.closeSuggestions()
         }
     }
@@ -173,7 +225,6 @@ struct SudoPasswordDialog: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            // 标题
             HStack {
                 Image(systemName: "lock.shield.fill")
                     .foregroundColor(.orange)
@@ -189,7 +240,6 @@ struct SudoPasswordDialog: View {
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            // 密码输入框
             SecureField("输入密码", text: $password)
                 .textFieldStyle(.roundedBorder)
                 .focused($isPasswordFieldFocused)
@@ -202,20 +252,21 @@ struct SudoPasswordDialog: View {
                     }
                 }
             
-            // 提示
             HStack {
-                Text("💡 密码仅用于本次执行，不会被存储")
+                Image(systemName: "info.circle")
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary.opacity(0.6))
+                Text("密码仅在内存中临时使用，不会被存储或记录")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.6))
                 Spacer()
             }
             
-            // 按钮
             HStack(spacing: 12) {
                 Button("取消") {
                     onCancel()
                 }
-                .keyboardShortcut(.escape)  // 修复：使用 .escape 替代 .cancel
+                .keyboardShortcut(.escape)
                 
                 Button("执行") {
                     if !password.isEmpty {

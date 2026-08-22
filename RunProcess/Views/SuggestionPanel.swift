@@ -13,13 +13,18 @@ class SuggestionPanel {
     
     private var panel: NSPanel?
     private var hostingController: NSHostingController<SuggestionPanelContent>?
+    private weak var positioningView: NSView?
+    private var windowObservations: [NSObjectProtocol] = []
     
     private init() {}
     
     func show(with viewModel: CommandViewModel, relativeTo positioningView: NSView) {
+        self.positioningView = positioningView
+        
         // 如果面板已存在，更新内容
         if let panel = panel, panel.isVisible {
             updateContent(viewModel)
+            repositionPanel()
             return
         }
         
@@ -45,6 +50,27 @@ class SuggestionPanel {
         // 定位到输入框下方
         positionPanel(relativeTo: positioningView)
         
+        // 监听窗口移动和调整大小
+        if let window = positioningView.window {
+            let moveObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didMoveNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                self?.repositionPanel()
+            }
+            
+            let resizeObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResizeNotification,
+                object: window,
+                queue: .main
+            ) { [weak self] _ in
+                self?.repositionPanel()
+            }
+            
+            windowObservations = [moveObserver, resizeObserver]
+        }
+        
         // 显示
         panel?.orderFront(nil)
     }
@@ -56,10 +82,15 @@ class SuggestionPanel {
         // 更新尺寸
         let newSize = calculatePanelSize(for: viewModel.suggestions)
         panel?.setContentSize(newSize)
+        repositionPanel()
     }
     
     func hide() {
         panel?.orderOut(nil)
+        // 移除观察者
+        windowObservations.forEach { NotificationCenter.default.removeObserver($0) }
+        windowObservations.removeAll()
+        positioningView = nil
     }
     
     func isVisible() -> Bool {
@@ -77,12 +108,16 @@ class SuggestionPanel {
         let screenRect = window?.convertToScreen(viewRect) ?? .zero
         
         // 面板位置：输入框下方，左对齐
-        let _: CGFloat = 480
         let panelHeight = panel.frame.height
         let x = screenRect.minX
-        let y = screenRect.minY - panelHeight - 4  // 4px 间距
+        let y = screenRect.minY - panelHeight - 4
         
         panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+    
+    private func repositionPanel() {
+        guard let view = positioningView, let panel = panel, panel.isVisible else { return }
+        positionPanel(relativeTo: view)
     }
     
     private func calculatePanelSize(for suggestions: [Suggestion]) -> NSSize {
@@ -103,7 +138,7 @@ struct SuggestionPanelContent: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 计数（只有数字，没文字）
+            // 计数
             HStack {
                 Spacer()
                 Text("\(viewModel.selectedIndex + 1)/\(viewModel.suggestions.count)")

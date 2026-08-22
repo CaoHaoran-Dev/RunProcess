@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD10625B303991850004E214 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = AD10625A303991850004E214 /* HotKey */; };
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD8D43F93036DFDA00B0576B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43F83036DFDA00B0576B /* README.md */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
@@ -32,6 +33,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD10625B303991850004E214 /* HotKey in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,6 +79,7 @@
 			);
 			name = RunProcess;
 			packageProductDependencies = (
+				AD10625A303991850004E214 /* HotKey */,
 			);
 			productName = RunProcess;
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
@@ -106,6 +109,9 @@
 			);
 			mainGroup = AD17FC623035CC7A00A52CD6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AD106259303991850004E214 /* XCRemoteSwiftPackageReference "HotKey" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
 			projectDirPath = "";
@@ -348,6 +354,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		AD106259303991850004E214 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AD10625A303991850004E214 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD106259303991850004E214 /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = AD17FC633035CC7A00A52CD6 /* Project object */;
 }

@@ -30,8 +30,9 @@ struct HistoryEntry: Codable {
 class CommandHistory {
     private let maxEntries = 500
     private let fileURL: URL
-    private var entries: [String: HistoryEntry] = [:]  // 用字典方便去重和更新
+    private var entries: [String: HistoryEntry] = [:]
     private let queue = DispatchQueue(label: "com.runprocess.history", qos: .background)
+    private let readWriteLock = NSLock()  // 保护 entries 的并发访问
     
     init() {
         // 存储到 Application Support 目录
@@ -54,10 +55,14 @@ class CommandHistory {
         do {
             let data = try Data(contentsOf: fileURL)
             let decoded = try JSONDecoder().decode([String: HistoryEntry].self, from: data)
+            readWriteLock.lock()
             entries = decoded
+            readWriteLock.unlock()
         } catch {
             print("⚠️ 加载历史记录失败: \(error)")
+            readWriteLock.lock()
             entries = [:]
+            readWriteLock.unlock()
         }
     }
     
@@ -65,8 +70,12 @@ class CommandHistory {
     private func save() {
         queue.async { [weak self] in
             guard let self = self else { return }
+            self.readWriteLock.lock()
+            let entriesCopy = self.entries
+            self.readWriteLock.unlock()
+            
             do {
-                let data = try JSONEncoder().encode(self.entries)
+                let data = try JSONEncoder().encode(entriesCopy)
                 try data.write(to: self.fileURL)
             } catch {
                 print("⚠️ 保存历史记录失败: \(error)")
@@ -84,6 +93,8 @@ class CommandHistory {
         queue.async { [weak self] in
             guard let self = self else { return }
             
+            self.readWriteLock.lock()
+            
             if var existing = self.entries[trimmed] {
                 existing.recordUsage()
                 self.entries[trimmed] = existing
@@ -98,6 +109,7 @@ class CommandHistory {
                 self.entries[trimmed] = HistoryEntry(command: trimmed)
             }
             
+            self.readWriteLock.unlock()
             self.save()
         }
     }
@@ -106,7 +118,11 @@ class CommandHistory {
     func query(prefix: String) -> [HistoryEntry] {
         guard !prefix.isEmpty else { return [] }
         
-        return entries.values
+        readWriteLock.lock()
+        let entriesCopy = entries
+        readWriteLock.unlock()
+        
+        return entriesCopy.values
             .filter { $0.command.hasPrefix(prefix) }
             .sorted { $0.count > $1.count }
             .prefix(20)
@@ -117,18 +133,26 @@ class CommandHistory {
     func clearAll() {
         queue.async { [weak self] in
             guard let self = self else { return }
+            self.readWriteLock.lock()
             self.entries.removeAll()
+            self.readWriteLock.unlock()
             self.save()
         }
     }
     
     /// 获取历史记录总数
     func count() -> Int {
-        return entries.count
+        readWriteLock.lock()
+        let count = entries.count
+        readWriteLock.unlock()
+        return count
     }
     
-    /// 获取所有历史命令（用于调试）
+    /// 获取所有历史命令（用于调试和历史导航）
     func getAll() -> [HistoryEntry] {
-        Array(entries.values)
+        readWriteLock.lock()
+        let entriesCopy = entries
+        readWriteLock.unlock()
+        return Array(entriesCopy.values)
     }
 }

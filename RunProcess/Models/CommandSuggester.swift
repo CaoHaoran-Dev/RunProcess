@@ -13,6 +13,11 @@ class CommandSuggester {
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "com.runprocess.suggester", qos: .userInitiated)
     
+    // 命令缓存
+    private var cachedCommands: [String] = []
+    private var lastCacheUpdate: Date = Date.distantPast
+    private let cacheTTL: TimeInterval = 300 // 5分钟缓存
+    
     /// 根据输入生成补全建议（异步回调，避免阻塞 UI）
     func suggest(for input: String, completion: @escaping ([Suggestion]) -> Void) {
         queue.async { [weak self] in
@@ -89,7 +94,7 @@ class CommandSuggester {
             }
         }
         
-        // 2. 系统命令（实时查找）
+        // 2. 系统命令（从缓存获取）
         let commands = findSystemCommands(prefix: prefix)
         for cmd in commands {
             if seen.insert(cmd).inserted {
@@ -101,10 +106,17 @@ class CommandSuggester {
         return suggestions.sorted { $0.priority > $1.priority }
     }
     
-    // MARK: - 系统命令查找（安全修复版）
+    // MARK: - 系统命令查找（带缓存）
     
     private func findSystemCommands(prefix: String) -> [String] {
-        // 获取 PATH 环境变量
+        // 检查缓存是否有效
+        let now = Date()
+        if now.timeIntervalSince(lastCacheUpdate) < cacheTTL && !cachedCommands.isEmpty {
+            // 从缓存中过滤
+            return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
+        }
+        
+        // 重新加载命令列表
         let pathString = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
         let paths = pathString.split(separator: ":").map(String.init)
         
@@ -112,69 +124,32 @@ class CommandSuggester {
         var seen = Set<String>()
         
         for path in paths {
-            // 安全检查：跳过空路径
             guard !path.isEmpty else { continue }
-            
-            // 使用 withSecureDirectory 方式读取
-            guard let files = try? fileManager.contentsOfDirectory(atPath: path) else {
-                continue
-            }
+            guard let files = try? fileManager.contentsOfDirectory(atPath: path) else { continue }
             
             for file in files {
-                // 跳过隐藏文件和系统文件
                 guard !file.hasPrefix(".") else { continue }
-                
-                // 安全检查：只处理匹配前缀的文件
-                guard file.hasPrefix(prefix) else { continue }
-                
-                // 去重
                 guard seen.insert(file).inserted else { continue }
                 
-                // 构建完整路径
                 let fullPath = (path as NSString).appendingPathComponent(file)
-                
-                // 安全地检查是否可执行
                 if isFileExecutableSafely(atPath: fullPath) {
                     allCommands.append(file)
                 }
             }
         }
         
-        // 按字母排序，最多返回 20 个
-        return allCommands.sorted().prefix(20).map { $0 }
+        // 更新缓存
+        cachedCommands = allCommands.sorted()
+        lastCacheUpdate = now
+        
+        // 返回匹配结果
+        return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
     }
     
     // MARK: - 安全文件检查
     
     private func isFileExecutableSafely(atPath path: String) -> Bool {
-        // 使用 withUnsafeFileSystemRepresentation 或简单的方式
-        // 先检查文件是否存在且不是目录
-        var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: path, isDirectory: &isDirectory) else {
-            return false
-        }
-        
-        // 如果是目录，跳过
-        guard !isDirectory.boolValue else {
-            return false
-        }
-        
-        // 检查是否可执行（使用 POSIX 权限）
-        // 这里使用更安全的方式：通过 FileManager 的属性检查
-        do {
-            let attributes = try fileManager.attributesOfItem(atPath: path)
-            // 检查 POSIX 权限中的可执行位
-            if let posixPermissions = attributes[.posixPermissions] as? NSNumber {
-                let permissions = posixPermissions.intValue
-                // 检查 owner、group 或 other 是否有执行权限
-                // 执行位：0100 (owner), 0010 (group), 0001 (other)
-                return (permissions & 0o111) != 0
-            }
-        } catch {
-            // 如果获取属性失败，尝试使用系统调用
-            return access(path, X_OK) == 0
-        }
-        
-        return false
+        // 直接使用 access() 系统调用，简化逻辑并避免 TOCTOU
+        return access(path, X_OK) == 0
     }
 }

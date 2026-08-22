@@ -14,10 +14,16 @@ class CommandViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var outputText: String = ""
     @Published var isRunning: Bool = false
+    @Published var canCancel: Bool = false
     
     // 候选列表相关
     @Published var suggestions: [Suggestion] = []
     @Published var selectedIndex: Int = 0
+    
+    // 历史命令导航
+    private var historyIndex: Int = -1
+    private var historyCommands: [String] = []
+    private var currentInputBackup: String = ""  // 保存当前输入，按↓时恢复
     
     // MARK: - 私有属性
     
@@ -25,27 +31,27 @@ class CommandViewModel: ObservableObject {
     private let history = CommandHistory()
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
+    private var currentCompletion: ((String) -> Void)?
     
     // MARK: - 初始化
     
     init() {
-        // 监听输入变化，关闭候选列表（打字时自动关闭）
         $inputText
             .dropFirst()
             .sink { [weak self] _ in
                 self?.closeSuggestions()
+                // 用户打字时重置历史导航
+                self?.resetHistoryNavigation()
             }
             .store(in: &cancellables)
     }
     
     // MARK: - 公开方法
     
-    /// 注册输入框（用于面板定位）
     func registerTextField(_ view: NSView) {
         textField = view
     }
     
-    /// 请求补全建议（按 Tab 时调用）
     func requestSuggestions() {
         guard !inputText.isEmpty else {
             closeSuggestions()
@@ -65,27 +71,23 @@ class CommandViewModel: ObservableObject {
         }
     }
     
-    /// 显示面板
     private func showPanel() {
         guard let textField = textField else { return }
         SuggestionPanel.shared.show(with: self, relativeTo: textField)
     }
     
-    /// 选择下一个候选
     func selectNext() {
         guard !suggestions.isEmpty else { return }
         selectedIndex = (selectedIndex + 1) % suggestions.count
         SuggestionPanel.shared.updateContent(self)
     }
     
-    /// 选择上一个候选
     func selectPrevious() {
         guard !suggestions.isEmpty else { return }
         selectedIndex = (selectedIndex - 1 + suggestions.count) % suggestions.count
         SuggestionPanel.shared.updateContent(self)
     }
     
-    /// 确认当前选中的候选
     func confirmSelection() {
         guard selectedIndex < suggestions.count else { return }
         
@@ -93,62 +95,107 @@ class CommandViewModel: ObservableObject {
         applySuggestion(selected)
     }
     
-    /// 关闭候选列表
     func closeSuggestions() {
         suggestions = []
         selectedIndex = 0
         SuggestionPanel.shared.hide()
     }
     
-    /// 检测是否是交互式命令
-    private func isInteractiveCommand(_ command: String) -> Bool {
-        let interactiveCommands = [
-            "vim", "vi", "nano", "emacs", "top", "htop", "less", "more",
-            "ssh", "telnet", "ftp", "sftp", "python", "python3", "ipython",
-            "irb", "node", "sh", "bash", "zsh", "fish", "mysql", "psql",
-            "sqlite3", "gdb", "lldb", "bc", "dc", "mail", "mutt", "pine"
-        ]
-        
-        // 提取命令的第一个单词
-        let firstWord = command.split(separator: " ").first.map(String.init) ?? ""
-        
-        // 检查是否是交互式命令
-        if interactiveCommands.contains(firstWord) {
-            return true
+    /// 导航到上一条历史命令（按上键）
+    func navigateHistoryUp() -> String? {
+        // 首次按上键时，加载历史列表并保存当前输入
+        if historyCommands.isEmpty {
+            historyCommands = history.getAll().map { $0.command }
+            currentInputBackup = inputText
         }
         
-        // 检查是否有交互式参数
-        if command.contains(" -i") || command.contains(" --interactive") {
-            return true
+        guard !historyCommands.isEmpty else { return nil }
+        
+        // 如果当前没有选中任何历史，从最后一条开始
+        if historyIndex == -1 {
+            historyIndex = historyCommands.count - 1
+        } else if historyIndex > 0 {
+            historyIndex -= 1
+        }
+        
+        return historyCommands[historyIndex]
+    }
+    
+    /// 导航到下一条历史命令（按下键）
+    func navigateHistoryDown() -> String? {
+        guard !historyCommands.isEmpty else { return nil }
+        
+        if historyIndex < historyCommands.count - 1 && historyIndex >= 0 {
+            historyIndex += 1
+            return historyCommands[historyIndex]
+        } else if historyIndex == historyCommands.count - 1 {
+            // 已经到最后一条，再按↓回到当前输入
+            historyIndex = -1
+            return currentInputBackup
+        } else {
+            // historyIndex == -1，没有历史可下翻
+            return nil
+        }
+    }
+    
+    /// 重置历史导航
+    func resetHistoryNavigation() {
+        historyIndex = -1
+        historyCommands = []
+        currentInputBackup = ""
+    }
+    
+    private func isInteractiveCommand(_ command: String) -> Bool {
+        if command.contains(" -c ") || command.contains(" --command ") {
+            return false
+        }
+        
+        let patterns = [
+            #"^(vim?|nano|emacs|top|htop|less|more)\b"#,
+            #"^(ssh|telnet|ftp|sftp)\s+[^-]"#,
+            #"^(python|python3|ipython|irb|node)\b"#,
+            #"^(mysql|psql|sqlite3)\b"#,
+            #"^(gdb|lldb|bc|dc)\b"#,
+            #"^(sh|bash|zsh|fish)\b"#,
+            #"^(mail|mutt|pine)\b"#,
+            #"\b(-i|--interactive)\b"#
+        ]
+        
+        for pattern in patterns {
+            if command.range(of: pattern, options: .regularExpression) != nil {
+                return true
+            }
         }
         
         return false
     }
     
-    /// 执行命令
     func executeCommand(completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
         
-        // 检测交互式命令
         if isInteractiveCommand(inputText) {
             isRunning = false
+            canCancel = false
             outputText = "⚠️ 交互式命令（如 vim、python、top 等）暂不支持\n💡 请在系统终端中执行此命令"
             completion(outputText)
             return
         }
         
-        // 记录历史
         history.record(inputText)
+        resetHistoryNavigation()
         
         isRunning = true
+        canCancel = true
         outputText = ""
         
-        // 执行命令（带 10 秒超时）
+        currentCompletion = completion
+        
         CommandExecutor.shared.execute(inputText, timeout: 10.0) { [weak self] result in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
                 self.isRunning = false
+                self.canCancel = false
                 switch result {
                 case .success(let text):
                     if text.isEmpty {
@@ -160,26 +207,47 @@ class CommandViewModel: ObservableObject {
                     self.outputText = "❌ \(error.localizedDescription)"
                 }
                 completion(self.outputText)
+                self.currentCompletion = nil
             }
         }
     }
     
-    /// 执行 sudo 命令
-    func executeCommandWithSudo(_ sudoCommand: String, completion: @escaping (String) -> Void) {
-        guard !sudoCommand.isEmpty else { return }
+    func cancelExecution() {
+        guard isRunning else { return }
+        CommandExecutor.shared.cancelCurrentTask()
+        isRunning = false
+        canCancel = false
+        outputText = "⏹️ 已取消执行"
+        currentCompletion?(outputText)
+        currentCompletion = nil
+    }
+    
+    func executeCommandWithSudo(_ command: String, password: String, completion: @escaping (String) -> Void) {
+        guard !command.isEmpty else { return }
+        
+        if isInteractiveCommand(command) {
+            isRunning = false
+            canCancel = false
+            outputText = "⚠️ 交互式命令（如 vim、python、top 等）暂不支持\n💡 请在系统终端中执行此命令"
+            completion(outputText)
+            return
+        }
+        
+        history.record(command)
+        resetHistoryNavigation()
         
         isRunning = true
+        canCancel = true
         outputText = ""
         
-        // 记录历史（记录原始命令，不记录密码）
-        history.record(inputText)
+        currentCompletion = completion
         
-        // 执行命令（带 10 秒超时）
-        CommandExecutor.shared.execute(sudoCommand, timeout: 10.0) { [weak self] result in
+        CommandExecutor.shared.executeWithSudo(command, password: password, timeout: 10.0) { [weak self] result in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
                 self.isRunning = false
+                self.canCancel = false
                 switch result {
                 case .success(let text):
                     if text.isEmpty {
@@ -188,22 +256,22 @@ class CommandViewModel: ObservableObject {
                         self.outputText = text
                     }
                 case .failure(let error):
-                    let errorMsg = error.localizedDescription
-                    if errorMsg.contains("sudo") || errorMsg.contains("password") {
-                        self.outputText = "❌ sudo 执行失败\n💡 请检查密码是否正确"
-                    } else {
-                        self.outputText = "❌ \(errorMsg)"
-                    }
+                    self.outputText = "❌ \(error.localizedDescription)"
                 }
                 completion(self.outputText)
+                self.currentCompletion = nil
             }
         }
     }
     
-    /// 清空历史记录
     func clearHistory() {
         history.clearAll()
+        resetHistoryNavigation()
         closeSuggestions()
+    }
+    
+    func clearOutput() {
+        outputText = ""
     }
     
     // MARK: - 私有方法
@@ -218,5 +286,6 @@ class CommandViewModel: ObservableObject {
         }
         
         closeSuggestions()
+        resetHistoryNavigation()
     }
 }
