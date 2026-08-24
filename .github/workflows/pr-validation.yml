@@ -16,7 +16,7 @@ jobs:
       - name: Build and Test macOS App
         run: |
           xcodebuild test \
-            -workspace "RunProcess.xcworkspace" \
+            -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
