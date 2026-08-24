@@ -13,14 +13,6 @@ jobs:
     runs-on: macos-15
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install CocoaPods Dependencies
-        run: |
-          sudo gem install cocoapods
-          pod install
-
       - name: Build and Test macOS App
         run: |
           xcodebuild test \
