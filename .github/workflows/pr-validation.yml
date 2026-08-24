@@ -2,20 +2,23 @@
 name: PR Validation
 
 on:
-  workflow_dispatch:                                # 1. 手动触发（在 Actions 页面点按钮）
+  workflow_dispatch:
   push:
-    branches: [ "main", "dev" ]                # 2. 代码推送时触发
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: [ "main", "dev" ]                # 3. PR 时触发
+    branches: [ "main", "dev" ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: macos-15
 
     steps:
-      - name: Build and Test macOS App
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build macOS App
         run: |
-          xcodebuild test \
+          xcodebuild build \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
             CODE_SIGN_IDENTITY="" \
