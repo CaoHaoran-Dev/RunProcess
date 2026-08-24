@@ -2,8 +2,11 @@
 name: PR Validation
 
 on:
+  workflow_dispatch:                                # 1. 手动触发（在 Actions 页面点按钮）
+  push:
+    branches: [ "main", "dev" ]                # 2. 代码推送时触发
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev" ]                # 3. PR 时触发
 
 jobs:
   build-and-test:
@@ -13,9 +16,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install CocoaPods Dependencies
+        run: |
+          sudo gem install cocoapods
+          pod install
+
       - name: Build and Test macOS App
         run: |
           xcodebuild test \
+            -workspace "RunProcess.xcworkspace" \
             -scheme "RunProcess" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
