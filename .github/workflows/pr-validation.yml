@@ -3,20 +3,20 @@ name: PR Validation
 
 on:
   pull_request:
-    branches: [ "main", "dev" ]  # 当对main和dev分支发起PR时触发
+    branches: [ "main", "develop" ]
 
 jobs:
   build-and-test:
-    runs-on: macos-15  # 使用最新稳定版macOS镜像，确保Xcode环境可用 [citation:1]
+    runs-on: macos-15
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Build and Test
-      run: |
-        xcodebuild test \
-          -scheme "你的Scheme名称" \  # 请替换为你的Xcode Scheme名称
-          -destination 'platform=iOS Simulator,name=iPhone 16' \  # 指定一个常用模拟器 [citation:1]
-          CODE_SIGNING_ALLOWED=NO \  # 关键：禁用代码签名 [citation:5][citation:8]
-          CODE_SIGNING_REQUIRED=NO
+      - name: Build and Test macOS App
+        run: |
+          xcodebuild test \
+            -scheme "RunProcess" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO

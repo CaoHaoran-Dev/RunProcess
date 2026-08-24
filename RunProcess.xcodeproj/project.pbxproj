@@ -18,6 +18,7 @@
 		AD49D2853036EE5E007BD3A5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		AD8D43F83036DFDA00B0576B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
+		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -48,6 +49,7 @@
 				AD8D43F83036DFDA00B0576B /* README.md */,
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
 				AD17FC6C3035CC7A00A52CD6 /* Products */,
+				ADE1CFF3303C5B8E0099A9EC /* .github */,
 			);
 			sourceTree = "<group>";
 		};
@@ -57,6 +59,22 @@
 				AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		ADE1CFF2303C5B8E0099A9EC /* workflows */ = {
+			isa = PBXGroup;
+			children = (
+				ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */,
+			);
+			path = workflows;
+			sourceTree = "<group>";
+		};
+		ADE1CFF3303C5B8E0099A9EC /* .github */ = {
+			isa = PBXGroup;
+			children = (
+				ADE1CFF2303C5B8E0099A9EC /* workflows */,
+			);
+			path = .github;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
