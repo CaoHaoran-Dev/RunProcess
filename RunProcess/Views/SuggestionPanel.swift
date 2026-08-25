@@ -13,26 +13,22 @@ class SuggestionPanel {
     
     private var panel: NSPanel?
     private var hostingController: NSHostingController<SuggestionPanelContent>?
-    private weak var positioningView: NSView?
-    private var windowObservations: [NSObjectProtocol] = []
+    private weak var parentWindow: NSWindow?
     
     private init() {}
     
     func show(with viewModel: CommandViewModel, relativeTo positioningView: NSView) {
-        self.positioningView = positioningView
+        guard let window = positioningView.window else { return }
+        self.parentWindow = window
         
-        // 如果面板已存在，更新内容
         if let panel = panel, panel.isVisible {
             updateContent(viewModel)
-            repositionPanel()
             return
         }
         
-        // 创建内容视图
         let contentView = SuggestionPanelContent(viewModel: viewModel)
         hostingController = NSHostingController(rootView: contentView)
         
-        // 创建 NSPanel
         panel = NSPanel(contentViewController: hostingController!)
         panel?.styleMask = [.nonactivatingPanel, .fullSizeContentView]
         panel?.isFloatingPanel = true
@@ -43,35 +39,17 @@ class SuggestionPanel {
         panel?.titlebarAppearsTransparent = true
         panel?.titleVisibility = .hidden
         
-        // 设置尺寸
         let panelSize = calculatePanelSize(for: viewModel.suggestions)
         panel?.setContentSize(panelSize)
         
-        // 定位到输入框下方
-        positionPanel(relativeTo: positioningView)
-        
-        // 监听窗口移动和调整大小
-        if let window = positioningView.window {
-            let moveObserver = NotificationCenter.default.addObserver(
-                forName: NSWindow.didMoveNotification,
-                object: window,
-                queue: .main
-            ) { [weak self] _ in
-                self?.repositionPanel()
+        if let panel = panel {
+            window.addChildWindow(panel, ordered: .above)
+            // ✅ 延迟一帧确保布局完成
+            DispatchQueue.main.async {
+                self.positionPanel(relativeTo: positioningView)
             }
-            
-            let resizeObserver = NotificationCenter.default.addObserver(
-                forName: NSWindow.didResizeNotification,
-                object: window,
-                queue: .main
-            ) { [weak self] _ in
-                self?.repositionPanel()
-            }
-            
-            windowObservations = [moveObserver, resizeObserver]
         }
         
-        // 显示
         panel?.orderFront(nil)
     }
     
@@ -79,18 +57,23 @@ class SuggestionPanel {
         let contentView = SuggestionPanelContent(viewModel: viewModel)
         hostingController?.rootView = contentView
         
-        // 更新尺寸
         let newSize = calculatePanelSize(for: viewModel.suggestions)
         panel?.setContentSize(newSize)
-        repositionPanel()
+        
+        // ✅ 内容更新后重新定位
+        if let positioningView = findPositioningView() {
+            positionPanel(relativeTo: positioningView)
+        }
     }
     
     func hide() {
-        panel?.orderOut(nil)
-        // 移除观察者
-        windowObservations.forEach { NotificationCenter.default.removeObserver($0) }
-        windowObservations.removeAll()
-        positioningView = nil
+        guard let panel = panel else { return }
+        
+        if let parent = panel.parent {
+            parent.removeChildWindow(panel)
+        }
+        panel.orderOut(nil)
+        parentWindow = nil
     }
     
     func isVisible() -> Bool {
@@ -99,25 +82,50 @@ class SuggestionPanel {
     
     // MARK: - 定位
     
-    private func positionPanel(relativeTo view: NSView) {
-        guard let panel = panel else { return }
+    private func findPositioningView() -> NSView? {
+        // 从父窗口的 contentView 中查找 RunTextField
+        guard let window = parentWindow,
+              let contentView = window.contentView else { return nil }
         
-        // 获取输入框在屏幕上的位置
-        let window = view.window
-        let viewRect = view.convert(view.bounds, to: nil)
-        let screenRect = window?.convertToScreen(viewRect) ?? .zero
-        
-        // 面板位置：输入框下方，左对齐
-        let panelHeight = panel.frame.height
-        let x = screenRect.minX
-        let y = screenRect.minY - panelHeight - 4
-        
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
+        // 递归查找第一个 RunTextField 的 NSView
+        return findTextField(in: contentView)
     }
     
-    private func repositionPanel() {
-        guard let view = positioningView, let panel = panel, panel.isVisible else { return }
-        positionPanel(relativeTo: view)
+    private func findTextField(in view: NSView) -> NSView? {
+        // 检查是否是 RunTextField 的 NSView 实例
+        if view is RunTextField.NSViewType {
+            return view
+        }
+        // 检查子视图
+        for subview in view.subviews {
+            if let found = findTextField(in: subview) {
+                return found
+            }
+        }
+        return nil
+    }
+    
+    private func positionPanel(relativeTo view: NSView) {
+        guard let panel = panel, let window = view.window else { return }
+        
+        // ✅ 修复：获取输入框在窗口坐标系中的位置
+        let viewRectInWindow = view.convert(view.bounds, to: nil)
+        
+        // ✅ 获取窗口在屏幕上的位置
+        let windowRect = window.frame
+        
+        // ✅ 计算面板在屏幕坐标系中的位置
+        // viewRectInWindow 是相对于窗口内容区域的原点
+        // 需要加上窗口的 frame 原点（但 window.frame 包含标题栏）
+        // 对于透明标题栏，contentView 的原点就是 window.frame 的原点加上标题栏高度
+        // 使用 window.contentLayoutRect 获取内容区域
+        let contentRect = window.contentLayoutRect
+        let titleBarHeight = window.frame.height - contentRect.height
+        
+        let screenX = windowRect.origin.x + viewRectInWindow.minX
+        let screenY = windowRect.origin.y + viewRectInWindow.minY - panel.frame.height - 4 - titleBarHeight
+        
+        panel.setFrameOrigin(NSPoint(x: screenX, y: screenY))
     }
     
     private func calculatePanelSize(for suggestions: [Suggestion]) -> NSSize {
@@ -138,7 +146,6 @@ struct SuggestionPanelContent: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 计数
             HStack {
                 Spacer()
                 Text("\(viewModel.selectedIndex + 1)/\(viewModel.suggestions.count)")

@@ -16,7 +16,7 @@ class CommandSuggester {
     // 命令缓存
     private var cachedCommands: [String] = []
     private var lastCacheUpdate: Date = Date.distantPast
-    private let cacheTTL: TimeInterval = 300 // 5分钟缓存
+    private let cacheTTL: TimeInterval = 60 // ✅ 修复：60秒缓存，新命令更快生效
     
     /// 根据输入生成补全建议（异步回调，避免阻塞 UI）
     func suggest(for input: String, completion: @escaping ([Suggestion]) -> Void) {
@@ -37,18 +37,15 @@ class CommandSuggester {
     // MARK: - 私有方法
     
     private func generateSuggestions(for input: String) -> [Suggestion] {
-        // 提取当前正在输入的最后一个单词
         let words = input.split(separator: " ", omittingEmptySubsequences: false)
         guard let lastWord = words.last.map(String.init), !lastWord.isEmpty else {
             return []
         }
         
-        // 判断是否路径补全
         if lastWord.hasPrefix("/") || lastWord.hasPrefix("~") {
             return suggestPaths(for: lastWord)
         }
         
-        // 否则：命令补全 + 历史补全
         return suggestCommandsAndHistory(for: lastWord)
     }
     
@@ -81,7 +78,6 @@ class CommandSuggester {
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
         
-        // 1. 历史命令（带频次权重）
         let historyEntries = history.query(prefix: prefix)
         for entry in historyEntries {
             if seen.insert(entry.command).inserted {
@@ -94,7 +90,6 @@ class CommandSuggester {
             }
         }
         
-        // 2. 系统命令（从缓存获取）
         let commands = findSystemCommands(prefix: prefix)
         for cmd in commands {
             if seen.insert(cmd).inserted {
@@ -102,21 +97,17 @@ class CommandSuggester {
             }
         }
         
-        // 3. 按优先级排序（priority 高的在前）
         return suggestions.sorted { $0.priority > $1.priority }
     }
     
     // MARK: - 系统命令查找（带缓存）
     
     private func findSystemCommands(prefix: String) -> [String] {
-        // 检查缓存是否有效
         let now = Date()
         if now.timeIntervalSince(lastCacheUpdate) < cacheTTL && !cachedCommands.isEmpty {
-            // 从缓存中过滤
             return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
         }
         
-        // 重新加载命令列表
         let pathString = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
         let paths = pathString.split(separator: ":").map(String.init)
         
@@ -132,24 +123,30 @@ class CommandSuggester {
                 guard seen.insert(file).inserted else { continue }
                 
                 let fullPath = (path as NSString).appendingPathComponent(file)
-                if isFileExecutableSafely(atPath: fullPath) {
+                // ✅ 修复：直接检查文件是否可执行，使用 stat 替代 access
+                if isFileExecutable(atPath: fullPath) {
                     allCommands.append(file)
                 }
             }
         }
         
-        // 更新缓存
         cachedCommands = allCommands.sorted()
         lastCacheUpdate = now
         
-        // 返回匹配结果
         return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
     }
     
-    // MARK: - 安全文件检查
+    // MARK: - 安全文件检查（使用 stat 替代 access，避免 TOCTOU）
     
-    private func isFileExecutableSafely(atPath path: String) -> Bool {
-        // 直接使用 access() 系统调用，简化逻辑并避免 TOCTOU
-        return access(path, X_OK) == 0
+    private func isFileExecutable(atPath path: String) -> Bool {
+        var statInfo = stat()
+        guard stat(path, &statInfo) == 0 else { return false }
+        
+        // 检查是否为普通文件或符号链接，且拥有者可执行
+        let isRegular = (statInfo.st_mode & S_IFMT) == S_IFREG
+        let isSymlink = (statInfo.st_mode & S_IFMT) == S_IFLNK
+        let isExecutable = (statInfo.st_mode & S_IXUSR) != 0
+        
+        return (isRegular || isSymlink) && isExecutable
     }
 }
