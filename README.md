@@ -58,7 +58,7 @@ Requires Xcode 16.0+.
 
 ## Documentation
 
-- [简体中文 README](Docs/zh-Hans/README.md)
+- [简体中文 README](Docs/zh-Hans/README.zh-Hans.md)
 - [License](LICENSE.md)
 
 ---
