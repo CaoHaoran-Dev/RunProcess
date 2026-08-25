@@ -30,6 +30,7 @@
 "hint.history.navigation" = "↑↓ 历史";
 "hint.global.hotkey" = "⌘⌥R 全局";
 "hint.hide.window" = "⌘W 隐藏";
+"hint.shift.enter" = "Shift↩ 换行";
 
 // MARK: - Sudo Dialog
 "sudo.dialog.title" = "需要管理员权限";

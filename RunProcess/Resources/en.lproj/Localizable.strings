@@ -30,6 +30,7 @@
 "hint.history.navigation" = "↑↓ History";
 "hint.global.hotkey" = "⌘⌥R Global";
 "hint.hide.window" = "⌘W Hide";
+"hint.shift.enter" = "Shift↩ Newline";
 
 // MARK: - Sudo Dialog
 "sudo.dialog.title" = "Administrator Privileges Required";

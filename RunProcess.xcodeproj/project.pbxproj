@@ -11,6 +11,8 @@
 		AD8D43F93036DFDA00B0576B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43F83036DFDA00B0576B /* README.md */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		ADF84783303D604C00462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF84782303D604C00462C27 /* HotKey */; };
+		ADF8478B303D6A3500462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478A303D6A3500462C27 /* HotKey */; };
+		ADF8478E303D6A6600462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478D303D6A6600462C27 /* HotKey */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +36,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADF8478E303D6A6600462C27 /* HotKey in Frameworks */,
+				ADF8478B303D6A3500462C27 /* HotKey in Frameworks */,
 				ADF84783303D604C00462C27 /* HotKey in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -98,6 +102,8 @@
 			name = RunProcess;
 			packageProductDependencies = (
 				ADF84782303D604C00462C27 /* HotKey */,
+				ADF8478A303D6A3500462C27 /* HotKey */,
+				ADF8478D303D6A6600462C27 /* HotKey */,
 			);
 			productName = RunProcess;
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
@@ -129,7 +135,7 @@
 			mainGroup = AD17FC623035CC7A00A52CD6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				ADF84781303D604C00462C27 /* XCLocalSwiftPackageReference "../../../../../Desktop/HotKey" */,
+				ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
@@ -376,16 +382,29 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		ADF84781303D604C00462C27 /* XCLocalSwiftPackageReference "../../../../../Desktop/HotKey" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../../../../Desktop/HotKey;
+/* Begin XCRemoteSwiftPackageReference section */
+		ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		ADF84782303D604C00462C27 /* HotKey */ = {
 			isa = XCSwiftPackageProductDependency;
+			productName = HotKey;
+		};
+		ADF8478A303D6A3500462C27 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = HotKey;
+		};
+		ADF8478D303D6A6600462C27 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */;
 			productName = HotKey;
 		};
 /* End XCSwiftPackageProductDependency section */

@@ -13,6 +13,7 @@ class CommandExecutor {
     private var currentTask: Process?
     private var currentTimeoutWork: DispatchWorkItem?
     private let taskQueue = DispatchQueue(label: "com.runprocess.executor", qos: .userInitiated)
+    private let stateQueue = DispatchQueue(label: "com.runprocess.state", qos: .userInitiated)
     private let maxOutputSize = 10 * 1024 * 1024 // 10MB
     
     private init() {}
@@ -35,7 +36,8 @@ class CommandExecutor {
             task.standardOutput = outputPipe
             task.standardError = errorPipe
             
-            self.taskQueue.sync {
+            // ✅ 使用 stateQueue 而非 taskQueue 避免死锁
+            self.stateQueue.sync {
                 self.currentTask = task
             }
             
@@ -50,8 +52,8 @@ class CommandExecutor {
                 group.enter()
                 group.enter()
                 
-                var outputEOF = false
-                var errorEOF = false
+                var outputDone = false
+                var errorDone = false
                 
                 let callbackQueue = DispatchQueue(label: "com.runprocess.callback", qos: .userInitiated)
                 
@@ -60,8 +62,8 @@ class CommandExecutor {
                         guard let self = self else { return }
                         let data = handle.availableData
                         if data.isEmpty {
-                            if !outputEOF {
-                                outputEOF = true
+                            if !outputDone {
+                                outputDone = true
                                 group.leave()
                             }
                             return
@@ -79,8 +81,8 @@ class CommandExecutor {
                         guard let self = self else { return }
                         let data = handle.availableData
                         if data.isEmpty {
-                            if !errorEOF {
-                                errorEOF = true
+                            if !errorDone {
+                                errorDone = true
                                 group.leave()
                             }
                             return
@@ -100,21 +102,23 @@ class CommandExecutor {
                     }
                     outputPipe.fileHandleForReading.readabilityHandler = nil
                     errorPipe.fileHandleForReading.readabilityHandler = nil
-                    if !outputEOF {
-                        outputEOF = true
+                    if !outputDone {
+                        outputDone = true
                         group.leave()
                     }
-                    if !errorEOF {
-                        errorEOF = true
+                    if !errorDone {
+                        errorDone = true
                         group.leave()
                     }
-                    self.taskQueue.sync {
+                    // ✅ 使用 stateQueue 避免死锁
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
                 }
                 
-                self.taskQueue.sync {
+                // ✅ 使用 stateQueue 避免死锁
+                self.stateQueue.sync {
                     self.currentTimeoutWork = timeoutWork
                 }
                 
@@ -137,7 +141,7 @@ class CommandExecutor {
                     
                     let wasTerminated = task.terminationStatus == 15
                     
-                    self.taskQueue.sync {
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
@@ -160,7 +164,7 @@ class CommandExecutor {
                 errorPipe.fileHandleForReading.readabilityHandler = nil
                 
                 DispatchQueue.main.async {
-                    self.taskQueue.sync {
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
@@ -192,7 +196,7 @@ class CommandExecutor {
             task.standardError = errorPipe
             task.standardInput = inputPipe
             
-            self.taskQueue.sync {
+            self.stateQueue.sync {
                 self.currentTask = task
             }
             
@@ -211,8 +215,8 @@ class CommandExecutor {
                 group.enter()
                 group.enter()
                 
-                var outputEOF = false
-                var errorEOF = false
+                var outputDone = false
+                var errorDone = false
                 
                 let callbackQueue = DispatchQueue(label: "com.runprocess.sudo.callback", qos: .userInitiated)
                 
@@ -221,8 +225,8 @@ class CommandExecutor {
                         guard let self = self else { return }
                         let data = handle.availableData
                         if data.isEmpty {
-                            if !outputEOF {
-                                outputEOF = true
+                            if !outputDone {
+                                outputDone = true
                                 group.leave()
                             }
                             return
@@ -240,8 +244,8 @@ class CommandExecutor {
                         guard let self = self else { return }
                         let data = handle.availableData
                         if data.isEmpty {
-                            if !errorEOF {
-                                errorEOF = true
+                            if !errorDone {
+                                errorDone = true
                                 group.leave()
                             }
                             return
@@ -261,21 +265,21 @@ class CommandExecutor {
                     }
                     outputPipe.fileHandleForReading.readabilityHandler = nil
                     errorPipe.fileHandleForReading.readabilityHandler = nil
-                    if !outputEOF {
-                        outputEOF = true
+                    if !outputDone {
+                        outputDone = true
                         group.leave()
                     }
-                    if !errorEOF {
-                        errorEOF = true
+                    if !errorDone {
+                        errorDone = true
                         group.leave()
                     }
-                    self.taskQueue.sync {
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
                 }
                 
-                self.taskQueue.sync {
+                self.stateQueue.sync {
                     self.currentTimeoutWork = timeoutWork
                 }
                 
@@ -298,7 +302,7 @@ class CommandExecutor {
                     
                     let wasTerminated = task.terminationStatus == 15
                     
-                    self.taskQueue.sync {
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
@@ -331,7 +335,7 @@ class CommandExecutor {
                 errorPipe.fileHandleForReading.readabilityHandler = nil
                 
                 DispatchQueue.main.async {
-                    self.taskQueue.sync {
+                    self.stateQueue.sync {
                         self.currentTask = nil
                         self.currentTimeoutWork = nil
                     }
@@ -344,7 +348,8 @@ class CommandExecutor {
     // MARK: - Cancel
     
     func cancelCurrentTask() {
-        taskQueue.sync {
+        // ✅ 使用 stateQueue 避免死锁
+        stateQueue.sync {
             currentTimeoutWork?.cancel()
             if let task = currentTask, task.isRunning {
                 task.terminate()

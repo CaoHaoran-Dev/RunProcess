@@ -22,12 +22,15 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // Input row
+            // ✅ 输入行 - 使用 ZStack 或 alignment 对齐
             HStack(spacing: 8) {
+                // ✅ 图标垂直居中
                 Image(systemName: "terminal")
                     .foregroundColor(.secondary)
-                    .font(.system(size: 16))
+                    .font(.system(size: 18))
+                    .frame(height: 44)
                 
+                // ✅ 输入框
                 RunTextField(
                     text: $viewModel.inputText,
                     onTab: viewModel.requestSuggestions,
@@ -41,6 +44,7 @@ struct ContentView: View {
                 .onAppear {
                     isFocused = true
                 }
+                .frame(height: 44)
                 .overlay(
                     NSViewAccessor { nsView in
                         viewModel.registerTextField(nsView)
@@ -51,29 +55,32 @@ struct ContentView: View {
                     Button(action: viewModel.cancelExecution) {
                         Image(systemName: "stop.circle.fill")
                             .foregroundColor(.red)
-                            .font(.system(size: 20))
+                            .font(.system(size: 22))
                     }
                     .buttonStyle(.plain)
+                    .frame(height: 44)
                     .help(NSLocalizedString("button.cancel.tooltip", comment: "Cancel button tooltip"))
                 }
                 
                 Button(action: executeCommand) {
                     Image(systemName: viewModel.isRunning ? "ellipsis.circle" : "return")
                         .foregroundColor(.secondary)
+                        .font(.system(size: 20))
                 }
                 .buttonStyle(.plain)
+                .frame(height: 44)
                 .keyboardShortcut(.defaultAction)
                 .disabled(viewModel.inputText.isEmpty || viewModel.isRunning)
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
                     .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             )
             
-            // Options row
+            // 选项行
             HStack {
                 Toggle(isOn: $useSudo) {
                     HStack(spacing: 4) {
@@ -108,7 +115,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 4)
             
-            // Output area
+            // 输出区域 / 底部提示
             if !viewModel.outputText.isEmpty {
                 ScrollView {
                     Text(viewModel.outputText)
@@ -148,6 +155,8 @@ struct ContentView: View {
                     Text(NSLocalizedString("hint.global.hotkey", comment: "Global hotkey hint"))
                     Text("·")
                     Text(NSLocalizedString("hint.hide.window", comment: "Hide window hint"))
+                    Text("·")
+                    Text(NSLocalizedString("hint.shift.enter", comment: "Shift+Enter hint"))
                 }
                 .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.6))
