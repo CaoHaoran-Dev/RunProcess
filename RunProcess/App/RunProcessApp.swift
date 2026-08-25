@@ -25,88 +25,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var viewModel: CommandViewModel?
     private var hotKey: HotKey?
     
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        // 隐藏 Dock 图标
-        NSApp.setActivationPolicy(.accessory)
-        
-        createWindow()
-        setupStatusBar()
-        setupGlobalHotkey()
-    }
-    
-    func createWindow() {
-        let viewModel = CommandViewModel()
-        self.viewModel = viewModel
-        
-        let contentView = ContentView(viewModel: viewModel)
-        let hostingController = NSHostingController(rootView: contentView)
-        
-        window = NSWindow(contentViewController: hostingController)
-        window?.title = "RunProcess"
-        window?.setContentSize(NSSize(width: 520, height: 160))
-        
-        // ✅ 标准窗口样式：有红绿灯 + 可调整大小
-        window?.styleMask = [
-            .titled,           // 标题栏（显示红绿灯）
-            .closable,         // 关闭按钮
-            .miniaturizable,   // 最小化按钮
-            .resizable,        // 可调整大小（右下角拖拽）
-            .fullSizeContentView
-        ]
-        window?.titlebarAppearsTransparent = true
-        window?.isMovableByWindowBackground = true
-        window?.isOpaque = false
-        window?.backgroundColor = .clear
-        
-        // ✅ 居中显示
-        window?.center()
-        
-        // ✅ 设置为浮动窗口（类似 Spotlight）
-        window?.level = .floating
-        window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        
-        // ✅ 点击其他区域时不关闭（但可以保持焦点）
-        window?.makeKeyAndOrderFront(nil)
-        window?.delegate = self
-    }
-    
-    func setupStatusBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        
-        if let button = statusItem?.button {
-            let image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "RunProcess")
-            image?.isTemplate = true
-            button.image = image
-            button.imagePosition = .imageOnly
-            button.action = #selector(toggleMenu)
-            button.target = self
-        }
-    }
-    
-    // MARK: - 全局快捷键（使用 HotKey 库）
-    
-    private func setupGlobalHotkey() {
-        hotKey = HotKey(key: .r, modifiers: [.command, .option])
-        
-        hotKey?.keyDownHandler = { [weak self] in
-            DispatchQueue.main.async {
-                self?.toggleWindow()
-            }
-        }
-        
-        print("✅ 全局热键注册成功: ⌘⌥R")
-    }
-    
-    @objc func toggleMenu() {
+    // ✅ 修复：懒加载菜单
+    private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
         
         let toggleItem = NSMenuItem(
             title: "显示/隐藏窗口",
             action: #selector(toggleWindow),
-            keyEquivalent: ""
+            keyEquivalent: "r"
         )
         toggleItem.keyEquivalentModifierMask = [.command, .option]
-        toggleItem.keyEquivalent = "r"
+        toggleItem.target = self
         menu.addItem(toggleItem)
         
         menu.addItem(NSMenuItem.separator())
@@ -130,7 +59,76 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         quitItem.target = self
         menu.addItem(quitItem)
         
-        statusItem?.menu = menu
+        return menu
+    }()
+    
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
+        
+        createWindow()
+        setupStatusBar()
+        setupGlobalHotkey()
+    }
+    
+    func createWindow() {
+        let viewModel = CommandViewModel()
+        self.viewModel = viewModel
+        
+        let contentView = ContentView(viewModel: viewModel)
+        let hostingController = NSHostingController(rootView: contentView)
+        
+        window = NSWindow(contentViewController: hostingController)
+        window?.title = "RunProcess"
+        window?.setContentSize(NSSize(width: 520, height: 160))
+        
+        window?.styleMask = [
+            .titled,
+            .closable,
+            .miniaturizable,
+            .resizable,
+            .fullSizeContentView
+        ]
+        window?.titlebarAppearsTransparent = true
+        window?.isMovableByWindowBackground = true
+        window?.isOpaque = false
+        window?.backgroundColor = .clear
+        
+        window?.center()
+        window?.level = .floating
+        window?.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        
+        window?.makeKeyAndOrderFront(nil)
+        window?.delegate = self
+    }
+    
+    func setupStatusBar() {
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        
+        if let button = statusItem?.button {
+            let image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: "RunProcess")
+            image?.isTemplate = true
+            button.image = image
+            button.imagePosition = .imageOnly
+            button.action = #selector(toggleMenu)
+            button.target = self
+        }
+    }
+    
+    private func setupGlobalHotkey() {
+        hotKey = HotKey(key: .r, modifiers: [.command, .option])
+        
+        hotKey?.keyDownHandler = { [weak self] in
+            DispatchQueue.main.async {
+                self?.toggleWindow()
+            }
+        }
+        
+        print("✅ 全局热键注册成功: ⌘⌥R")
+    }
+    
+    @objc func toggleMenu() {
+        // ✅ 修复：使用懒加载的菜单，不再每次重建
+        statusItem?.menu = statusMenu
         statusItem?.button?.performClick(nil)
     }
     
@@ -139,11 +137,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if window.isVisible {
             window.orderOut(nil)
         } else {
-            // ✅ 显示并激活
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             
-            // ✅ 自动聚焦到输入框
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 NotificationCenter.default.post(
                     name: NSNotification.Name("FocusTextField"),
@@ -174,11 +170,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-// MARK: - NSWindowDelegate
-
 extension AppDelegate: NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        // 点击关闭按钮 → 隐藏窗口而不是退出
         sender.orderOut(nil)
         return false
     }

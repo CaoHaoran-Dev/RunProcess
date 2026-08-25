@@ -10,33 +10,33 @@ import Foundation
 class CommandExecutor {
     static let shared = CommandExecutor()
     
-    // 当前正在运行的任务（用于取消）
     private var currentTask: Process?
     private var currentTimeoutWork: DispatchWorkItem?
-    private let taskQueue = DispatchQueue(label: "com.runprocess.executor")
+    private let taskQueue = DispatchQueue(label: "com.runprocess.executor", qos: .default)
+    private let maxOutputSize = 10 * 1024 * 1024 // 10MB
+    private let outputQueue = DispatchQueue(label: "com.runprocess.output", qos: .userInitiated)
     
     private init() {}
     
-    /// 执行命令（带超时）
     func execute(_ input: String, timeout: TimeInterval = 10.0, completion: @escaping (Result<String, Error>) -> Void) {
-        // 取消之前的任务
         cancelCurrentTask()
         
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        // ✅ 修复：所有操作在同一个 QoS 队列中执行
+        outputQueue.async { [weak self] in
             guard let self = self else { return }
             
             let task = Process()
-            let pipe = Pipe()
+            let outputPipe = Pipe()
+            let errorPipe = Pipe()
             
             let homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
             task.currentDirectoryURL = URL(fileURLWithPath: homeDirectory)
             
             task.launchPath = "/bin/zsh"
             task.arguments = ["-l", "-c", input]
-            task.standardOutput = pipe
-            task.standardError = pipe
+            task.standardOutput = outputPipe
+            task.standardError = errorPipe
             
-            // 保存当前任务
             self.taskQueue.sync {
                 self.currentTask = task
             }
@@ -44,12 +44,69 @@ class CommandExecutor {
             do {
                 try task.run()
                 
-                let timeoutWork = DispatchWorkItem { [weak self] in
+                // ✅ 修复：使用 DispatchGroup 但确保在同一个队列中处理
+                let group = DispatchGroup()
+                var outputData = Data()
+                var errorData = Data()
+                let lock = NSLock()
+                var outputFinished = false
+                var errorFinished = false
+                
+                // 读取 stdout
+                group.enter()
+                outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                    guard let self = self else { return }
+                    let data = handle.availableData
+                    if data.isEmpty {
+                        if !outputFinished {
+                            outputFinished = true
+                            group.leave()
+                        }
+                        return
+                    }
+                    lock.lock()
+                    if outputData.count + data.count <= self.maxOutputSize {
+                        outputData.append(data)
+                    }
+                    lock.unlock()
+                }
+                
+                // 读取 stderr
+                group.enter()
+                errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                    guard let self = self else { return }
+                    let data = handle.availableData
+                    if data.isEmpty {
+                        if !errorFinished {
+                            errorFinished = true
+                            group.leave()
+                        }
+                        return
+                    }
+                    lock.lock()
+                    if errorData.count + data.count <= self.maxOutputSize {
+                        errorData.append(data)
+                    }
+                    lock.unlock()
+                }
+                
+                // ✅ 修复：超时处理使用相同的 QoS
+                let timeoutWork = DispatchWorkItem(qos: .userInitiated) { [weak self] in
                     guard let self = self else { return }
                     if task.isRunning {
                         task.terminate()
-                        pipe.fileHandleForReading.closeFile()
-                        pipe.fileHandleForWriting.closeFile()
+                    }
+                    // 清理 handlers
+                    outputPipe.fileHandleForReading.readabilityHandler = nil
+                    errorPipe.fileHandleForReading.readabilityHandler = nil
+                    // 确保 group 被释放
+                    if !outputFinished {
+                        outputFinished = true
+                        group.leave()
+                    }
+                    if !errorFinished {
+                        errorFinished = true
+                        group.leave()
                     }
                     self.taskQueue.sync {
                         self.currentTask = nil
@@ -61,19 +118,28 @@ class CommandExecutor {
                     self.currentTimeoutWork = timeoutWork
                 }
                 
-                DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
+                // ✅ 修复：在同一个队列中调度超时
+                self.outputQueue.asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
                 
-                task.waitUntilExit()
+                // ✅ 修复：等待 group 完成（不阻塞高优先级队列）
+                let result = group.wait(timeout: .now() + timeout + 1)
+                
+                // 取消超时任务（如果还没触发）
                 timeoutWork.cancel()
                 
-                // 读取输出
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8) ?? ""
-                let trimmed = output.trimmingCharacters(in: .newlines)
+                // 清理 handlers
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
                 
-                // 关闭 pipe
-                pipe.fileHandleForReading.closeFile()
-                pipe.fileHandleForWriting.closeFile()
+                // 等待进程结束
+                task.waitUntilExit()
+                
+                let output = String(data: outputData, encoding: .utf8) ?? ""
+                let error = String(data: errorData, encoding: .utf8) ?? ""
+                let combined = output + (error.isEmpty ? "" : "\n" + error)
+                let trimmed = combined.trimmingCharacters(in: .newlines)
+                
+                let wasTerminated = task.terminationStatus == 15 || result == .timedOut
                 
                 DispatchQueue.main.async {
                     self.taskQueue.sync {
@@ -81,16 +147,19 @@ class CommandExecutor {
                         self.currentTimeoutWork = nil
                     }
                     
-                    if task.terminationStatus == 0 {
+                    if wasTerminated {
+                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）\n💡 如需执行耗时命令，请直接在终端中运行"])))
+                    } else if task.terminationStatus == 0 {
                         completion(.success(trimmed))
-                    } else if task.terminationStatus == 15 {
-                        completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）\n💡 如需执行耗时命令，请直接在终端中运行"])))
                     } else {
                         let errorMsg = trimmed.isEmpty ? "命令执行失败（退出码: \(task.terminationStatus)）" : trimmed
                         completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errorMsg])))
                     }
                 }
             } catch {
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+                
                 DispatchQueue.main.async {
                     self.taskQueue.sync {
                         self.currentTask = nil
@@ -102,31 +171,28 @@ class CommandExecutor {
         }
     }
     
-    /// 🔒 安全执行 sudo 命令（通过 standardInput 传递密码）
     func executeWithSudo(_ command: String, password: String, timeout: TimeInterval = 10.0, completion: @escaping (Result<String, Error>) -> Void) {
-        // 取消之前的任务
         cancelCurrentTask()
         
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+        outputQueue.async { [weak self] in
             guard let self = self else { return }
             
             let task = Process()
             let outputPipe = Pipe()
+            let errorPipe = Pipe()
             let inputPipe = Pipe()
             
             let homeDirectory = FileManager.default.homeDirectoryForCurrentUser.path
             task.currentDirectoryURL = URL(fileURLWithPath: homeDirectory)
             
-            // 🛡️ 使用 sudo -S 从标准输入读取密码
             task.launchPath = "/usr/bin/sudo"
             let commandArgs = command.split(separator: " ").map(String.init)
-            task.arguments = ["-S", "-k"] + commandArgs  // -k 忽略缓存，强制要求密码
+            task.arguments = ["-S", "-k"] + commandArgs
             
             task.standardOutput = outputPipe
-            task.standardError = outputPipe
+            task.standardError = errorPipe
             task.standardInput = inputPipe
             
-            // 保存当前任务
             self.taskQueue.sync {
                 self.currentTask = task
             }
@@ -134,17 +200,67 @@ class CommandExecutor {
             do {
                 try task.run()
                 
-                // 🔐 通过标准输入传递密码，不会出现在进程列表中
                 let passwordData = "\(password)\n".data(using: .utf8)!
                 inputPipe.fileHandleForWriting.write(passwordData)
                 inputPipe.fileHandleForWriting.closeFile()
                 
-                let timeoutWork = DispatchWorkItem { [weak self] in
+                let group = DispatchGroup()
+                var outputData = Data()
+                var errorData = Data()
+                let lock = NSLock()
+                var outputFinished = false
+                var errorFinished = false
+                
+                group.enter()
+                outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                    guard let self = self else { return }
+                    let data = handle.availableData
+                    if data.isEmpty {
+                        if !outputFinished {
+                            outputFinished = true
+                            group.leave()
+                        }
+                        return
+                    }
+                    lock.lock()
+                    if outputData.count + data.count <= self.maxOutputSize {
+                        outputData.append(data)
+                    }
+                    lock.unlock()
+                }
+                
+                group.enter()
+                errorPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+                    guard let self = self else { return }
+                    let data = handle.availableData
+                    if data.isEmpty {
+                        if !errorFinished {
+                            errorFinished = true
+                            group.leave()
+                        }
+                        return
+                    }
+                    lock.lock()
+                    if errorData.count + data.count <= self.maxOutputSize {
+                        errorData.append(data)
+                    }
+                    lock.unlock()
+                }
+                
+                let timeoutWork = DispatchWorkItem(qos: .userInitiated) { [weak self] in
                     guard let self = self else { return }
                     if task.isRunning {
                         task.terminate()
-                        outputPipe.fileHandleForReading.closeFile()
-                        outputPipe.fileHandleForWriting.closeFile()
+                    }
+                    outputPipe.fileHandleForReading.readabilityHandler = nil
+                    errorPipe.fileHandleForReading.readabilityHandler = nil
+                    if !outputFinished {
+                        outputFinished = true
+                        group.leave()
+                    }
+                    if !errorFinished {
+                        errorFinished = true
+                        group.leave()
                     }
                     self.taskQueue.sync {
                         self.currentTask = nil
@@ -156,18 +272,23 @@ class CommandExecutor {
                     self.currentTimeoutWork = timeoutWork
                 }
                 
-                DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
+                self.outputQueue.asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
                 
-                task.waitUntilExit()
+                let result = group.wait(timeout: .now() + timeout + 1)
+                
                 timeoutWork.cancel()
                 
-                let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-                let output = String(data: data, encoding: .utf8) ?? ""
-                let trimmed = output.trimmingCharacters(in: .newlines)
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
                 
-                // 关闭 pipe
-                outputPipe.fileHandleForReading.closeFile()
-                outputPipe.fileHandleForWriting.closeFile()
+                task.waitUntilExit()
+                
+                let output = String(data: outputData, encoding: .utf8) ?? ""
+                let error = String(data: errorData, encoding: .utf8) ?? ""
+                let combined = output + (error.isEmpty ? "" : "\n" + error)
+                let trimmed = combined.trimmingCharacters(in: .newlines)
+                
+                let wasTerminated = task.terminationStatus == 15 || result == .timedOut
                 
                 DispatchQueue.main.async {
                     self.taskQueue.sync {
@@ -175,13 +296,17 @@ class CommandExecutor {
                         self.currentTimeoutWork = nil
                     }
                     
-                    if task.terminationStatus == 0 {
+                    if wasTerminated {
+                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）"])))
+                    } else if task.terminationStatus == 0 {
                         completion(.success(trimmed))
-                    } else if task.terminationStatus == 15 {
-                        completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）"])))
                     } else {
-                        // 检测密码错误
-                        if trimmed.lowercased().contains("password") || trimmed.contains("Sorry") {
+                        let lowercased = trimmed.lowercased()
+                        let isPasswordError = lowercased.contains("sorry") ||
+                                              lowercased.contains("incorrect password") ||
+                                              (lowercased.contains("password") && lowercased.contains("try again"))
+                        
+                        if isPasswordError {
                             completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "❌ 密码错误\n💡 请检查密码后重试"])))
                         } else {
                             let errorMsg = trimmed.isEmpty ? "命令执行失败（退出码: \(task.terminationStatus)）" : trimmed
@@ -190,6 +315,9 @@ class CommandExecutor {
                     }
                 }
             } catch {
+                outputPipe.fileHandleForReading.readabilityHandler = nil
+                errorPipe.fileHandleForReading.readabilityHandler = nil
+                
                 DispatchQueue.main.async {
                     self.taskQueue.sync {
                         self.currentTask = nil
@@ -201,7 +329,6 @@ class CommandExecutor {
         }
     }
     
-    /// 取消当前正在执行的任务
     func cancelCurrentTask() {
         taskQueue.sync {
             currentTimeoutWork?.cancel()

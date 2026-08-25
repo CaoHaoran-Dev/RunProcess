@@ -9,23 +9,16 @@ import SwiftUI
 import Combine
 
 class CommandViewModel: ObservableObject {
-    // MARK: - Published 属性
-    
     @Published var inputText: String = ""
     @Published var outputText: String = ""
     @Published var isRunning: Bool = false
     @Published var canCancel: Bool = false
-    
-    // 候选列表相关
     @Published var suggestions: [Suggestion] = []
     @Published var selectedIndex: Int = 0
     
-    // 历史命令导航
     private var historyIndex: Int = -1
     private var historyCommands: [String] = []
-    private var currentInputBackup: String = ""  // 保存当前输入，按↓时恢复
-    
-    // MARK: - 私有属性
+    private var currentInputBackup: String = ""
     
     private let suggester = CommandSuggester()
     private let history = CommandHistory()
@@ -33,20 +26,15 @@ class CommandViewModel: ObservableObject {
     private weak var textField: NSView?
     private var currentCompletion: ((String) -> Void)?
     
-    // MARK: - 初始化
-    
     init() {
         $inputText
             .dropFirst()
             .sink { [weak self] _ in
                 self?.closeSuggestions()
-                // 用户打字时重置历史导航
                 self?.resetHistoryNavigation()
             }
             .store(in: &cancellables)
     }
-    
-    // MARK: - 公开方法
     
     func registerTextField(_ view: NSView) {
         textField = view
@@ -90,7 +78,6 @@ class CommandViewModel: ObservableObject {
     
     func confirmSelection() {
         guard selectedIndex < suggestions.count else { return }
-        
         let selected = suggestions[selectedIndex]
         applySuggestion(selected)
     }
@@ -101,9 +88,7 @@ class CommandViewModel: ObservableObject {
         SuggestionPanel.shared.hide()
     }
     
-    /// 导航到上一条历史命令（按上键）
     func navigateHistoryUp() -> String? {
-        // 首次按上键时，加载历史列表并保存当前输入
         if historyCommands.isEmpty {
             historyCommands = history.getAll().map { $0.command }
             currentInputBackup = inputText
@@ -111,7 +96,6 @@ class CommandViewModel: ObservableObject {
         
         guard !historyCommands.isEmpty else { return nil }
         
-        // 如果当前没有选中任何历史，从最后一条开始
         if historyIndex == -1 {
             historyIndex = historyCommands.count - 1
         } else if historyIndex > 0 {
@@ -121,7 +105,6 @@ class CommandViewModel: ObservableObject {
         return historyCommands[historyIndex]
     }
     
-    /// 导航到下一条历史命令（按下键）
     func navigateHistoryDown() -> String? {
         guard !historyCommands.isEmpty else { return nil }
         
@@ -129,42 +112,54 @@ class CommandViewModel: ObservableObject {
             historyIndex += 1
             return historyCommands[historyIndex]
         } else if historyIndex == historyCommands.count - 1 {
-            // 已经到最后一条，再按↓回到当前输入
             historyIndex = -1
             return currentInputBackup
         } else {
-            // historyIndex == -1，没有历史可下翻
             return nil
         }
     }
     
-    /// 重置历史导航
     func resetHistoryNavigation() {
         historyIndex = -1
         historyCommands = []
         currentInputBackup = ""
     }
     
+    // ✅ 修复：更准确的交互式命令检测
     private func isInteractiveCommand(_ command: String) -> Bool {
-        if command.contains(" -c ") || command.contains(" --command ") {
-            return false
-        }
+        // 排除管道和重定向的情况
+        let hasPipe = command.contains("|")
+        let hasRedirect = command.contains(">") || command.contains("<")
         
-        let patterns = [
-            #"^(vim?|nano|emacs|top|htop|less|more)\b"#,
-            #"^(ssh|telnet|ftp|sftp)\s+[^-]"#,
-            #"^(python|python3|ipython|irb|node)\b"#,
-            #"^(mysql|psql|sqlite3)\b"#,
-            #"^(gdb|lldb|bc|dc)\b"#,
-            #"^(sh|bash|zsh|fish)\b"#,
-            #"^(mail|mutt|pine)\b"#,
-            #"\b(-i|--interactive)\b"#
+        // 提取第一个命令（管道前的内容）
+        let firstPart = command.split(separator: "|").first.map(String.init) ?? command
+        let trimmed = firstPart.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 交互式命令列表（仅当它们作为第一个命令且没有管道/重定向时）
+        let interactiveCommands = [
+            "vim", "vi", "nano", "emacs", "top", "htop", "less", "more",
+            "ssh", "telnet", "ftp", "sftp",
+            "python", "python3", "ipython", "irb", "node",
+            "mysql", "psql", "sqlite3",
+            "gdb", "lldb", "bc", "dc",
+            "sh", "bash", "zsh", "fish",
+            "mail", "mutt", "pine"
         ]
         
-        for pattern in patterns {
-            if command.range(of: pattern, options: .regularExpression) != nil {
+        // 检查第一个命令是否匹配
+        for cmd in interactiveCommands {
+            if trimmed == cmd || trimmed.hasPrefix(cmd + " ") {
+                // 如果有管道或重定向，不拦截
+                if hasPipe || hasRedirect {
+                    return false
+                }
                 return true
             }
+        }
+        
+        // 检查是否有 -i 或 --interactive 参数
+        if command.contains(" -i ") || command.contains(" --interactive ") {
+            return true
         }
         
         return false
@@ -273,8 +268,6 @@ class CommandViewModel: ObservableObject {
     func clearOutput() {
         outputText = ""
     }
-    
-    // MARK: - 私有方法
     
     private func applySuggestion(_ suggestion: Suggestion) {
         let words = inputText.split(separator: " ", omittingEmptySubsequences: false)
