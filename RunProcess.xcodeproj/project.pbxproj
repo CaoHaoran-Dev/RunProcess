@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 77;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -24,8 +24,16 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RunProcess; sourceTree = "<group>"; };
-		ADF8478F303D6F5300462C27 /* Docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Docs; sourceTree = "<group>"; };
+		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RunProcess;
+			sourceTree = "<group>";
+		};
+		ADF8478F303D6F5300462C27 /* Docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Docs;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -124,7 +132,6 @@
 				};
 			};
 			buildConfigurationList = AD17FC663035CC7A00A52CD6 /* Build configuration list for PBXProject "RunProcess" */;
-			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -137,6 +144,7 @@
 			packageReferences = (
 				ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */,
 			);
+			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -297,7 +305,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2100.0;
+				CURRENT_PROJECT_VERSION = 2200.0;
 				DEVELOPMENT_TEAM = MVKBMZMN48;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -331,7 +339,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2100.0;
+				CURRENT_PROJECT_VERSION = 2200.0;
 				DEVELOPMENT_TEAM = MVKBMZMN48;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;

@@ -52,7 +52,7 @@ cd RunProcess
 open RunProcess.xcodeproj
 ```
 
-Requires Xcode 15.0+.
+Requires Xcode 16.0+.
 
 ---
 

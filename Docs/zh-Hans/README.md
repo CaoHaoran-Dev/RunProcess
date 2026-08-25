@@ -80,7 +80,7 @@ cd RunProcess
 open RunProcess.xcodeproj
 ```
 
-需要 Xcode 15.3+。
+需要 Xcode 16.0+。
 
 ---
 
