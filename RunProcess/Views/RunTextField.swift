@@ -11,13 +11,13 @@ struct RunTextField: NSViewRepresentable {
     @Binding var text: String
     let onTab: () -> Void
     let onEnter: () -> Void
-    let onUp: () -> String?   // 返回历史命令，nil 表示没有更多历史
-    let onDown: () -> String? // 返回历史命令，nil 表示没有更多历史
+    let onUp: () -> String?
+    let onDown: () -> String?
     
     func makeNSView(context: Context) -> NSTextField {
         let field = CustomTextField()
         field.delegate = context.coordinator
-        field.placeholderString = "输入命令或拖入文件..."
+        field.placeholderString = NSLocalizedString("textfield.placeholder", comment: "TextField placeholder")
         field.font = NSFont.monospacedSystemFont(ofSize: 18, weight: .regular)
         field.isBordered = false
         field.drawsBackground = false
@@ -49,25 +49,21 @@ struct RunTextField: NSViewRepresentable {
         }
         
         func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            // 回车 - 执行
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
                 parent.onEnter()
                 return true
             }
             
-            // Tab - 补全
             if commandSelector == #selector(NSResponder.insertTab(_:)) {
                 parent.onTab()
                 return true
             }
             
-            // 上箭头 - 历史命令上一条
             if commandSelector == #selector(NSResponder.moveUp(_:)) {
                 if let command = parent.onUp() {
                     parent.text = command
                     if let field = control as? NSTextField {
                         field.stringValue = command
-                        // 光标移到末尾
                         if let editor = field.currentEditor() as? NSTextView {
                             editor.selectedRange = NSRange(location: command.count, length: 0)
                         }
@@ -76,7 +72,6 @@ struct RunTextField: NSViewRepresentable {
                 return true
             }
             
-            // 下箭头 - 历史命令下一条
             if commandSelector == #selector(NSResponder.moveDown(_:)) {
                 if let command = parent.onDown() {
                     parent.text = command

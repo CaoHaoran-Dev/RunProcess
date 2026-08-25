@@ -1,0 +1,51 @@
+/*
+  Localizable.strings (English)
+  RunProcess
+*/
+
+// MARK: - TextField
+"textfield.placeholder" = "Enter command or drag file...";
+
+// MARK: - Toggle
+"sudo.toggle.label" = "Run as root";
+
+// MARK: - Buttons
+"button.cancel" = "Cancel";
+"button.cancel.tooltip" = "Cancel execution";
+"button.execute" = "Execute";
+"button.ok" = "OK";
+
+// MARK: - Menu
+"menu.toggle.window" = "Show/Hide Window";
+"menu.clear.history" = "Clear Command History";
+"menu.quit" = "Quit";
+
+// MARK: - Alert
+"alert.history.cleared.title" = "Cleared";
+"alert.history.cleared.message" = "All command history has been deleted";
+
+// MARK: - Hint
+"hint.drag.file" = "Drop file";
+"hint.tab.completion" = "Tab complete";
+"hint.history.navigation" = "↑↓ History";
+"hint.global.hotkey" = "⌘⌥R Global";
+"hint.hide.window" = "⌘W Hide";
+
+// MARK: - Sudo Dialog
+"sudo.dialog.title" = "Administrator Privileges Required";
+"sudo.dialog.message" = "This command requires root privileges. Please enter your password.";
+"sudo.dialog.password.placeholder" = "Enter password";
+"sudo.dialog.security.hint" = "Password is used only in memory and is never stored or logged";
+
+// MARK: - Output
+"output.success" = "✅ Execution successful";
+"output.success.sudo" = "✅ Execution successful (root privileges)";
+"output.cancelled" = "⏹️ Execution cancelled";
+"output.clear.tooltip" = "Clear output";
+
+// MARK: - Errors
+"error.interactive.command" = "⚠️ Interactive commands (vim, python, top, etc.) are not supported\n💡 Please run this command in the system terminal";
+"error.timeout" = "⏰ Command execution timed out (exceeded %@ seconds)\n💡 For long-running commands, please run directly in the terminal";
+"error.timeout.short" = "⏰ Command execution timed out (exceeded %@ seconds)";
+"error.sudo.wrong.password" = "❌ Wrong password\n💡 Please check your password and try again";
+"error.exit.code" = "Command execution failed (exit code: %ld)";

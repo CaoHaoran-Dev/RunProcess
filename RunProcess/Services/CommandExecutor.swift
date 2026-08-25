@@ -22,7 +22,6 @@ class CommandExecutor {
     func execute(_ input: String, timeout: TimeInterval = 10.0, completion: @escaping (Result<String, Error>) -> Void) {
         cancelCurrentTask()
         
-        // ✅ 所有工作在同一 QoS 队列
         taskQueue.async { [weak self] in
             guard let self = self else { return }
             
@@ -47,7 +46,6 @@ class CommandExecutor {
                 var errorData = Data()
                 let lock = NSLock()
                 
-                // ✅ 使用调度组
                 let group = DispatchGroup()
                 group.enter()
                 group.enter()
@@ -55,7 +53,6 @@ class CommandExecutor {
                 var outputEOF = false
                 var errorEOF = false
                 
-                // ✅ 显式指定回调队列为 userInitiated
                 let callbackQueue = DispatchQueue(label: "com.runprocess.callback", qos: .userInitiated)
                 
                 outputPipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
@@ -96,7 +93,6 @@ class CommandExecutor {
                     }
                 }
                 
-                // ✅ 超时处理
                 let timeoutWork = DispatchWorkItem { [weak self] in
                     guard let self = self else { return }
                     if task.isRunning {
@@ -122,11 +118,8 @@ class CommandExecutor {
                     self.currentTimeoutWork = timeoutWork
                 }
                 
-                // ✅ 在同一个队列调度超时
                 self.taskQueue.asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
                 
-                // ✅ 关键修复：不使用 wait() 阻塞，改用通知回调
-                // 在 group 完成后处理结果
                 group.notify(queue: .main) { [weak self] in
                     guard let self = self else { return }
                     
@@ -150,12 +143,15 @@ class CommandExecutor {
                     }
                     
                     if wasTerminated {
-                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）\n💡 如需执行耗时命令，请直接在终端中运行"])))
+                        let format = NSLocalizedString("error.timeout", comment: "Timeout error")
+                        let message = String(format: format, timeout)
+                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: message])))
                     } else if task.terminationStatus == 0 {
                         completion(.success(trimmed))
                     } else {
-                        let errorMsg = trimmed.isEmpty ? "命令执行失败（退出码: \(task.terminationStatus)）" : trimmed
-                        completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errorMsg])))
+                        let format = NSLocalizedString("error.exit.code", comment: "Exit code error")
+                        let message = trimmed.isEmpty ? String(format: format, task.terminationStatus) : trimmed
+                        completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: message])))
                     }
                 }
                 
@@ -308,7 +304,9 @@ class CommandExecutor {
                     }
                     
                     if wasTerminated {
-                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: "⏰ 命令执行超时（超过 \(timeout) 秒）"])))
+                        let format = NSLocalizedString("error.timeout.short", comment: "Timeout error short")
+                        let message = String(format: format, timeout)
+                        completion(.failure(NSError(domain: "RunProcess", code: 15, userInfo: [NSLocalizedDescriptionKey: message])))
                     } else if task.terminationStatus == 0 {
                         completion(.success(trimmed))
                     } else {
@@ -318,10 +316,12 @@ class CommandExecutor {
                                               (lowercased.contains("password") && lowercased.contains("try again"))
                         
                         if isPasswordError {
-                            completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "❌ 密码错误\n💡 请检查密码后重试"])))
+                            let message = NSLocalizedString("error.sudo.wrong.password", comment: "Wrong password error")
+                            completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: message])))
                         } else {
-                            let errorMsg = trimmed.isEmpty ? "命令执行失败（退出码: \(task.terminationStatus)）" : trimmed
-                            completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errorMsg])))
+                            let format = NSLocalizedString("error.exit.code", comment: "Exit code error")
+                            let message = trimmed.isEmpty ? String(format: format, task.terminationStatus) : trimmed
+                            completion(.failure(NSError(domain: "RunProcess", code: Int(task.terminationStatus), userInfo: [NSLocalizedDescriptionKey: message])))
                         }
                     }
                 }

@@ -22,7 +22,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // 输入行
+            // Input row
             HStack(spacing: 8) {
                 Image(systemName: "terminal")
                     .foregroundColor(.secondary)
@@ -47,7 +47,6 @@ struct ContentView: View {
                     }
                 )
                 
-                // 取消按钮（执行时显示）
                 if viewModel.isRunning && viewModel.canCancel {
                     Button(action: viewModel.cancelExecution) {
                         Image(systemName: "stop.circle.fill")
@@ -55,10 +54,9 @@ struct ContentView: View {
                             .font(.system(size: 20))
                     }
                     .buttonStyle(.plain)
-                    .help("取消执行")
+                    .help(NSLocalizedString("button.cancel.tooltip", comment: "Cancel button tooltip"))
                 }
                 
-                // 执行按钮
                 Button(action: executeCommand) {
                     Image(systemName: viewModel.isRunning ? "ellipsis.circle" : "return")
                         .foregroundColor(.secondary)
@@ -75,24 +73,23 @@ struct ContentView: View {
                     .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             )
             
-            // 选项行
+            // Options row
             HStack {
                 Toggle(isOn: $useSudo) {
                     HStack(spacing: 4) {
                         Image(systemName: "lock.shield")
                             .font(.system(size: 12))
                             .foregroundColor(useSudo ? .orange : .secondary)
-                        Text("以 root 执行")
+                        Text(NSLocalizedString("sudo.toggle.label", comment: "Sudo toggle label"))
                             .font(.system(size: 12))
                             .foregroundColor(useSudo ? .orange : .secondary)
                     }
                 }
                 .toggleStyle(.checkbox)
-                .help("勾选后命令前会自动添加 sudo")
+                .help(NSLocalizedString("sudo.toggle.label", comment: "Sudo toggle label"))
                 
                 Spacer()
                 
-                // 清空输出按钮
                 if !viewModel.outputText.isEmpty {
                     Button(action: viewModel.clearOutput) {
                         Image(systemName: "xmark.circle.fill")
@@ -100,10 +97,9 @@ struct ContentView: View {
                             .foregroundColor(.secondary.opacity(0.5))
                     }
                     .buttonStyle(.plain)
-                    .help("清空输出")
+                    .help(NSLocalizedString("output.clear.tooltip", comment: "Clear output tooltip"))
                 }
                 
-                // 执行状态指示器
                 if viewModel.isRunning {
                     ProgressView()
                         .controlSize(.small)
@@ -112,7 +108,7 @@ struct ContentView: View {
             }
             .padding(.horizontal, 4)
             
-            // 输出区域
+            // Output area
             if !viewModel.outputText.isEmpty {
                 ScrollView {
                     Text(viewModel.outputText)
@@ -142,17 +138,16 @@ struct ContentView: View {
                 )
                 .frame(height: outputHeight)
             } else {
-                // ✅ 底部提示：简洁文字，不加图标
                 HStack(spacing: 16) {
-                    Text("拖入文件")
+                    Text(NSLocalizedString("hint.drag.file", comment: "Drag file hint"))
                     Text("·")
-                    Text("Tab 补全")
+                    Text(NSLocalizedString("hint.tab.completion", comment: "Tab completion hint"))
                     Text("·")
-                    Text("↑↓ 历史")
+                    Text(NSLocalizedString("hint.history.navigation", comment: "History navigation hint"))
                     Text("·")
-                    Text("⌘⌥R 全局")
+                    Text(NSLocalizedString("hint.global.hotkey", comment: "Global hotkey hint"))
                     Text("·")
-                    Text("⌘W 隐藏")
+                    Text(NSLocalizedString("hint.hide.window", comment: "Hide window hint"))
                 }
                 .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.6))
@@ -214,7 +209,7 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Sudo 密码对话框
+// MARK: - Sudo Password Dialog
 
 struct SudoPasswordDialog: View {
     @Binding var password: String
@@ -229,46 +224,49 @@ struct SudoPasswordDialog: View {
                 Image(systemName: "lock.shield.fill")
                     .foregroundColor(.orange)
                     .font(.system(size: 18))
-                Text("需要管理员权限")
+                Text(NSLocalizedString("sudo.dialog.title", comment: "Sudo dialog title"))
                     .font(.headline)
                 Spacer()
             }
             .padding(.horizontal, 4)
             
-            Text("执行此命令需要 root 权限，请输入密码")
+            Text(NSLocalizedString("sudo.dialog.message", comment: "Sudo dialog message"))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
-            SecureField("输入密码", text: $password)
-                .textFieldStyle(.roundedBorder)
-                .focused($isPasswordFieldFocused)
-                .onAppear {
-                    isPasswordFieldFocused = true
+            SecureField(
+                NSLocalizedString("sudo.dialog.password.placeholder", comment: "Password placeholder"),
+                text: $password
+            )
+            .textFieldStyle(.roundedBorder)
+            .focused($isPasswordFieldFocused)
+            .onAppear {
+                isPasswordFieldFocused = true
+            }
+            .onSubmit {
+                if !password.isEmpty {
+                    onConfirm()
                 }
-                .onSubmit {
-                    if !password.isEmpty {
-                        onConfirm()
-                    }
-                }
+            }
             
             HStack {
                 Image(systemName: "info.circle")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.6))
-                Text("密码仅在内存中临时使用，不会被存储或记录")
+                Text(NSLocalizedString("sudo.dialog.security.hint", comment: "Security hint"))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.6))
                 Spacer()
             }
             
             HStack(spacing: 12) {
-                Button("取消") {
+                Button(NSLocalizedString("button.cancel", comment: "Cancel button")) {
                     onCancel()
                 }
                 .keyboardShortcut(.escape)
                 
-                Button("执行") {
+                Button(NSLocalizedString("button.execute", comment: "Execute button")) {
                     if !password.isEmpty {
                         onConfirm()
                     }

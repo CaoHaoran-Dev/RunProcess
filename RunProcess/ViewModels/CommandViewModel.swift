@@ -125,17 +125,13 @@ class CommandViewModel: ObservableObject {
         currentInputBackup = ""
     }
     
-    // ✅ 修复：更准确的交互式命令检测
     private func isInteractiveCommand(_ command: String) -> Bool {
-        // 排除管道和重定向的情况
         let hasPipe = command.contains("|")
         let hasRedirect = command.contains(">") || command.contains("<")
         
-        // 提取第一个命令（管道前的内容）
         let firstPart = command.split(separator: "|").first.map(String.init) ?? command
         let trimmed = firstPart.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 交互式命令列表（仅当它们作为第一个命令且没有管道/重定向时）
         let interactiveCommands = [
             "vim", "vi", "nano", "emacs", "top", "htop", "less", "more",
             "ssh", "telnet", "ftp", "sftp",
@@ -146,10 +142,8 @@ class CommandViewModel: ObservableObject {
             "mail", "mutt", "pine"
         ]
         
-        // 检查第一个命令是否匹配
         for cmd in interactiveCommands {
             if trimmed == cmd || trimmed.hasPrefix(cmd + " ") {
-                // 如果有管道或重定向，不拦截
                 if hasPipe || hasRedirect {
                     return false
                 }
@@ -157,7 +151,6 @@ class CommandViewModel: ObservableObject {
             }
         }
         
-        // 检查是否有 -i 或 --interactive 参数
         if command.contains(" -i ") || command.contains(" --interactive ") {
             return true
         }
@@ -171,7 +164,7 @@ class CommandViewModel: ObservableObject {
         if isInteractiveCommand(inputText) {
             isRunning = false
             canCancel = false
-            outputText = "⚠️ 交互式命令（如 vim、python、top 等）暂不支持\n💡 请在系统终端中执行此命令"
+            outputText = NSLocalizedString("error.interactive.command", comment: "Interactive command error")
             completion(outputText)
             return
         }
@@ -194,7 +187,7 @@ class CommandViewModel: ObservableObject {
                 switch result {
                 case .success(let text):
                     if text.isEmpty {
-                        self.outputText = "✅ 执行成功"
+                        self.outputText = NSLocalizedString("output.success", comment: "Success message")
                     } else {
                         self.outputText = text
                     }
@@ -212,7 +205,7 @@ class CommandViewModel: ObservableObject {
         CommandExecutor.shared.cancelCurrentTask()
         isRunning = false
         canCancel = false
-        outputText = "⏹️ 已取消执行"
+        outputText = NSLocalizedString("output.cancelled", comment: "Cancelled message")
         currentCompletion?(outputText)
         currentCompletion = nil
     }
@@ -223,7 +216,7 @@ class CommandViewModel: ObservableObject {
         if isInteractiveCommand(command) {
             isRunning = false
             canCancel = false
-            outputText = "⚠️ 交互式命令（如 vim、python、top 等）暂不支持\n💡 请在系统终端中执行此命令"
+            outputText = NSLocalizedString("error.interactive.command", comment: "Interactive command error")
             completion(outputText)
             return
         }
@@ -246,7 +239,7 @@ class CommandViewModel: ObservableObject {
                 switch result {
                 case .success(let text):
                     if text.isEmpty {
-                        self.outputText = "✅ 执行成功（root 权限）"
+                        self.outputText = NSLocalizedString("output.success.sudo", comment: "Success message with sudo")
                     } else {
                         self.outputText = text
                     }

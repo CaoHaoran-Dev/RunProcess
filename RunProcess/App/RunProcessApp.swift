@@ -25,12 +25,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var viewModel: CommandViewModel?
     private var hotKey: HotKey?
     
-    // ✅ 修复：懒加载菜单
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
         
         let toggleItem = NSMenuItem(
-            title: "显示/隐藏窗口",
+            title: NSLocalizedString("menu.toggle.window", comment: "Toggle window menu item"),
             action: #selector(toggleWindow),
             keyEquivalent: "r"
         )
@@ -41,7 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         
         let clearItem = NSMenuItem(
-            title: "清空历史命令",
+            title: NSLocalizedString("menu.clear.history", comment: "Clear history menu item"),
             action: #selector(clearHistory),
             keyEquivalent: ""
         )
@@ -51,7 +50,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
         
         let quitItem = NSMenuItem(
-            title: "退出",
+            title: NSLocalizedString("menu.quit", comment: "Quit menu item"),
             action: #selector(quitApp),
             keyEquivalent: "q"
         )
@@ -123,11 +122,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         
-        print("✅ 全局热键注册成功: ⌘⌥R")
+        print("✅ Global hotkey registered: ⌘⌥R")
     }
     
     @objc func toggleMenu() {
-        // ✅ 修复：使用懒加载的菜单，不再每次重建
         statusItem?.menu = statusMenu
         statusItem?.button?.performClick(nil)
     }
@@ -153,10 +151,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         viewModel?.clearHistory()
         
         let alert = NSAlert()
-        alert.messageText = "已清空"
-        alert.informativeText = "所有历史命令已删除"
+        alert.messageText = NSLocalizedString("alert.history.cleared.title", comment: "History cleared alert title")
+        alert.informativeText = NSLocalizedString("alert.history.cleared.message", comment: "History cleared alert message")
         alert.alertStyle = .informational
-        alert.addButton(withTitle: "确定")
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: "OK button"))
         alert.runModal()
     }
     
@@ -166,7 +164,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
-        print("🛑 RunProcess 即将退出")
+        print("🛑 RunProcess is exiting")
     }
 }
 
