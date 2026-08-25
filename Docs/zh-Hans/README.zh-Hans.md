@@ -93,7 +93,7 @@ Swift + SwiftUI，100% AI 生成代码
 ## 文档
 
 - [English README](../../README.md)
-- [License](LICENSE.md)
+- [License](LICENSE.zh-Hans.md)
 
 ---
 
