@@ -3,32 +3,29 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
-		AD8D43F93036DFDA00B0576B /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43F83036DFDA00B0576B /* README.md */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		ADF84783303D604C00462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF84782303D604C00462C27 /* HotKey */; };
 		ADF8478B303D6A3500462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478A303D6A3500462C27 /* HotKey */; };
 		ADF8478E303D6A6600462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478D303D6A6600462C27 /* HotKey */; };
+		ADF84792303D6F8A00462C27 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RunProcess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD49D2853036EE5E007BD3A5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
-		AD8D43F83036DFDA00B0576B /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
+		ADF84791303D6F8A00462C27 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = RunProcess;
-			sourceTree = "<group>";
-		};
+		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RunProcess; sourceTree = "<group>"; };
+		ADF8478F303D6F5300462C27 /* Docs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Docs; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,9 +45,10 @@
 		AD17FC623035CC7A00A52CD6 = {
 			isa = PBXGroup;
 			children = (
+				ADF84791303D6F8A00462C27 /* README.md */,
+				ADF8478F303D6F5300462C27 /* Docs */,
 				AD49D2853036EE5E007BD3A5 /* .gitignore */,
 				AD8D43FA3036E17700B0576B /* LICENSE.md */,
-				AD8D43F83036DFDA00B0576B /* README.md */,
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
 				AD17FC6C3035CC7A00A52CD6 /* Products */,
 				ADE1CFF3303C5B8E0099A9EC /* .github */,
@@ -98,6 +96,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
+				ADF8478F303D6F5300462C27 /* Docs */,
 			);
 			name = RunProcess;
 			packageProductDependencies = (
@@ -125,6 +124,7 @@
 				};
 			};
 			buildConfigurationList = AD17FC663035CC7A00A52CD6 /* Build configuration list for PBXProject "RunProcess" */;
+			compatibilityVersion = "Xcode 15.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -137,7 +137,6 @@
 			packageReferences = (
 				ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -152,8 +151,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADF84792303D6F8A00462C27 /* README.md in Resources */,
 				AD49D2863036EE74007BD3A5 /* .gitignore in Resources */,
-				AD8D43F93036DFDA00B0576B /* README.md in Resources */,
 				AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -312,7 +311,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -346,7 +345,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

@@ -1,73 +1,68 @@
 # RunProcess
 
-> 给 macOS 做的"伪 Windows 运行框" —— 能跑真命令，有毛玻璃，常驻菜单栏
+> A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
 
 ---
 
-## 这是什么
+## Overview
 
-B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也搞了一个。
-
-本质就是 `/bin/zsh` 套了个毛玻璃皮肤，输入什么执行什么。
+RunProcess is a lightweight macOS application that provides a quick command execution interface inspired by the Windows Run dialog. It combines the power of `/bin/zsh` with a polished, modern interface that stays accessible from your menu bar.
 
 ---
 
-## 功能
+## Features
 
-- 输入命令，执行，看输出/报错
-- Tab 补全（系统命令 + 历史命令 + 路径）
-- 拖拽文件自动填充路径
-- 勾选"以 root 执行"弹密码框（密码安全传递，不泄露）
-- 菜单栏常驻，Dock 不显示
-- 毛玻璃，自动适配深色/浅色
-- 浮动窗口，类似 Spotlight
-- 全局热键 ⌘⌥R 显示/隐藏
-
----
-
-## 使用
-
-打开应用，菜单栏点 ⚡，输入命令，按回车。
-
-| 输入 | 效果 |
-|------|------|
-| `ls ~/Downloads` | 列文件 |
-| `open .` | Finder 打开当前目录 |
-| `git status` | git 状态 |
+- **Command Execution** – Execute any shell command with real-time output display
+- **Tab Completion** – Auto-complete system commands, command history, and file paths
+- **Command History** – Navigate previous commands using ↑ and ↓ arrow keys
+- **Drag & Drop** – Drag files from Finder to automatically populate file paths with proper escaping
+- **Root Privileges** – Execute commands with `sudo` via a secure password dialog (password never stored or logged)
+- **Global Hotkey** – Show/hide the window with ⌘⌥R from anywhere
+- **Menu Bar Integration** – Access from the menu bar; Dock icon is hidden
+- **Translucent Interface** – Native macOS visual effect with automatic light/dark mode adaptation
+- **Floating Window** – Spotlight-style window that stays on top
+- **Multi-line Input** – Support for multi-line commands with Shift+Enter
 
 ---
 
-## 快捷键
+## Requirements
 
-| 按键 | 作用 |
-|------|------|
-| `⌘⌥R` | 全局显示/隐藏窗口 |
-| `Enter` | 执行 |
-| `Tab` | 补全浮窗 |
-| `↑↓` | 历史命令导航 |
-| `⌘W` | 隐藏窗口 |
-| `⌘Q` | 退出 |
+- macOS 12.4 or later
+- Apple Silicon or Intel
 
 ---
 
-## 系统要求
+## Installation
 
-macOS 12.4+，Apple Silicon / Intel 都行
+### Download (Recommended)
+
+Download the latest `RunProcess.zip` from [Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases).
+
+1. Download and unzip the file
+2. Move `RunProcess.app` to your `Applications` folder
+3. Right-click the app → **Open** → confirm to bypass Gatekeeper
+
+> The app is not notarized, so macOS may show a security warning on first launch. Right-click and select **Open** to run it.
+
+### Build from Source
+
+```bash
+git clone https://github.com/CaoHaoran-Dev/RunProcess.git
+cd RunProcess
+open RunProcess.xcodeproj
+```
+
+Requires Xcode 15.0+.
 
 ---
 
-## 技术栈
+## Documentation
 
-Swift + SwiftUI，100% AI 生成代码
+- [简体中文 README](Docs/zh-Hans/README.md)
+- [License](LICENSE.md)
 
 ---
 
 ## License
 
-MIT
-
----
-
-## 开发故事
-
-AI 写代码，人类提需求，一下午搞定。这就是 2026 年的开发方式。
+MIT © CaoHaoran-Dev
