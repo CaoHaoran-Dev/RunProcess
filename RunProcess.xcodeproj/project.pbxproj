@@ -15,9 +15,20 @@
 		ADF84792303D6F8A00462C27 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AD682D5C303E762B00A624CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AD17FC633035CC7A00A52CD6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AD17FC6A3035CC7A00A52CD6;
+			remoteInfo = RunProcess;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RunProcess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD49D2853036EE5E007BD3A5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		AD682D58303E762B00A624CF /* RunProcessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunProcessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
 		ADF84791303D6F8A00462C27 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -27,6 +38,11 @@
 		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = RunProcess;
+			sourceTree = "<group>";
+		};
+		AD682D59303E762B00A624CF /* RunProcessTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RunProcessTests;
 			sourceTree = "<group>";
 		};
 		ADF8478F303D6F5300462C27 /* Docs */ = {
@@ -47,6 +63,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD682D55303E762B00A624CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -58,6 +81,7 @@
 				AD49D2853036EE5E007BD3A5 /* .gitignore */,
 				AD8D43FA3036E17700B0576B /* LICENSE.md */,
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
+				AD682D59303E762B00A624CF /* RunProcessTests */,
 				AD17FC6C3035CC7A00A52CD6 /* Products */,
 				ADE1CFF3303C5B8E0099A9EC /* .github */,
 			);
@@ -67,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */,
+				AD682D58303E762B00A624CF /* RunProcessTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -116,6 +141,29 @@
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AD682D57303E762B00A624CF /* RunProcessTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AD682D60303E762B00A624CF /* Build configuration list for PBXNativeTarget "RunProcessTests" */;
+			buildPhases = (
+				AD682D54303E762B00A624CF /* Sources */,
+				AD682D55303E762B00A624CF /* Frameworks */,
+				AD682D56303E762B00A624CF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AD682D5D303E762B00A624CF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AD682D59303E762B00A624CF /* RunProcessTests */,
+			);
+			name = RunProcessTests;
+			packageProductDependencies = (
+			);
+			productName = RunProcessTests;
+			productReference = AD682D58303E762B00A624CF /* RunProcessTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -128,6 +176,10 @@
 				TargetAttributes = {
 					AD17FC6A3035CC7A00A52CD6 = {
 						CreatedOnToolsVersion = 26.3;
+					};
+					AD682D57303E762B00A624CF = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = AD17FC6A3035CC7A00A52CD6;
 					};
 				};
 			};
@@ -150,6 +202,7 @@
 			projectRoot = "";
 			targets = (
 				AD17FC6A3035CC7A00A52CD6 /* RunProcess */,
+				AD682D57303E762B00A624CF /* RunProcessTests */,
 			);
 		};
 /* End PBXProject section */
@@ -165,6 +218,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD682D56303E762B00A624CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -175,7 +235,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AD682D54303E762B00A624CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AD682D5D303E762B00A624CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AD17FC6A3035CC7A00A52CD6 /* RunProcess */;
+			targetProxy = AD682D5C303E762B00A624CF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		AD17FC743035CC7E00A52CD6 /* Debug */ = {
@@ -366,6 +441,46 @@
 			};
 			name = Release;
 		};
+		AD682D5E303E762B00A624CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MVKBMZMN48;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcessTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RunProcess.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RunProcess";
+			};
+			name = Debug;
+		};
+		AD682D5F303E762B00A624CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MVKBMZMN48;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcessTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RunProcess.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/RunProcess";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -383,6 +498,15 @@
 			buildConfigurations = (
 				AD17FC773035CC7E00A52CD6 /* Debug */,
 				AD17FC783035CC7E00A52CD6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AD682D60303E762B00A624CF /* Build configuration list for PBXNativeTarget "RunProcessTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD682D5E303E762B00A624CF /* Debug */,
+				AD682D5F303E762B00A624CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
