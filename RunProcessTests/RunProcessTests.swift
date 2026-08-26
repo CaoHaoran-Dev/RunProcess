@@ -76,6 +76,7 @@ final class CommandHistoryTests: XCTestCase {
         let results = history.query(prefix: "git")
         
         XCTAssertEqual(results.count, 2)
+        // "git log" 使用次数更多，应该排在前面
         XCTAssertEqual(results[0].command, "git log")
         XCTAssertEqual(results[1].command, "git status")
     }
@@ -180,7 +181,6 @@ final class CommandSuggesterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Priority callback")
         
         suggester.suggest(for: "git") { suggestions in
-            // "git status" 使用次数更多，应该排在前面
             if suggestions.count >= 2 {
                 let first = suggestions[0]
                 let second = suggestions[1]
@@ -193,12 +193,12 @@ final class CommandSuggesterTests: XCTestCase {
         wait(for: [expectation], timeout: 2.0)
     }
     
-    func testSuggestPaths() {
+    func testSuggestPaths() throws {
+        try XCTSkipIf(ProcessInfo.isRunningOnCI, "CI 环境可能没有 Desktop 目录")
+        
         let expectation = XCTestExpectation(description: "Path suggestion callback")
         
         suggester.suggest(for: "~/Desktop") { suggestions in
-            // 路径补全可能返回多个结果
-            // 在 CI 环境中可能没有 Desktop 目录，所以只检查不崩溃
             XCTAssertNotNil(suggestions)
             expectation.fulfill()
         }
@@ -206,15 +206,14 @@ final class CommandSuggesterTests: XCTestCase {
         wait(for: [expectation], timeout: 5.0)
     }
     
-    func testSuggestPathsWithSpaces() {
-        // 测试路径中包含空格的情况
+    func testSuggestPathsWithSpaces() throws {
+        try XCTSkipIf(ProcessInfo.isRunningOnCI, "CI 环境可能没有 Applications 目录")
+        
         let expectation = XCTestExpectation(description: "Path with spaces callback")
         
-        // 使用一个肯定存在的路径
         suggester.suggest(for: "/Applications") { suggestions in
-            // 应该返回 .app 文件
-            let hasApp = suggestions.contains { $0.text.contains(".app") }
-            // 不强制断言，因为不同环境结果不同
+            // 检查方法正常返回
+            XCTAssertNotNil(suggestions)
             expectation.fulfill()
         }
         
@@ -225,9 +224,12 @@ final class CommandSuggesterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Command suggestion callback")
         
         suggester.suggest(for: "git") { suggestions in
-            // 系统命令补全依赖 PATH，在 CI 环境中可能为空
             // 只检查方法正常返回
             XCTAssertNotNil(suggestions)
+            // 如果为空，标记为预期失败（CI 环境可能没有 git）
+            if suggestions.isEmpty && ProcessInfo.isRunningOnCI {
+                XCTExpectFailure("CI 环境可能没有 git 命令，这是预期的")
+            }
             expectation.fulfill()
         }
         
@@ -249,7 +251,7 @@ final class CommandSuggesterTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Single char callback")
         
         suggester.suggest(for: "l") { suggestions in
-            // 至少应该有 ls 或类似命令
+            // 只检查方法正常返回
             XCTAssertNotNil(suggestions)
             expectation.fulfill()
         }
@@ -292,6 +294,14 @@ final class SuggestionTests: XCTestCase {
         // 应该被 clamp 到 100
         XCTAssertEqual(suggestion.priority, 400) // 300 + 100
     }
+    
+    func testSuggestionIdentifiable() {
+        let s1 = Suggestion(text: "test", type: .command)
+        let s2 = Suggestion(text: "test", type: .command)
+        
+        // 每个实例应该有唯一的 id
+        XCTAssertNotEqual(s1.id, s2.id)
+    }
 }
 
 // MARK: - CommandViewModel Tests
@@ -316,13 +326,6 @@ final class CommandViewModelTests: XCTestCase {
         XCTAssertEqual(processed, "open \"/Applications/Calculator.app\"")
     }
     
-    func testProcessCommandAppendsOpenForDotAppNoSpaces() {
-        let input = "/Applications/Calculator.app"
-        let processed = viewModel.processCommandForTesting(input)
-        // 路径包含空格，应该加引号
-        XCTAssertTrue(processed.contains("\""))
-    }
-    
     func testProcessCommandDoesNotDuplicateOpen() {
         let input = "open /Applications/Calculator.app"
         let processed = viewModel.processCommandForTesting(input)
@@ -341,6 +344,12 @@ final class CommandViewModelTests: XCTestCase {
         XCTAssertEqual(processed, "open \"/Applications/Calculator.app\"")
     }
     
+    func testProcessCommandHandlesTrailingSlash() {
+        let input = "/Applications/Calculator.app/"
+        let processed = viewModel.processCommandForTesting(input)
+        XCTAssertEqual(processed, "open \"/Applications/Calculator.app/\"")
+    }
+    
     func testProcessCommandPreservesNonAppCommands() {
         let input = "ls -la"
         let processed = viewModel.processCommandForTesting(input)
@@ -353,16 +362,24 @@ final class CommandViewModelTests: XCTestCase {
         XCTAssertEqual(processed, "start /Applications/Calculator.app")
     }
     
+    func testProcessCommandTrimsWhitespace() {
+        let input = "  /Applications/Calculator.app  "
+        let processed = viewModel.processCommandForTesting(input)
+        XCTAssertEqual(processed, "open \"/Applications/Calculator.app\"")
+    }
+    
     func testIsInteractiveCommandDetection() {
         XCTAssertTrue(viewModel.isInteractiveCommandForTesting("vim"))
         XCTAssertTrue(viewModel.isInteractiveCommandForTesting("ssh user@host"))
         XCTAssertTrue(viewModel.isInteractiveCommandForTesting("python3 -i"))
         XCTAssertTrue(viewModel.isInteractiveCommandForTesting("top"))
         XCTAssertTrue(viewModel.isInteractiveCommandForTesting("less file.txt"))
+        XCTAssertTrue(viewModel.isInteractiveCommandForTesting("bash"))
         
         XCTAssertFalse(viewModel.isInteractiveCommandForTesting("ls -la"))
         XCTAssertFalse(viewModel.isInteractiveCommandForTesting("grep test file.txt"))
         XCTAssertFalse(viewModel.isInteractiveCommandForTesting("cat file.txt"))
+        XCTAssertFalse(viewModel.isInteractiveCommandForTesting("echo hello"))
     }
     
     func testIsInteractiveCommandWithPipe() {
@@ -428,6 +445,41 @@ final class CommandViewModelTests: XCTestCase {
         
         viewModel.selectPrevious()
         XCTAssertEqual(viewModel.selectedIndex, 1) // 循环到末尾
+    }
+    
+    func testSelectPreviousFromMiddle() {
+        viewModel.suggestions = [
+            Suggestion(text: "cmd1", type: .command),
+            Suggestion(text: "cmd2", type: .command),
+            Suggestion(text: "cmd3", type: .command)
+        ]
+        viewModel.selectedIndex = 1
+        
+        viewModel.selectPrevious()
+        XCTAssertEqual(viewModel.selectedIndex, 0)
+    }
+    
+    func testSelectNextWithEmptyList() {
+        viewModel.suggestions = []
+        viewModel.selectedIndex = 0
+        
+        // 不崩溃
+        viewModel.selectNext()
+        XCTAssertEqual(viewModel.selectedIndex, 0)
+    }
+    
+    func testConfirmSelection() {
+        viewModel.suggestions = [
+            Suggestion(text: "selected command", type: .command)
+        ]
+        viewModel.selectedIndex = 0
+        viewModel.inputText = "test"
+        
+        viewModel.confirmSelection()
+        
+        // 应该更新 inputText 并关闭建议
+        XCTAssertEqual(viewModel.inputText, "selected command")
+        XCTAssertTrue(viewModel.suggestions.isEmpty)
     }
 }
 
@@ -601,6 +653,23 @@ final class CommandExecutorTests: XCTestCase {
         
         wait(for: [expectation], timeout: 10.0)
     }
+    
+    func testExecuteCommandWithEnvironmentVariables() {
+        let expectation = XCTestExpectation(description: "Environment variable test")
+        
+        executor.execute("echo $HOME", timeout: 5.0) { result in
+            switch result {
+            case .success(let output):
+                let home = FileManager.default.homeDirectoryForCurrentUser.path
+                XCTAssertTrue(output.contains(home))
+            case .failure(let error):
+                XCTFail("命令执行失败: \(error.localizedDescription)")
+            }
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10.0)
+    }
 }
 
 // MARK: - Integration Tests
@@ -631,17 +700,23 @@ final class RunProcessIntegrationTests: XCTestCase {
         wait(for: [expectation], timeout: 10.0)
     }
     
-    func testEndToEndWithDotApp() {
-        // 测试 .app 自动转换
+    func testEndToEndWithDotApp() throws {
+        try XCTSkipIf(ProcessInfo.isRunningOnCI, "CI 环境可能没有 Calculator.app")
+        
+        let appPath = "/Applications/Calculator.app"
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: appPath, isDirectory: &isDirectory),
+              isDirectory.boolValue else {
+            throw XCTSkip("Calculator.app 不存在，跳过测试")
+        }
+        
         let expectation = XCTestExpectation(description: "Dot app conversion")
         
-        viewModel.inputText = "/Applications/Calculator.app"
-        // 执行前检查 inputText 是否被转换
+        viewModel.inputText = appPath
         viewModel.executeCommand { _ in
             // 验证 inputText 被自动添加了 open
-            // 由于 executeCommand 会修改 inputText，检查它
-            let hasOpen = viewModel.inputText.hasPrefix("open")
-            // 在 CI 环境中可能没有 Calculator.app，所以不强制断言
+            let hasOpen = self.viewModel.inputText.hasPrefix("open")
+            // 不强制断言，只确保不崩溃
             expectation.fulfill()
         }
         
@@ -661,6 +736,82 @@ final class RunProcessIntegrationTests: XCTestCase {
         }
         
         wait(for: [expectation], timeout: 10.0)
+    }
+    
+    func testEndToEndWithSudo() throws {
+        try XCTSkipIf(ProcessInfo.isRunningOnCI, "Sudo 测试在 CI 环境需要交互式密码输入，跳过")
+        
+        // 注意：这个测试在本地也需要确保有 sudo 权限且密码正确
+        // 实际项目中建议使用 mock 而不是真实 sudo
+        let expectation = XCTestExpectation(description: "Sudo test")
+        
+        viewModel.inputText = "whoami"
+        viewModel.executeCommandWithSudo("whoami", password: "") { output in
+            // 用空密码应该失败
+            XCTAssertTrue(output.contains("错误") || output.contains("password"))
+            expectation.fulfill()
+        }
+        
+        wait(for: [expectation], timeout: 10.0)
+    }
+}
+
+// MARK: - Performance Tests
+
+final class RunProcessPerformanceTests: XCTestCase {
+    
+    var history: CommandHistory!
+    var suggester: CommandSuggester!
+    var viewModel: CommandViewModel!
+    
+    override func setUp() {
+        super.setUp()
+        history = CommandHistory()
+        history.clearAll()
+        suggester = CommandSuggester()
+        viewModel = CommandViewModel()
+    }
+    
+    override func tearDown() {
+        history.clearAll()
+        history = nil
+        suggester = nil
+        viewModel = nil
+        super.tearDown()
+    }
+    
+    func testHistoryQueryPerformance() {
+        // 填充大量历史数据
+        for i in 0..<500 {
+            history.record("command_\(i)")
+        }
+        
+        measure {
+            _ = history.query(prefix: "command_1")
+        }
+    }
+    
+    func testSuggesterPerformance() {
+        // 填充历史数据
+        for i in 0..<200 {
+            history.record("test_command_\(i)")
+        }
+        
+        measure {
+            let expectation = XCTestExpectation(description: "Performance")
+            suggester.suggest(for: "test") { _ in
+                expectation.fulfill()
+            }
+            wait(for: [expectation], timeout: 5.0)
+        }
+    }
+    
+    func testCommandProcessingPerformance() {
+        let input = "/Applications/SomeApp.app/Contents/MacOS/SomeApp"
+        
+        measure {
+            _ = viewModel.processCommandForTesting(input)
+        }
     }
 }
 
