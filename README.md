@@ -56,6 +56,11 @@ Requires Xcode 16.0+.
 
 ---
 
+### Try It Online
+
+Visit the GitHub Pages demo:
+[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/index.html)
+
 ## Documentation
 
 - [简体中文 README](Docs/zh-Hans/README.zh-Hans.md)

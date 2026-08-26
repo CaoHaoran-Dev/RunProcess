@@ -8,16 +8,16 @@
 import Foundation
 
 /// 补全建议项
-struct Suggestion: Identifiable, Equatable {
+struct Suggestion: Identifiable, Equatable, Sendable {
     let id = UUID()
     let text: String
     let type: SuggestionType
     let priority: Int
     
-    enum SuggestionType: String {
-        case history = "clock.arrow.circlepath"   // 📜 → SF Symbol
-        case command = "terminal"                 // ⚡ → SF Symbol
-        case path = "folder"                     // 📁 → SF Symbol
+    enum SuggestionType: String, Sendable {
+        case history = "clock.arrow.circlepath"
+        case command = "terminal"
+        case path = "folder"
         
         var iconName: String {
             return self.rawValue
@@ -51,7 +51,8 @@ struct Suggestion: Identifiable, Equatable {
         }
     }
     
-    static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
-        lhs.text == rhs.text && lhs.type == rhs.type
+    // 显式实现 Equatable，标记为 nonisolated 避免 MainActor 隔离问题
+    nonisolated static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
+        return lhs.text == rhs.text && lhs.type == rhs.type
     }
 }
