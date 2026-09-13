@@ -19,7 +19,6 @@ struct HistoryEntry: Codable {
         self.lastUsed = Date()
     }
     
-    /// 更新使用记录（频次+1，刷新时间）
     mutating func recordUsage() {
         count += 1
         lastUsed = Date()
@@ -31,27 +30,21 @@ class CommandHistory {
     private let maxEntries = 500
     private let fileURL: URL
     private var entries: [String: HistoryEntry] = [:]
-    private let queue = DispatchQueue(label: "com.runprocess.history", qos: .background)
-    private let readWriteLock = NSLock()  // 保护 entries 的并发访问
+    private let saveQueue = DispatchQueue(label: "com.runprocess.history.save", qos: .background)
+    private let readWriteLock = NSLock()
     
     init() {
-        // 存储到 Application Support 目录
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let appDir = appSupport.appendingPathComponent("RunProcess")
-        
-        // 确保目录存在
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
-        
         fileURL = appDir.appendingPathComponent("history.json")
         load()
     }
     
     // MARK: - 私有方法
     
-    /// 加载历史记录
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
-        
         do {
             let data = try Data(contentsOf: fileURL)
             let decoded = try JSONDecoder().decode([String: HistoryEntry].self, from: data)
@@ -66,16 +59,12 @@ class CommandHistory {
         }
     }
     
-    /// 保存历史记录
-    private func save() {
-        queue.async { [weak self] in
+    /// 把一份快照异步写到磁盘。调用方负责传入不可变的副本。
+    private func save(_ snapshot: [String: HistoryEntry]) {
+        saveQueue.async { [weak self] in
             guard let self = self else { return }
-            self.readWriteLock.lock()
-            let entriesCopy = self.entries
-            self.readWriteLock.unlock()
-            
             do {
-                let data = try JSONEncoder().encode(entriesCopy)
+                let data = try JSONEncoder().encode(snapshot)
                 try data.write(to: self.fileURL)
             } catch {
                 print("⚠️ 保存历史记录失败: \(error)")
@@ -86,32 +75,30 @@ class CommandHistory {
     // MARK: - 公开方法
     
     /// 记录一条命令执行
+    /// 内存同步更新（读路径立即可见），磁盘异步保存
     func record(_ command: String) {
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            
-            self.readWriteLock.lock()
-            
-            if var existing = self.entries[trimmed] {
-                existing.recordUsage()
-                self.entries[trimmed] = existing
-            } else {
-                // 如果超过最大条目数，删除最旧的一条
-                if self.entries.count >= self.maxEntries {
-                    let oldest = self.entries.min { $0.value.lastUsed < $1.value.lastUsed }
-                    if let key = oldest?.key {
-                        self.entries.removeValue(forKey: key)
-                    }
+        readWriteLock.lock()
+        
+        if var existing = entries[trimmed] {
+            existing.recordUsage()
+            entries[trimmed] = existing
+        } else {
+            if entries.count >= maxEntries {
+                let oldest = entries.min { $0.value.lastUsed < $1.value.lastUsed }
+                if let key = oldest?.key {
+                    entries.removeValue(forKey: key)
                 }
-                self.entries[trimmed] = HistoryEntry(command: trimmed)
             }
-            
-            self.readWriteLock.unlock()
-            self.save()
+            entries[trimmed] = HistoryEntry(command: trimmed)
         }
+        
+        let snapshot = entries
+        readWriteLock.unlock()
+        
+        save(snapshot)
     }
     
     /// 查询匹配前缀的历史命令（按频次降序）
@@ -130,14 +117,14 @@ class CommandHistory {
     }
     
     /// 清空所有历史记录
+    /// 内存同步清空（读路径立即可见），磁盘异步保存
     func clearAll() {
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            self.readWriteLock.lock()
-            self.entries.removeAll()
-            self.readWriteLock.unlock()
-            self.save()
-        }
+        readWriteLock.lock()
+        entries.removeAll()
+        let snapshot = entries
+        readWriteLock.unlock()
+        
+        save(snapshot)
     }
     
     /// 获取历史记录总数
