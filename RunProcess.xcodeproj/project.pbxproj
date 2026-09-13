@@ -8,10 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
+		AD4ED43D3056BD9C0005644E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = AD4ED43C3056BD9C0005644E /* KeyboardShortcuts */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
-		ADF84783303D604C00462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF84782303D604C00462C27 /* HotKey */; };
-		ADF8478B303D6A3500462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478A303D6A3500462C27 /* HotKey */; };
-		ADF8478E303D6A6600462C27 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = ADF8478D303D6A6600462C27 /* HotKey */; };
 		ADF84792303D6F8A00462C27 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
 /* End PBXBuildFile section */
 
@@ -57,9 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ADF8478E303D6A6600462C27 /* HotKey in Frameworks */,
-				ADF8478B303D6A3500462C27 /* HotKey in Frameworks */,
-				ADF84783303D604C00462C27 /* HotKey in Frameworks */,
+				AD4ED43D3056BD9C0005644E /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -133,9 +129,7 @@
 			);
 			name = RunProcess;
 			packageProductDependencies = (
-				ADF84782303D604C00462C27 /* HotKey */,
-				ADF8478A303D6A3500462C27 /* HotKey */,
-				ADF8478D303D6A6600462C27 /* HotKey */,
+				AD4ED43C3056BD9C0005644E /* KeyboardShortcuts */,
 			);
 			productName = RunProcess;
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
@@ -190,11 +184,12 @@
 				en,
 				Base,
 				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = AD17FC623035CC7A00A52CD6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */,
+				AD4ED43B3056BD9C0005644E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
@@ -395,7 +390,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 2.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcess;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linran.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -429,7 +424,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
 				MARKETING_VERSION = 2.2.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.haoran.RunProcess;
+				PRODUCT_BUNDLE_IDENTIFIER = com.linran.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -514,29 +509,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+		AD4ED43B3056BD9C0005644E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/soffes/HotKey";
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		ADF84782303D604C00462C27 /* HotKey */ = {
+		AD4ED43C3056BD9C0005644E /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = HotKey;
-		};
-		ADF8478A303D6A3500462C27 /* HotKey */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = HotKey;
-		};
-		ADF8478D303D6A6600462C27 /* HotKey */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = ADF8478C303D6A6600462C27 /* XCRemoteSwiftPackageReference "HotKey" */;
-			productName = HotKey;
+			package = AD4ED43B3056BD9C0005644E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

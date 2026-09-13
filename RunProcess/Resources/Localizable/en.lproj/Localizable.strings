@@ -17,6 +17,7 @@
 
 // MARK: - Menu
 "menu.toggle.window" = "Show/Hide Window";
+"menu.settings.shortcut" = "Shortcut Settings…";
 "menu.clear.history" = "Clear Command History";
 "menu.quit" = "Quit";
 
@@ -28,7 +29,6 @@
 "hint.drag.file" = "Drop file";
 "hint.tab.completion" = "Tab complete";
 "hint.history.navigation" = "↑↓ History";
-"hint.global.hotkey" = "⌘⌥R Global";
 "hint.hide.window" = "⌘W Hide";
 "hint.shift.enter" = "Shift↩ Newline";
 
@@ -50,3 +50,18 @@
 "error.timeout.short" = "⏰ Command execution timed out (exceeded %@ seconds)";
 "error.sudo.wrong.password" = "❌ Wrong password\n💡 Please check your password and try again";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
+
+// MARK: - Shortcut Settings
+"window.shortcut.settings.title" = "Shortcut Settings";
+"shortcut.settings.title" = "Global Shortcut";
+"shortcut.toggle.window.label" = "Show / Hide Window";
+"shortcut.settings.hint" = "Click the shortcut field and press a new key combination to change it.";
+
+// MARK: - About
+"menu.about" = "About RunProcess";
+"window.about.title" = "About RunProcess";
+"about.version" = "Version";
+"about.description" = "A Spotlight-style command launcher for macOS.";
+"about.repository" = "GitHub Repository";
+"about.license" = "MIT License";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";

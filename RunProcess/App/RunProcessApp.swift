@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import HotKey
+import KeyboardShortcuts
 
 @main
 struct RunProcessApp: App {
@@ -23,7 +23,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow?
     var statusItem: NSStatusItem?
     var viewModel: CommandViewModel?
-    private var hotKey: HotKey?
+    
+    private var shortcutSettingsWindow: NSWindow?
+    private var aboutWindow: NSWindow?
     
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
@@ -31,13 +33,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let toggleItem = NSMenuItem(
             title: NSLocalizedString("menu.toggle.window", comment: "Toggle window menu item"),
             action: #selector(toggleWindow),
-            keyEquivalent: "r"
+            keyEquivalent: ""
         )
-        toggleItem.keyEquivalentModifierMask = [.command, .option]
         toggleItem.target = self
         menu.addItem(toggleItem)
         
         menu.addItem(NSMenuItem.separator())
+        
+        let settingsItem = NSMenuItem(
+            title: NSLocalizedString("menu.settings.shortcut", comment: "Shortcut settings menu item"),
+            action: #selector(openShortcutSettings),
+            keyEquivalent: ""
+        )
+        settingsItem.target = self
+        menu.addItem(settingsItem)
         
         let clearItem = NSMenuItem(
             title: NSLocalizedString("menu.clear.history", comment: "Clear history menu item"),
@@ -48,6 +57,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(clearItem)
         
         menu.addItem(NSMenuItem.separator())
+        
+        let aboutItem = NSMenuItem(
+            title: NSLocalizedString("menu.about", comment: "About menu item"),
+            action: #selector(openAbout),
+            keyEquivalent: ""
+        )
+        aboutItem.target = self
+        menu.addItem(aboutItem)
         
         let quitItem = NSMenuItem(
             title: NSLocalizedString("menu.quit", comment: "Quit menu item"),
@@ -113,17 +130,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    // MARK: - Global Hotkey (KeyboardShortcuts)
+    
     private func setupGlobalHotkey() {
-        hotKey = HotKey(key: .r, modifiers: [.command, .option])
-        
-        hotKey?.keyDownHandler = { [weak self] in
-            DispatchQueue.main.async {
+        KeyboardShortcuts.onKeyUp(for: .toggleWindow) { [weak self] in
+            Task { @MainActor in
                 self?.toggleWindow()
             }
         }
         
-        print("✅ Global hotkey registered: ⌘⌥R")
+        print("✅ Global hotkey registered")
     }
+    
+    // MARK: - Menu Actions
     
     @objc func toggleMenu() {
         statusItem?.menu = statusMenu
@@ -147,6 +166,58 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    // MARK: - Shortcut Settings
+    
+    @objc func openShortcutSettings() {
+        if let existing = shortcutSettingsWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        let settingsView = ShortcutSettingsView()
+        let hostingController = NSHostingController(rootView: settingsView)
+        
+        let settingsWindow = NSWindow(contentViewController: hostingController)
+        settingsWindow.title = NSLocalizedString("window.shortcut.settings.title", comment: "Shortcut settings window title")
+        settingsWindow.styleMask = [.titled, .closable]
+        settingsWindow.isReleasedWhenClosed = false
+        settingsWindow.center()
+        settingsWindow.level = .floating
+        
+        shortcutSettingsWindow = settingsWindow
+        
+        settingsWindow.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    // MARK: - About
+    
+    @objc func openAbout() {
+        if let existing = aboutWindow, existing.isVisible {
+            existing.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+        
+        let aboutView = AboutView()
+        let hostingController = NSHostingController(rootView: aboutView)
+        
+        let window = NSWindow(contentViewController: hostingController)
+        window.title = NSLocalizedString("window.about.title", comment: "About window title")
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        window.center()
+        window.level = .floating
+        
+        aboutWindow = window
+        
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    // MARK: - Clear History
+    
     @objc func clearHistory() {
         viewModel?.clearHistory()
         
@@ -158,8 +229,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
     
+    // MARK: - Quit
+    
     @objc func quitApp() {
-        hotKey = nil
         NSApp.terminate(nil)
     }
     
@@ -172,5 +244,98 @@ extension AppDelegate: NSWindowDelegate {
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)
         return false
+    }
+}
+
+// MARK: - Shortcut Settings View
+
+struct ShortcutSettingsView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(NSLocalizedString("shortcut.settings.title", comment: "Shortcut settings title"))
+                .font(.headline)
+            
+            KeyboardShortcuts.Recorder(
+                NSLocalizedString("shortcut.toggle.window.label", comment: "Toggle window shortcut label"),
+                name: .toggleWindow
+            )
+            
+            Divider()
+            
+            Text(NSLocalizedString("shortcut.settings.hint", comment: "Shortcut settings hint"))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+            
+            Spacer()
+        }
+        .padding(20)
+        .frame(width: 360, height: 160)
+    }
+}
+
+// MARK: - About View
+
+struct AboutView: View {
+    private var version: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(v) (\(b))"
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // 图标
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 80, height: 80)
+            
+            // 名称 + 版本
+            VStack(spacing: 4) {
+                Text("RunProcess")
+                    .font(.title2.weight(.semibold))
+                Text(NSLocalizedString("about.version", comment: "Version label") + " " + version)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            
+            // 简介
+            Text(NSLocalizedString("about.description", comment: "About description"))
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            Divider()
+            
+            // 链接
+            VStack(spacing: 8) {
+                Link(destination: URL(string: "https://github.com/CaoHaoran-Dev/RunProcess")!) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "link")
+                            .font(.system(size: 11))
+                        Text(NSLocalizedString("about.repository", comment: "Repository link"))
+                            .font(.system(size: 12))
+                    }
+                }
+                
+                Link(destination: URL(string: "https://github.com/CaoHaoran-Dev/RunProcess/blob/main/LICENSE.md")!) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 11))
+                        Text(NSLocalizedString("about.license", comment: "License link"))
+                            .font(.system(size: 12))
+                    }
+                }
+            }
+            .buttonStyle(.link)
+            
+            // 版权
+            Text(NSLocalizedString("about.copyright", comment: "Copyright"))
+                .font(.system(size: 10))
+                .foregroundColor(.secondary.opacity(0.6))
+                .padding(.top, 4)
+        }
+        .padding(28)
+        .frame(width: 320)
     }
 }

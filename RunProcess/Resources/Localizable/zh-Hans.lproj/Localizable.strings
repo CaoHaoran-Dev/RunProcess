@@ -17,6 +17,7 @@
 
 // MARK: - Menu
 "menu.toggle.window" = "显示/隐藏窗口";
+"menu.settings.shortcut" = "快捷键设置…";
 "menu.clear.history" = "清空历史命令";
 "menu.quit" = "退出";
 
@@ -28,7 +29,6 @@
 "hint.drag.file" = "拖入文件";
 "hint.tab.completion" = "Tab 补全";
 "hint.history.navigation" = "↑↓ 历史";
-"hint.global.hotkey" = "⌘⌥R 全局";
 "hint.hide.window" = "⌘W 隐藏";
 "hint.shift.enter" = "Shift↩ 换行";
 
@@ -50,3 +50,18 @@
 "error.timeout.short" = "⏰ 命令执行超时（超过 %@ 秒）";
 "error.sudo.wrong.password" = "❌ 密码错误\n💡 请检查密码后重试";
 "error.exit.code" = "命令执行失败（退出码: %ld）";
+
+// MARK: - Shortcut Settings
+"window.shortcut.settings.title" = "快捷键设置";
+"shortcut.settings.title" = "全局快捷键";
+"shortcut.toggle.window.label" = "显示 / 隐藏窗口";
+"shortcut.settings.hint" = "点击快捷键输入框，按下新的组合键即可修改。";
+
+// MARK: - About
+"menu.about" = "关于 RunProcess";
+"window.about.title" = "关于 RunProcess";
+"about.version" = "版本";
+"about.description" = "给 macOS 做的仿 Windows 运行框，常驻菜单栏。";
+"about.repository" = "GitHub 仓库";
+"about.license" = "MIT 许可证";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";

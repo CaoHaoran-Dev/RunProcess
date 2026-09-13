@@ -1,0 +1,67 @@
+/*
+  Localizable.strings (繁體中文)
+  RunProcess
+*/
+
+// MARK: - TextField
+"textfield.placeholder" = "輸入命令或拖入檔案...";
+
+// MARK: - Toggle
+"sudo.toggle.label" = "以 root 執行";
+
+// MARK: - Buttons
+"button.cancel" = "取消";
+"button.cancel.tooltip" = "取消執行";
+"button.execute" = "執行";
+"button.ok" = "確定";
+
+// MARK: - Menu
+"menu.toggle.window" = "顯示/隱藏視窗";
+"menu.settings.shortcut" = "快速鍵設定…";
+"menu.clear.history" = "清除歷史命令";
+"menu.quit" = "結束";
+
+// MARK: - Alert
+"alert.history.cleared.title" = "已清除";
+"alert.history.cleared.message" = "所有歷史命令已刪除";
+
+// MARK: - Hint
+"hint.drag.file" = "拖入檔案";
+"hint.tab.completion" = "Tab 補全";
+"hint.history.navigation" = "↑↓ 歷史";
+"hint.hide.window" = "⌘W 隱藏";
+"hint.shift.enter" = "Shift↩ 換行";
+
+// MARK: - Sudo Dialog
+"sudo.dialog.title" = "需要管理員權限";
+"sudo.dialog.message" = "執行此命令需要 root 權限，請輸入密碼";
+"sudo.dialog.password.placeholder" = "輸入密碼";
+"sudo.dialog.security.hint" = "密碼僅在記憶體中臨時使用，不會被儲存或記錄";
+
+// MARK: - Output
+"output.success" = "✅ 執行成功";
+"output.success.sudo" = "✅ 執行成功（root 權限）";
+"output.cancelled" = "⏹️ 已取消執行";
+"output.clear.tooltip" = "清除輸出";
+
+// MARK: - Errors
+"error.interactive.command" = "⚠️ 互動式命令（如 vim、python、top 等）暫不支援\n💡 請在系統終端機中執行此命令";
+"error.timeout" = "⏰ 命令執行逾時（超過 %@ 秒）\n💡 如需執行耗時命令，請直接在終端機中執行";
+"error.timeout.short" = "⏰ 命令執行逾時（超過 %@ 秒）";
+"error.sudo.wrong.password" = "❌ 密碼錯誤\n💡 請檢查密碼後重試";
+"error.exit.code" = "命令執行失敗（結束碼: %ld）";
+
+// MARK: - Shortcut Settings
+"window.shortcut.settings.title" = "快速鍵設定";
+"shortcut.settings.title" = "全域快速鍵";
+"shortcut.toggle.window.label" = "顯示 / 隱藏視窗";
+"shortcut.settings.hint" = "點擊快速鍵輸入欄位，按下新的組合鍵即可修改。";
+
+// MARK: - About
+"menu.about" = "關於 RunProcess";
+"window.about.title" = "關於 RunProcess";
+"about.version" = "版本";
+"about.description" = "為 macOS 打造的仿 Windows 執行方塊，常駐選單列。";
+"about.repository" = "GitHub 儲存庫";
+"about.license" = "MIT 授權條款";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";

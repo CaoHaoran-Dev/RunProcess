@@ -152,8 +152,6 @@ struct ContentView: View {
                     Text("·")
                     Text(NSLocalizedString("hint.history.navigation", comment: "History navigation hint"))
                     Text("·")
-                    Text(NSLocalizedString("hint.global.hotkey", comment: "Global hotkey hint"))
-                    Text("·")
                     Text(NSLocalizedString("hint.hide.window", comment: "Hide window hint"))
                     Text("·")
                     Text(NSLocalizedString("hint.shift.enter", comment: "Shift+Enter hint"))
