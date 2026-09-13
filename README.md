@@ -59,7 +59,7 @@ Requires Xcode 16.0+.
 ### Try It Online
 
 Visit the GitHub Pages demo:
-[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/index.html)
+[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
 
 ## Documentation
 

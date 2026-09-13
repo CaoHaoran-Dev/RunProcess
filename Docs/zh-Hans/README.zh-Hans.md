@@ -36,7 +36,7 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 | `ls ~/Downloads` | 列文件 |
 | `open .` | Finder 打开当前目录 |
 | `git status` | git 状态 |
-| `/Applications/Calculator.app` | 自动加 `open`，启动计算器 |
+| `/System/Applications/Calculator.app` | 自动加 `open`，启动计算器 |
 
 ---
 
@@ -85,7 +85,7 @@ open RunProcess.xcodeproj
 ### 在线体验
 
 访问 GitHub Pages：
-[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/index.html)
+[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
 
 ---
 
