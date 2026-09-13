@@ -24,7 +24,7 @@ jobs:
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
-            -destination "platform=macos,arch=arm64" \
+            -destination "platform=macOS,arch=arm64" \
             -test-iterations 2 \
             -retry-tests-on-failure \
             CODE_SIGN_IDENTITY="" \
@@ -37,7 +37,7 @@ jobs:
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
-            -destination "platform=macos,arch=x86_64" \
+            -destination "platform=macOS,arch=x86_64" \
             -test-iterations 2 \
             -retry-tests-on-failure \
             CODE_SIGN_IDENTITY="" \
