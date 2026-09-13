@@ -22,15 +22,13 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 12) {
-            // ✅ 输入行 - 使用 ZStack 或 alignment 对齐
+            // 输入行
             HStack(spacing: 8) {
-                // ✅ 图标垂直居中
                 Image(systemName: "terminal")
                     .foregroundColor(.secondary)
                     .font(.system(size: 18))
                     .frame(height: 44)
                 
-                // ✅ 输入框
                 RunTextField(
                     text: $viewModel.inputText,
                     onTab: viewModel.requestSuggestions,
@@ -128,7 +126,7 @@ struct ContentView: View {
                 .frame(minHeight: 60, maxHeight: 200)
                 .transition(.opacity)
                 .background(
-                    GeometryReader { geometry in
+                    GeometryReader { _ in
                         Color.clear
                             .onChange(of: viewModel.outputText) { _ in
                                 let lines = viewModel.outputText.components(separatedBy: "\n").count
@@ -190,14 +188,17 @@ struct ContentView: View {
         }
     }
     
+    // MARK: - 执行
+    
     func executeCommand() {
         guard !viewModel.inputText.isEmpty else { return }
         
         if useSudo {
+            // ✅ 每次 sudo 都弹密码框
             showSudoPasswordDialog = true
             sudoPassword = ""
         } else {
-            viewModel.executeCommand { _ in
+            viewModel.executeCommand(useSudo: false, password: nil) { _ in
                 viewModel.closeSuggestions()
             }
         }
@@ -206,11 +207,10 @@ struct ContentView: View {
     func executeWithSudo() {
         showSudoPasswordDialog = false
         
-        let command = viewModel.inputText
         let password = sudoPassword
         sudoPassword = ""
         
-        viewModel.executeCommandWithSudo(command, password: password) { _ in
+        viewModel.executeCommand(useSudo: true, password: password) { _ in
             viewModel.closeSuggestions()
         }
     }

@@ -14,11 +14,14 @@
 "button.cancel.tooltip" = "Cancel execution";
 "button.execute" = "Execute";
 "button.ok" = "OK";
+"button.confirm" = "Confirm";
 
 // MARK: - Menu
+"menu.new.window" = "New Window";
 "menu.toggle.window" = "Show/Hide Window";
-"menu.settings.shortcut" = "Shortcut Settings…";
+"menu.settings" = "Settings…";
 "menu.clear.history" = "Clear Command History";
+"menu.about" = "About RunProcess";
 "menu.quit" = "Quit";
 
 // MARK: - Alert
@@ -36,7 +39,7 @@
 "sudo.dialog.title" = "Administrator Privileges Required";
 "sudo.dialog.message" = "This command requires root privileges. Please enter your password.";
 "sudo.dialog.password.placeholder" = "Enter password";
-"sudo.dialog.security.hint" = "Password is used only in memory and is never stored or logged";
+"sudo.dialog.security.hint" = "Password is used only in memory during execution and is never stored or logged";
 
 // MARK: - Output
 "output.success" = "✅ Execution successful";
@@ -49,19 +52,38 @@
 "error.timeout" = "⏰ Command execution timed out (exceeded %@ seconds)\n💡 For long-running commands, please run directly in the terminal";
 "error.timeout.short" = "⏰ Command execution timed out (exceeded %@ seconds)";
 "error.sudo.wrong.password" = "❌ Wrong password\n💡 Please check your password and try again";
+"error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
 
-// MARK: - Shortcut Settings
-"window.shortcut.settings.title" = "Shortcut Settings";
-"shortcut.settings.title" = "Global Shortcut";
-"shortcut.toggle.window.label" = "Show / Hide Window";
-"shortcut.settings.hint" = "Click the shortcut field and press a new key combination to change it.";
+// MARK: - Window Titles
+"window.settings.title" = "Settings";
+"window.about.title" = "About RunProcess";
+"window.title.session" = "RunProcess - Session";
+
+// MARK: - Settings
+"settings.section.shortcut" = "Shortcut";
+"settings.section.session" = "Session";
+"settings.section.workingDirectory" = "Working Directory";
+"settings.section.sudo" = "Sudo";
+
+"settings.session.enabled" = "Session Mode";
+"settings.session.description" = "Persistent shell; cd / export persist across commands";
+"settings.session.new.window.hint" = "Only affects newly opened windows.";
+
+"settings.workingDirectory.choose" = "Choose…";
+"settings.workingDirectory.reset" = "Reset";
+"settings.workingDirectory.invalid" = "The selected path does not exist. Falling back to your home directory.";
+"settings.workingDirectory.new.window.hint" = "Only affects newly opened windows.";
+"settings.workingDirectory.panel.prompt" = "Choose";
+
+"settings.sudo.hint" = "Every sudo command requires entering your password. The password is used only in memory during execution and is never stored or logged.";
+
+// MARK: - Session
+"session.reset.notice" = "Session was reset";
 
 // MARK: - About
-"menu.about" = "About RunProcess";
-"window.about.title" = "About RunProcess";
 "about.version" = "Version";
 "about.description" = "A Spotlight-style command launcher for macOS.";
 "about.repository" = "GitHub Repository";
 "about.license" = "MIT License";
-"about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";z

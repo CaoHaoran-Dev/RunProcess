@@ -14,11 +14,14 @@
 "button.cancel.tooltip" = "取消执行";
 "button.execute" = "执行";
 "button.ok" = "确定";
+"button.confirm" = "确认";
 
 // MARK: - Menu
+"menu.new.window" = "新建窗口";
 "menu.toggle.window" = "显示/隐藏窗口";
-"menu.settings.shortcut" = "快捷键设置…";
+"menu.settings" = "设置…";
 "menu.clear.history" = "清空历史命令";
+"menu.about" = "关于 RunProcess";
 "menu.quit" = "退出";
 
 // MARK: - Alert
@@ -36,7 +39,7 @@
 "sudo.dialog.title" = "需要管理员权限";
 "sudo.dialog.message" = "执行此命令需要 root 权限，请输入密码";
 "sudo.dialog.password.placeholder" = "输入密码";
-"sudo.dialog.security.hint" = "密码仅在内存中临时使用，不会被存储或记录";
+"sudo.dialog.security.hint" = "密码仅在当次执行期间存在于内存中，不会被存储或记录";
 
 // MARK: - Output
 "output.success" = "✅ 执行成功";
@@ -49,17 +52,36 @@
 "error.timeout" = "⏰ 命令执行超时（超过 %@ 秒）\n💡 如需执行耗时命令，请直接在终端中运行";
 "error.timeout.short" = "⏰ 命令执行超时（超过 %@ 秒）";
 "error.sudo.wrong.password" = "❌ 密码错误\n💡 请检查密码后重试";
+"error.sudo.missing.password" = "sudo 命令需要密码。";
 "error.exit.code" = "命令执行失败（退出码: %ld）";
 
-// MARK: - Shortcut Settings
-"window.shortcut.settings.title" = "快捷键设置";
-"shortcut.settings.title" = "全局快捷键";
-"shortcut.toggle.window.label" = "显示 / 隐藏窗口";
-"shortcut.settings.hint" = "点击快捷键输入框，按下新的组合键即可修改。";
+// MARK: - Window Titles
+"window.settings.title" = "设置";
+"window.about.title" = "关于 RunProcess";
+"window.title.session" = "RunProcess - 会话模式";
+
+// MARK: - Settings
+"settings.section.shortcut" = "快捷键";
+"settings.section.session" = "会话";
+"settings.section.workingDirectory" = "默认工作目录";
+"settings.section.sudo" = "Sudo";
+
+"settings.session.enabled" = "会话模式";
+"settings.session.description" = "持久 shell，cd / export 跨命令生效";
+"settings.session.new.window.hint" = "仅影响新打开的窗口。";
+
+"settings.workingDirectory.choose" = "选择…";
+"settings.workingDirectory.reset" = "恢复默认";
+"settings.workingDirectory.invalid" = "所选路径不存在，已回退到用户主目录。";
+"settings.workingDirectory.new.window.hint" = "仅影响新打开的窗口。";
+"settings.workingDirectory.panel.prompt" = "选择";
+
+"settings.sudo.hint" = "每次执行 sudo 命令都需要输入密码。密码仅在当次执行期间存在于内存中，不会被存储或记录。";
+
+// MARK: - Session
+"session.reset.notice" = "会话已重置";
 
 // MARK: - About
-"menu.about" = "关于 RunProcess";
-"window.about.title" = "关于 RunProcess";
 "about.version" = "版本";
 "about.description" = "给 macOS 做的仿 Windows 运行框，常驻菜单栏。";
 "about.repository" = "GitHub 仓库";

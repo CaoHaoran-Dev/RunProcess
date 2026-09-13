@@ -16,6 +16,14 @@ class CommandViewModel: ObservableObject {
     @Published var suggestions: [Suggestion] = []
     @Published var selectedIndex: Int = 0
     
+    /// 是否使用会话模式
+    var usesSessionMode: Bool = false
+    
+    /// 执行回调（由 Session 注入）
+    /// 参数：命令、是否 sudo、sudo 密码（非 sudo 时为 nil）、完成回调
+    var executeHandler: ((String, Bool, String?, @escaping (Result<String, Error>) -> Void) -> Void)?
+    var cancelHandler: (() -> Void)?
+    
     private var historyIndex: Int = -1
     private var historyCommands: [String] = []
     private var currentInputBackup: String = ""
@@ -24,7 +32,6 @@ class CommandViewModel: ObservableObject {
     private let history = CommandHistory()
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
-    private var currentCompletion: ((String) -> Void)?
     
     init() {
         $inputText
@@ -78,8 +85,7 @@ class CommandViewModel: ObservableObject {
     
     func confirmSelection() {
         guard selectedIndex < suggestions.count else { return }
-        let selected = suggestions[selectedIndex]
-        applySuggestion(selected)
+        applySuggestion(suggestions[selectedIndex])
     }
     
     func closeSuggestions() {
@@ -90,7 +96,9 @@ class CommandViewModel: ObservableObject {
     
     func navigateHistoryUp() -> String? {
         if historyCommands.isEmpty {
-            historyCommands = history.getAll().map { $0.command }
+            historyCommands = history.getAll()
+                .sorted { $0.lastUsed > $1.lastUsed }
+                .map { $0.command }
             currentInputBackup = inputText
         }
         
@@ -125,28 +133,22 @@ class CommandViewModel: ObservableObject {
         currentInputBackup = ""
     }
     
-    // MARK: - Smart Command Processing
+    // MARK: - 智能处理
     
-    /// ✅ 智能处理命令：如果输入是 .app 路径，自动添加 open
     private func processCommand(_ input: String) -> String {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 如果已经包含 open 或 start，不处理
         let lowercased = trimmed.lowercased()
         if lowercased.hasPrefix("open ") || lowercased.hasPrefix("start ") {
             return trimmed
         }
         
-        // 检测是否以 .app 结尾（且不是命令本身）
         if trimmed.hasSuffix(".app") || trimmed.hasSuffix(".app/") {
-            // 如果路径包含空格，需要加引号
             let escaped = trimmed.contains(" ") ? "\"\(trimmed)\"" : trimmed
             return "open \(escaped)"
         }
         
-        // 检测是否包含 .app/Contents/ 或 .app/Contents/MacOS/
         if trimmed.contains(".app/Contents/") || trimmed.contains(".app/Contents/MacOS/") {
-            // 提取 .app 路径
             if let range = trimmed.range(of: ".app", options: .backwards) {
                 let appPath = String(trimmed[..<range.upperBound])
                 let escaped = appPath.contains(" ") ? "\"\(appPath)\"" : appPath
@@ -190,10 +192,16 @@ class CommandViewModel: ObservableObject {
         return false
     }
     
-    func executeCommand(completion: @escaping (String) -> Void) {
+    // MARK: - 执行
+    
+    /// 执行命令
+    /// - Parameters:
+    ///   - useSudo: 是否以 sudo 执行
+    ///   - password: sudo 密码（useSudo 为 true 时必填）
+    ///   - completion: 完成回调，返回输出文本
+    func executeCommand(useSudo: Bool, password: String?, completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
         
-        // ✅ 智能处理命令
         let processedCommand = processCommand(inputText)
         if processedCommand != inputText {
             inputText = processedCommand
@@ -214,9 +222,15 @@ class CommandViewModel: ObservableObject {
         canCancel = true
         outputText = ""
         
-        currentCompletion = completion
+        guard let handler = executeHandler else {
+            isRunning = false
+            canCancel = false
+            outputText = "❌ 执行器未配置"
+            completion(outputText)
+            return
+        }
         
-        CommandExecutor.shared.execute(processedCommand, timeout: 10.0) { [weak self] result in
+        handler(processedCommand, useSudo, password) { [weak self] result in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
@@ -233,64 +247,16 @@ class CommandViewModel: ObservableObject {
                     self.outputText = "❌ \(error.localizedDescription)"
                 }
                 completion(self.outputText)
-                self.currentCompletion = nil
             }
         }
     }
     
     func cancelExecution() {
         guard isRunning else { return }
-        CommandExecutor.shared.cancelCurrentTask()
+        cancelHandler?()
         isRunning = false
         canCancel = false
         outputText = NSLocalizedString("output.cancelled", comment: "Cancelled message")
-        currentCompletion?(outputText)
-        currentCompletion = nil
-    }
-    
-    func executeCommandWithSudo(_ command: String, password: String, completion: @escaping (String) -> Void) {
-        guard !command.isEmpty else { return }
-        
-        // ✅ 智能处理命令（Sudo 模式下也处理）
-        let processedCommand = processCommand(command)
-        
-        if isInteractiveCommand(processedCommand) {
-            isRunning = false
-            canCancel = false
-            outputText = NSLocalizedString("error.interactive.command", comment: "Interactive command error")
-            completion(outputText)
-            return
-        }
-        
-        history.record(processedCommand)
-        resetHistoryNavigation()
-        
-        isRunning = true
-        canCancel = true
-        outputText = ""
-        
-        currentCompletion = completion
-        
-        CommandExecutor.shared.executeWithSudo(processedCommand, password: password, timeout: 10.0) { [weak self] result in
-            guard let self = self else { return }
-            
-            DispatchQueue.main.async {
-                self.isRunning = false
-                self.canCancel = false
-                switch result {
-                case .success(let text):
-                    if text.isEmpty {
-                        self.outputText = NSLocalizedString("output.success.sudo", comment: "Success message with sudo")
-                    } else {
-                        self.outputText = text
-                    }
-                case .failure(let error):
-                    self.outputText = "❌ \(error.localizedDescription)"
-                }
-                completion(self.outputText)
-                self.currentCompletion = nil
-            }
-        }
     }
     
     func clearHistory() {
@@ -301,6 +267,10 @@ class CommandViewModel: ObservableObject {
     
     func clearOutput() {
         outputText = ""
+    }
+    
+    func showSessionResetNotice() {
+        outputText = NSLocalizedString("session.reset.notice", comment: "Session reset notice")
     }
     
     private func applySuggestion(_ suggestion: Suggestion) {

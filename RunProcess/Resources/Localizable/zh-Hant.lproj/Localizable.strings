@@ -14,11 +14,14 @@
 "button.cancel.tooltip" = "取消執行";
 "button.execute" = "執行";
 "button.ok" = "確定";
+"button.confirm" = "確認";
 
 // MARK: - Menu
+"menu.new.window" = "新增視窗";
 "menu.toggle.window" = "顯示/隱藏視窗";
-"menu.settings.shortcut" = "快速鍵設定…";
+"menu.settings" = "設定…";
 "menu.clear.history" = "清除歷史命令";
+"menu.about" = "關於 RunProcess";
 "menu.quit" = "結束";
 
 // MARK: - Alert
@@ -36,7 +39,7 @@
 "sudo.dialog.title" = "需要管理員權限";
 "sudo.dialog.message" = "執行此命令需要 root 權限，請輸入密碼";
 "sudo.dialog.password.placeholder" = "輸入密碼";
-"sudo.dialog.security.hint" = "密碼僅在記憶體中臨時使用，不會被儲存或記錄";
+"sudo.dialog.security.hint" = "密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄";
 
 // MARK: - Output
 "output.success" = "✅ 執行成功";
@@ -49,17 +52,36 @@
 "error.timeout" = "⏰ 命令執行逾時（超過 %@ 秒）\n💡 如需執行耗時命令，請直接在終端機中執行";
 "error.timeout.short" = "⏰ 命令執行逾時（超過 %@ 秒）";
 "error.sudo.wrong.password" = "❌ 密碼錯誤\n💡 請檢查密碼後重試";
+"error.sudo.missing.password" = "sudo 命令需要密碼。";
 "error.exit.code" = "命令執行失敗（結束碼: %ld）";
 
-// MARK: - Shortcut Settings
-"window.shortcut.settings.title" = "快速鍵設定";
-"shortcut.settings.title" = "全域快速鍵";
-"shortcut.toggle.window.label" = "顯示 / 隱藏視窗";
-"shortcut.settings.hint" = "點擊快速鍵輸入欄位，按下新的組合鍵即可修改。";
+// MARK: - Window Titles
+"window.settings.title" = "設定";
+"window.about.title" = "關於 RunProcess";
+"window.title.session" = "RunProcess - 工作階段模式";
+
+// MARK: - Settings
+"settings.section.shortcut" = "快速鍵";
+"settings.section.session" = "工作階段";
+"settings.section.workingDirectory" = "預設工作目錄";
+"settings.section.sudo" = "Sudo";
+
+"settings.session.enabled" = "工作階段模式";
+"settings.session.description" = "持久 shell，cd / export 跨命令生效";
+"settings.session.new.window.hint" = "僅影響新開啟的視窗。";
+
+"settings.workingDirectory.choose" = "選擇…";
+"settings.workingDirectory.reset" = "恢復預設";
+"settings.workingDirectory.invalid" = "所選路徑不存在，已退回使用者主目錄。";
+"settings.workingDirectory.new.window.hint" = "僅影響新開啟的視窗。";
+"settings.workingDirectory.panel.prompt" = "選擇";
+
+"settings.sudo.hint" = "每次執行 sudo 命令都需要輸入密碼。密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄。";
+
+// MARK: - Session
+"session.reset.notice" = "工作階段已重置";
 
 // MARK: - About
-"menu.about" = "關於 RunProcess";
-"window.about.title" = "關於 RunProcess";
 "about.version" = "版本";
 "about.description" = "為 macOS 打造的仿 Windows 執行方塊，常駐選單列。";
 "about.repository" = "GitHub 儲存庫";

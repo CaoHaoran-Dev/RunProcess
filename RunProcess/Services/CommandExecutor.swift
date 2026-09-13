@@ -30,7 +30,7 @@ class CommandExecutor {
             let outputPipe = Pipe()
             let errorPipe = Pipe()
             
-            task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+            task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
             task.launchPath = "/bin/zsh"
             task.arguments = ["-l", "-c", input]
             task.standardOutput = outputPipe
@@ -187,7 +187,7 @@ class CommandExecutor {
             let errorPipe = Pipe()
             let inputPipe = Pipe()
             
-            task.currentDirectoryURL = FileManager.default.homeDirectoryForCurrentUser
+            task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
             task.launchPath = "/usr/bin/sudo"
             let commandArgs = command.split(separator: " ").map(String.init)
             task.arguments = ["-S", "-k"] + commandArgs
