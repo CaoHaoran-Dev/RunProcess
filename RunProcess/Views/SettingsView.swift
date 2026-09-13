@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import AppKit
+internal import AppKit
 import KeyboardShortcuts
 
 struct SettingsView: View {
