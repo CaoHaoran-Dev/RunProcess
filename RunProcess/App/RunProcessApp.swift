@@ -14,7 +14,7 @@ struct RunProcessApp: App {
     
     var body: some Scene {
         Settings {
-            EmptyView()
+            SettingsView()
         }
     }
 }
@@ -26,6 +26,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
     private var aboutWindow: NSWindow?
+    private var keyMonitor: Any?
     
     // MARK: - Menu
     
@@ -37,6 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             action: #selector(newWindow),
             keyEquivalent: "n"
         )
+        newWindowItem.keyEquivalentModifierMask = .command
         newWindowItem.target = self
         menu.addItem(newWindowItem)
         
@@ -96,11 +98,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         setupStatusBar()
         setupGlobalHotkey()
+        setupKeyMonitor()
         
         _ = sessionManager.newSession()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+        
         sessionManager.removeAll()
         print("🛑 RunProcess is exiting")
     }
@@ -127,6 +135,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 self?.toggleWindow()
             }
+        }
+    }
+    
+    // MARK: - Key Monitor
+    
+    private func setupKeyMonitor() {
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self else { return event }
+            
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            
+            if flags == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "n" {
+                self.newWindow()
+                return nil
+            }
+            
+            if flags == .command,
+               event.charactersIgnoringModifiers == "," {
+                self.openSettings()
+                return nil
+            }
+            
+            return event
         }
     }
     
@@ -162,10 +194,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    /// 隐藏所有窗口（失焦自动隐藏时调用）
+    func hideAllWindows() {
+        for session in sessionManager.allSessions {
+            session.hide()
+        }
+        
+        settingsWindow?.orderOut(nil)
+        aboutWindow?.orderOut(nil)
+    }
+    
+    // MARK: - Settings
+    
     @objc func openSettings() {
-        if let existing = settingsWindow, existing.isVisible {
+        NSApp.activate(ignoringOtherApps: true)
+        openSettingsWindow()
+    }
+    
+    private func openSettingsWindow() {
+        if let existing = settingsWindow {
             existing.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
+            
+            if let parentWindow = sessionManager.activeSession()?.window,
+               existing.parent !== parentWindow {
+                existing.parent?.removeChildWindow(existing)
+                parentWindow.addChildWindow(existing, ordered: .above)
+            }
             return
         }
         
@@ -177,12 +231,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()
-        window.level = .floating
+        window.level = .modalPanel
         
         settingsWindow = window
+        
+        if let parentWindow = sessionManager.activeSession()?.window {
+            parentWindow.addChildWindow(window, ordered: .above)
+        }
+        
         window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
+    
+    func reparentAuxiliaryWindows(to parent: NSWindow) {
+        if let settings = settingsWindow, settings.parent !== parent {
+            settings.parent?.removeChildWindow(settings)
+            parent.addChildWindow(settings, ordered: .above)
+        }
+        
+        if let about = aboutWindow, about.parent !== parent {
+            about.parent?.removeChildWindow(about)
+            parent.addChildWindow(about, ordered: .above)
+        }
+    }
+    
+    // MARK: - Clear History
     
     @objc func clearHistory() {
         CommandHistory().clearAll()
@@ -195,10 +267,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
     
+    // MARK: - About
+    
     @objc func openAbout() {
-        if let existing = aboutWindow, existing.isVisible {
+        if let existing = aboutWindow {
             existing.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
+            
+            if let parentWindow = sessionManager.activeSession()?.window,
+               existing.parent !== parentWindow {
+                existing.parent?.removeChildWindow(existing)
+                parentWindow.addChildWindow(existing, ordered: .above)
+            }
             return
         }
         
@@ -210,12 +290,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()
-        window.level = .floating
+        window.level = .modalPanel
         
         aboutWindow = window
+        
+        if let parentWindow = sessionManager.activeSession()?.window {
+            parentWindow.addChildWindow(window, ordered: .above)
+        }
+        
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
+    
+    // MARK: - Quit
     
     @objc func quitApp() {
         NSApp.terminate(nil)

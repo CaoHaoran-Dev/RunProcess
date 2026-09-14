@@ -13,6 +13,8 @@ struct SettingsView: View {
     @State private var sessionModeEnabled: Bool = AppSettings.sessionModeEnabled
     @State private var workingDirectoryDisplay: String = AppSettings.displayWorkingDirectory
     @State private var workingDirectoryIsValid: Bool = AppSettings.isWorkingDirectoryValid
+    @State private var appearanceStyle: AppearanceStyle = AppSettings.appearanceStyleRaw
+    @State private var hideOnDeactivate: Bool = AppSettings.hideOnDeactivate
     
     var body: some View {
         Form {
@@ -21,6 +23,41 @@ struct SettingsView: View {
                     NSLocalizedString("shortcut.toggle.window.label", comment: "Toggle window shortcut label"),
                     name: .toggleWindow
                 )
+            }
+            
+            // ✅ 语言区块，仅 macOS 13+ 显示
+            if #available(macOS 13.0, *) {
+                Section(NSLocalizedString("settings.section.language", comment: "Language section")) {
+                    Text(NSLocalizedString("settings.language.hint", comment: "Language hint"))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            
+            Section(NSLocalizedString("settings.section.window", comment: "Window section")) {
+                Toggle(isOn: $hideOnDeactivate) {
+                    Text(NSLocalizedString("settings.window.hideOnDeactivate", comment: "Hide on deactivate toggle"))
+                }
+                .onChange(of: hideOnDeactivate) { newValue in
+                    AppSettings.hideOnDeactivate = newValue
+                }
+            }
+            
+            Section(NSLocalizedString("settings.section.appearance", comment: "Appearance section")) {
+                Picker(
+                    NSLocalizedString("settings.appearance.style", comment: "Appearance style label"),
+                    selection: $appearanceStyle
+                ) {
+                    ForEach(AppearanceStyle.allCases.filter { $0.isSupported }, id: \.self) { style in
+                        Text(NSLocalizedString(style.displayNameKey, comment: "Appearance style"))
+                            .tag(style)
+                    }
+                }
+                .pickerStyle(.radioGroup)
+                .onChange(of: appearanceStyle) { newValue in
+                    AppSettings.appearanceStyleRaw = newValue
+                }
             }
             
             Section(NSLocalizedString("settings.section.session", comment: "Session section")) {
@@ -62,8 +99,10 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 460, height: 480)
+        .frame(width: 460, height: 680)
     }
+    
+    // MARK: - 工作目录行
     
     private var workingDirectoryRow: some View {
         HStack(spacing: 8) {

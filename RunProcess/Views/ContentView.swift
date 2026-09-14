@@ -16,6 +16,13 @@ struct ContentView: View {
     @State private var sudoPassword: String = ""
     @State private var outputHeight: CGFloat = 100
     
+    /// 监听外观风格变化（设置面板改动后自动刷新）
+    @AppStorage("appearance.style") private var appearanceStyleRaw: String = AppSettings.appearanceStyleRaw.rawValue
+    
+    private var appearanceStyle: AppearanceStyle {
+        AppSettings.resolvedAppearanceStyle
+    }
+    
     init(viewModel: CommandViewModel) {
         self.viewModel = viewModel
     }
@@ -163,8 +170,12 @@ struct ContentView: View {
         .padding(20)
         .frame(width: 520, height: viewModel.outputText.isEmpty ? 160 : 240 + (outputHeight - 100))
         .background(
-            VisualEffectView(material: .underWindowBackground, blendingMode: .behindWindow)
-                .ignoresSafeArea()
+            AdaptiveWindowBackground(
+                style: appearanceStyle,
+                material: .underWindowBackground,
+                blendingMode: .behindWindow
+            )
+            .ignoresSafeArea()
         )
         .onExitCommand {
             viewModel.closeSuggestions()
@@ -194,7 +205,6 @@ struct ContentView: View {
         guard !viewModel.inputText.isEmpty else { return }
         
         if useSudo {
-            // ✅ 每次 sudo 都弹密码框
             showSudoPasswordDialog = true
             sudoPassword = ""
         } else {
@@ -287,8 +297,12 @@ struct SudoPasswordDialog: View {
         .padding(20)
         .frame(width: 380)
         .background(
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(12)
+            AdaptiveGlassBackground(
+                style: AppSettings.resolvedAppearanceStyle,
+                material: .hudWindow,
+                blendingMode: .behindWindow,
+                cornerRadius: 12
+            )
         )
     }
 }

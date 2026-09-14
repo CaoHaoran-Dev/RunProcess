@@ -56,24 +56,42 @@
 "error.exit.code" = "Command execution failed (exit code: %ld)";
 
 /* Window Titles */
-"window.settings.title" = "Settings";
+"window.settings.title" = "RunProcess Settings";
 "window.about.title" = "About RunProcess";
 "window.title.session" = "RunProcess - Session";
 
 /* Settings */
 "settings.section.shortcut" = "Shortcut";
+"settings.section.window" = "Window";
+"settings.section.appearance" = "Appearance";
 "settings.section.session" = "Session";
 "settings.section.workingDirectory" = "Working Directory";
 "settings.section.sudo" = "Sudo";
+
+"settings.window.hideOnDeactivate" = "Hide windows when the app loses focus";
+
+"settings.appearance.style" = "Style";
+"appearance.none" = "None";
+"appearance.frostedGlass" = "Frosted Glass";
+"appearance.liquidGlass" = "Liquid Glass";
+
 "settings.session.enabled" = "Session Mode";
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
+
 "settings.workingDirectory.choose" = "Choose...";
 "settings.workingDirectory.reset" = "Reset";
 "settings.workingDirectory.invalid" = "The selected path does not exist. Falling back to your home directory.";
 "settings.workingDirectory.new.window.hint" = "Only affects newly opened windows.";
 "settings.workingDirectory.panel.prompt" = "Choose";
+
 "settings.sudo.hint" = "Every sudo command requires entering your password. The password is used only in memory during execution and is never stored or logged.";
+
+"settings.section.language" = "Language";
+"settings.language.hint" = "To use a different language for RunProcess:\nSystem Settings → General → Language & Region → Applications";
+
+/* Shortcut */
+"shortcut.toggle.window.label" = "Show / Hide Window";
 
 /* Session */
 "session.reset.notice" = "Session was reset";
