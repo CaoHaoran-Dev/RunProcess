@@ -24,9 +24,7 @@ jobs:
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
-            -destination "platform=macos,arch=arm64" \
-            -test-iterations 1 \
-            -retry-tests-on-failure \
+            -destination "platform=macOS,arch=arm64" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -37,9 +35,7 @@ jobs:
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
-            -destination "platform=macos,arch=x86_64" \
-            -test-iterations 1 \
-            -retry-tests-on-failure \
+            -destination "platform=macOS,arch=x86_64" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \

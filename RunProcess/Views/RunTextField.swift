@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import AppKit
+internal import AppKit
 
 struct RunTextField: NSViewRepresentable {
     @Binding var text: String
@@ -36,8 +36,13 @@ struct RunTextField: NSViewRepresentable {
         textView.textContainer?.widthTracksTextView = true
         textView.autoresizingMask = [.width]
         
-        textView.textColor = .labelColor
-        textView.insertionPointColor = .labelColor
+        // ✅ 动态颜色：按当前 effectiveAppearance 解析，深色白、浅色黑
+        //    不能在 makeNSView 时用 .labelColor 静态快照，否则会被冻结成浅色下的黑色
+        let dynamicTextColor = NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .white : .black
+        }
+        textView.textColor = dynamicTextColor
+        textView.insertionPointColor = dynamicTextColor
         
         textView.registerForDraggedTypes([NSPasteboard.PasteboardType("NSFilenamesPboardType")])
         
@@ -46,9 +51,13 @@ struct RunTextField: NSViewRepresentable {
         paragraphStyle.minimumLineHeight = 28
         paragraphStyle.maximumLineHeight = 28
         textView.defaultParagraphStyle = paragraphStyle
+        
+        // ✅ typingAttributes 必须显式带 .foregroundColor，否则新输入字符
+        //    会退回 textView.textColor 的旧快照（曾被解析为纯黑）
         textView.typingAttributes = [
             .font: NSFont.monospacedSystemFont(ofSize: 18, weight: .regular),
-            .paragraphStyle: paragraphStyle
+            .paragraphStyle: paragraphStyle,
+            .foregroundColor: dynamicTextColor
         ]
         
         scrollView.documentView = textView

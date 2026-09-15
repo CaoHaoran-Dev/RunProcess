@@ -1,0 +1,104 @@
+/*
+  Localizable.strings (繁體中文)
+  RunProcess
+*/
+
+/* TextField */
+"textfield.placeholder" = "輸入命令或拖入檔案...";
+
+/* Toggle */
+"sudo.toggle.label" = "以 root 執行";
+
+/* Buttons */
+"button.cancel" = "取消";
+"button.cancel.tooltip" = "取消執行";
+"button.execute" = "執行";
+"button.ok" = "確定";
+"button.confirm" = "確認";
+
+/* Menu */
+"menu.new.window" = "新增視窗";
+"menu.toggle.window" = "顯示/隱藏視窗";
+"menu.settings" = "設定...";
+"menu.clear.history" = "清除歷史命令";
+"menu.about" = "關於 RunProcess";
+"menu.quit" = "結束";
+
+/* Alert */
+"alert.history.cleared.title" = "已清除";
+"alert.history.cleared.message" = "所有歷史命令已刪除";
+
+/* Hint */
+"hint.drag.file" = "拖入檔案";
+"hint.tab.completion" = "Tab 補全";
+"hint.history.navigation" = "↑↓ 歷史";
+"hint.hide.window" = "⌘W 隱藏";
+"hint.shift.enter" = "Shift↩ 換行";
+
+/* Sudo Dialog */
+"sudo.dialog.title" = "需要管理員權限";
+"sudo.dialog.message" = "執行此命令需要 root 權限，請輸入密碼";
+"sudo.dialog.password.placeholder" = "輸入密碼";
+"sudo.dialog.security.hint" = "密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄";
+
+/* Output */
+"output.success" = "✅ 執行成功";
+"output.success.sudo" = "✅ 執行成功（root 權限）";
+"output.cancelled" = "⏹️ 已取消執行";
+"output.clear.tooltip" = "清除輸出";
+
+/* Errors */
+"error.interactive.command" = "⚠️ 互動式命令（如 vim、python、top 等）暫不支援\n💡 請在系統終端機中執行此命令";
+"error.timeout" = "⏰ 命令執行逾時（超過 %@ 秒）\n💡 如需執行耗時命令，請直接在終端機中執行";
+"error.timeout.short" = "⏰ 命令執行逾時（超過 %@ 秒）";
+"error.sudo.wrong.password" = "❌ 密碼錯誤\n💡 請檢查密碼後重試";
+"error.sudo.missing.password" = "sudo 命令需要密碼。";
+"error.exit.code" = "命令執行失敗（結束碼: %ld）";
+
+/* Window Titles */
+"window.settings.title" = "RunProcess 設定";
+"window.about.title" = "關於 RunProcess";
+"window.title.session" = "RunProcess - 工作階段模式";
+
+/* Settings */
+"settings.section.shortcut" = "快速鍵";
+"settings.section.window" = "視窗";
+"settings.section.appearance" = "外觀";
+"settings.section.session" = "工作階段";
+"settings.section.workingDirectory" = "預設工作目錄";
+"settings.section.sudo" = "Sudo";
+
+"settings.window.hideOnDeactivate" = "應用程式失去焦點時自動隱藏視窗";
+
+"settings.appearance.style" = "風格";
+"appearance.none" = "無";
+"appearance.frostedGlass" = "毛玻璃";
+"appearance.liquidGlass" = "液態玻璃";
+
+"settings.session.enabled" = "工作階段模式";
+"settings.session.description" = "持久 shell，cd / export 跨命令生效";
+"settings.session.new.window.hint" = "僅影響新開啟的視窗。";
+
+"settings.workingDirectory.choose" = "選擇...";
+"settings.workingDirectory.reset" = "恢復預設";
+"settings.workingDirectory.invalid" = "所選路徑不存在，已退回使用者主目錄。";
+"settings.workingDirectory.new.window.hint" = "僅影響新開啟的視窗。";
+"settings.workingDirectory.panel.prompt" = "選擇";
+
+"settings.sudo.hint" = "每次執行 sudo 命令都需要輸入密碼。密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄。";
+
+"settings.section.language" = "語言";
+"settings.language.hint" = "為 RunProcess 單獨選擇語言：\n系統設定 → 一般 → 語言與地區 → 應用程式";
+
+/* Shortcut */
+"shortcut.toggle.window.label" = "顯示 / 隱藏視窗";
+
+/* Session */
+"session.reset.notice" = "工作階段已重置";
+
+/* About */
+"about.version" = "版本";
+"about.description" = "為 macOS 打造的仿 Windows 執行方塊，常駐選單列。";
+"about.repository" = "GitHub 儲存庫";
+"about.license" = "MIT 授權條款";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";

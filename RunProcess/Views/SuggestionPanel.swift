@@ -44,7 +44,6 @@ class SuggestionPanel {
         
         if let panel = panel {
             window.addChildWindow(panel, ordered: .above)
-            // ✅ 延迟一帧确保布局完成
             DispatchQueue.main.async {
                 self.positionPanel(relativeTo: positioningView)
             }
@@ -60,7 +59,6 @@ class SuggestionPanel {
         let newSize = calculatePanelSize(for: viewModel.suggestions)
         panel?.setContentSize(newSize)
         
-        // ✅ 内容更新后重新定位
         if let positioningView = findPositioningView() {
             positionPanel(relativeTo: positioningView)
         }
@@ -83,20 +81,15 @@ class SuggestionPanel {
     // MARK: - 定位
     
     private func findPositioningView() -> NSView? {
-        // 从父窗口的 contentView 中查找 RunTextField
         guard let window = parentWindow,
               let contentView = window.contentView else { return nil }
-        
-        // 递归查找第一个 RunTextField 的 NSView
         return findTextField(in: contentView)
     }
     
     private func findTextField(in view: NSView) -> NSView? {
-        // 检查是否是 RunTextField 的 NSView 实例
         if view is RunTextField.NSViewType {
             return view
         }
-        // 检查子视图
         for subview in view.subviews {
             if let found = findTextField(in: subview) {
                 return found
@@ -108,17 +101,8 @@ class SuggestionPanel {
     private func positionPanel(relativeTo view: NSView) {
         guard let panel = panel, let window = view.window else { return }
         
-        // ✅ 修复：获取输入框在窗口坐标系中的位置
         let viewRectInWindow = view.convert(view.bounds, to: nil)
-        
-        // ✅ 获取窗口在屏幕上的位置
         let windowRect = window.frame
-        
-        // ✅ 计算面板在屏幕坐标系中的位置
-        // viewRectInWindow 是相对于窗口内容区域的原点
-        // 需要加上窗口的 frame 原点（但 window.frame 包含标题栏）
-        // 对于透明标题栏，contentView 的原点就是 window.frame 的原点加上标题栏高度
-        // 使用 window.contentLayoutRect 获取内容区域
         let contentRect = window.contentLayoutRect
         let titleBarHeight = window.frame.height - contentRect.height
         
@@ -182,9 +166,13 @@ struct SuggestionPanelContent: View {
         }
         .frame(width: 480)
         .background(
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-                .cornerRadius(10)
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
+            AdaptiveGlassBackground(
+                style: AppSettings.resolvedAppearanceStyle,
+                material: .hudWindow,
+                blendingMode: .behindWindow,
+                cornerRadius: 10
+            )
+            .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 4)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10)

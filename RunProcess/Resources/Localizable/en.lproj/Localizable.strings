@@ -1,0 +1,104 @@
+/*
+  Localizable.strings (English)
+  RunProcess
+*/
+
+/* TextField */
+"textfield.placeholder" = "Enter command or drag file...";
+
+/* Toggle */
+"sudo.toggle.label" = "Run as root";
+
+/* Buttons */
+"button.cancel" = "Cancel";
+"button.cancel.tooltip" = "Cancel execution";
+"button.execute" = "Execute";
+"button.ok" = "OK";
+"button.confirm" = "Confirm";
+
+/* Menu */
+"menu.new.window" = "New Window";
+"menu.toggle.window" = "Show/Hide Window";
+"menu.settings" = "Settings...";
+"menu.clear.history" = "Clear Command History";
+"menu.about" = "About RunProcess";
+"menu.quit" = "Quit";
+
+/* Alert */
+"alert.history.cleared.title" = "Cleared";
+"alert.history.cleared.message" = "All command history has been deleted";
+
+/* Hint */
+"hint.drag.file" = "Drop file";
+"hint.tab.completion" = "Tab complete";
+"hint.history.navigation" = "Up/Down History";
+"hint.hide.window" = "Cmd+W Hide";
+"hint.shift.enter" = "Shift+Enter Newline";
+
+/* Sudo Dialog */
+"sudo.dialog.title" = "Administrator Privileges Required";
+"sudo.dialog.message" = "This command requires root privileges. Please enter your password.";
+"sudo.dialog.password.placeholder" = "Enter password";
+"sudo.dialog.security.hint" = "Password is used only in memory during execution and is never stored or logged";
+
+/* Output */
+"output.success" = "Execution successful";
+"output.success.sudo" = "Execution successful (root privileges)";
+"output.cancelled" = "Execution cancelled";
+"output.clear.tooltip" = "Clear output";
+
+/* Errors */
+"error.interactive.command" = "Interactive commands (vim, python, top, etc.) are not supported. Please run this command in the system terminal.";
+"error.timeout" = "Command execution timed out (exceeded %@ seconds). For long-running commands, please run directly in the terminal.";
+"error.timeout.short" = "Command execution timed out (exceeded %@ seconds)";
+"error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
+"error.sudo.missing.password" = "Password is required for sudo commands.";
+"error.exit.code" = "Command execution failed (exit code: %ld)";
+
+/* Window Titles */
+"window.settings.title" = "RunProcess Settings";
+"window.about.title" = "About RunProcess";
+"window.title.session" = "RunProcess - Session";
+
+/* Settings */
+"settings.section.shortcut" = "Shortcut";
+"settings.section.window" = "Window";
+"settings.section.appearance" = "Appearance";
+"settings.section.session" = "Session";
+"settings.section.workingDirectory" = "Working Directory";
+"settings.section.sudo" = "Sudo";
+
+"settings.window.hideOnDeactivate" = "Hide windows when the app loses focus";
+
+"settings.appearance.style" = "Style";
+"appearance.none" = "None";
+"appearance.frostedGlass" = "Frosted Glass";
+"appearance.liquidGlass" = "Liquid Glass";
+
+"settings.session.enabled" = "Session Mode";
+"settings.session.description" = "Persistent shell; cd / export persist across commands";
+"settings.session.new.window.hint" = "Only affects newly opened windows.";
+
+"settings.workingDirectory.choose" = "Choose...";
+"settings.workingDirectory.reset" = "Reset";
+"settings.workingDirectory.invalid" = "The selected path does not exist. Falling back to your home directory.";
+"settings.workingDirectory.new.window.hint" = "Only affects newly opened windows.";
+"settings.workingDirectory.panel.prompt" = "Choose";
+
+"settings.sudo.hint" = "Every sudo command requires entering your password. The password is used only in memory during execution and is never stored or logged.";
+
+"settings.section.language" = "Language";
+"settings.language.hint" = "To use a different language for RunProcess:\nSystem Settings → General → Language & Region → Applications";
+
+/* Shortcut */
+"shortcut.toggle.window.label" = "Show / Hide Window";
+
+/* Session */
+"session.reset.notice" = "Session was reset";
+
+/* About */
+"about.version" = "Version";
+"about.description" = "A Spotlight-style command launcher for macOS.";
+"about.repository" = "GitHub Repository";
+"about.license" = "MIT License";
+"about.copyright" = "MIT © 2026 CaoHaoran-Dev";
