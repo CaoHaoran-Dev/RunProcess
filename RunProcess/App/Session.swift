@@ -8,6 +8,9 @@
 internal import AppKit
 import SwiftUI
 
+/// 单个窗口会话
+///
+/// 持有窗口、ViewModel、可选的持久 shell、sudo 授权状态。
 final class Session {
     
     let id = UUID()
@@ -15,14 +18,21 @@ final class Session {
     let viewModel: CommandViewModel
     let sudoAuth: SudoAuthManager
     
+    /// 会话模式下的持久 shell（非会话模式为 nil）
     private(set) var persistentShell: PersistentShell?
+    
+    /// 是否使用会话模式
     let usesSessionMode: Bool
+    
+    /// 当前 cwd（会话模式下由 shell 同步，非会话模式固定为默认工作目录）
     private(set) var currentWorkingDirectory: String
+    
+    /// 窗口标题前缀
     private let baseTitle: String
     
+    // 通知观察者 token，销毁时移除，避免泄漏
     private var willCloseObserver: NSObjectProtocol?
     private var didBecomeKeyObserver: NSObjectProtocol?
-    private var didResignKeyObserver: NSObjectProtocol?
     
     // MARK: - Init
     
@@ -36,10 +46,12 @@ final class Session {
             ? NSLocalizedString("window.title.session", comment: "Session window title")
             : "RunProcess"
         
+        // 创建 viewModel
         let viewModel = CommandViewModel()
         viewModel.usesSessionMode = usesSessionMode
         self.viewModel = viewModel
         
+        // 创建窗口
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
         
@@ -63,6 +75,7 @@ final class Session {
         
         self.window = window
         
+        // 会话模式：创建持久 shell
         if usesSessionMode {
             let shell = PersistentShell(initialCWD: initialCWD)
             shell.onCWDChange = { [weak self] cwd in
@@ -73,9 +86,11 @@ final class Session {
                 self?.handleShellCrash()
             }
             self.persistentShell = shell
+            
             try? shell.start()
         }
         
+        // 绑定 viewModel 的执行逻辑到 session
         viewModel.executeHandler = { [weak self] command, useSudo, password, completion in
             self?.execute(command: command, useSudo: useSudo, password: password, completion: completion)
         }
@@ -83,11 +98,13 @@ final class Session {
             self?.cancelExecution()
         }
         
+        // 注册到 SessionRegistry
         SessionRegistry.shared.register(viewModel: viewModel, session: self)
     }
     
     // MARK: - 窗口观察
     
+    /// 由 SessionManager 在创建后调用，绑定窗口通知
     func observeWindow(manager: SessionManager) {
         willCloseObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
@@ -107,26 +124,6 @@ final class Session {
             manager?.markActive(self)
             (NSApp.delegate as? AppDelegate)?.reparentAuxiliaryWindows(to: self.window)
         }
-        
-        // ✅ 主窗口失去 key 时，检查 App 是否还 active
-        didResignKeyObserver = NotificationCenter.default.addObserver(
-            forName: NSWindow.didResignKeyNotification,
-            object: window,
-            queue: .main
-        ) { [weak self] _ in
-            guard let self = self else { return }
-            // 延迟到下一个 runloop，让 key window 切换完成
-            DispatchQueue.main.async {
-                self.handleResignKey()
-            }
-        }
-    }
-    
-    private func handleResignKey() {
-        guard AppSettings.hideOnDeactivate else { return }
-        // App 不再 active，隐藏所有窗口
-        guard !NSApp.isActive else { return }
-        (NSApp.delegate as? AppDelegate)?.hideAllWindows()
     }
     
     deinit {
@@ -134,9 +131,6 @@ final class Session {
             NotificationCenter.default.removeObserver(token)
         }
         if let token = didBecomeKeyObserver {
-            NotificationCenter.default.removeObserver(token)
-        }
-        if let token = didResignKeyObserver {
             NotificationCenter.default.removeObserver(token)
         }
         
@@ -188,6 +182,7 @@ final class Session {
         password: String,
         completion: @escaping (Result<String, Error>) -> Void
     ) {
+        // sudo 命令走独立进程，不走持久 shell
         sudoAuth.executeSudo(command, password: password, timeout: 10.0, completion: completion)
     }
     

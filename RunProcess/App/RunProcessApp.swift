@@ -99,11 +99,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusBar()
         setupGlobalHotkey()
         setupKeyMonitor()
+        setupAppActiveObserver()
         
         _ = sessionManager.newSession()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+        
         if let monitor = keyMonitor {
             NSEvent.removeMonitor(monitor)
             keyMonitor = nil
@@ -162,6 +169,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
+    // MARK: - App Active Observer
+    
+    private func setupAppActiveObserver() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidResignActive),
+            name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+    }
+    
+    @objc func applicationDidResignActive() {
+        guard AppSettings.hideOnDeactivate else { return }
+        hideAllWindows()
+    }
+    
     // MARK: - Actions
     
     @objc func toggleMenu() {
@@ -194,7 +217,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
     
-    /// 隐藏所有窗口（失焦自动隐藏时调用）
+    /// 隐藏所有窗口（App 失活时调用）
     func hideAllWindows() {
         for session in sessionManager.allSessions {
             session.hide()
@@ -231,7 +254,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()
-        window.level = .modalPanel
+        window.level = .normal
         
         settingsWindow = window
         
@@ -290,7 +313,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.styleMask = [.titled, .closable]
         window.isReleasedWhenClosed = false
         window.center()
-        window.level = .modalPanel
+        window.level = .normal
         
         aboutWindow = window
         

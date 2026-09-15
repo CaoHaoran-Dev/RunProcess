@@ -316,8 +316,8 @@ class CommandExecutor {
                     } else {
                         let lowercased = trimmed.lowercased()
                         let isPasswordError = lowercased.contains("sorry") ||
-                                              lowercased.contains("incorrect password") ||
-                                              (lowercased.contains("password") && lowercased.contains("try again"))
+                        lowercased.contains("incorrect password") ||
+                        (lowercased.contains("password") && lowercased.contains("try again"))
                         
                         if isPasswordError {
                             let message = NSLocalizedString("error.sudo.wrong.password", comment: "Wrong password error")
@@ -348,14 +348,13 @@ class CommandExecutor {
     // MARK: - Cancel
     
     func cancelCurrentTask() {
-        // ✅ 使用 stateQueue 避免死锁
-        stateQueue.sync {
-            currentTimeoutWork?.cancel()
-            if let task = currentTask, task.isRunning {
+        stateQueue.async {
+            self.currentTimeoutWork?.cancel()
+            if let task = self.currentTask, task.isRunning {
                 task.terminate()
             }
-            currentTask = nil
-            currentTimeoutWork = nil
+            self.currentTask = nil
+            self.currentTimeoutWork = nil
         }
     }
 }
