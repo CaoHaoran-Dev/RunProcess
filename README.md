@@ -133,9 +133,16 @@ Download the latest `RunProcess.zip` from [Releases](https://github.com/CaoHaora
 
 1. Download and unzip the file.
 2. Move `RunProcess.app` to your `Applications` folder.
-3. Right-click the application → **Open** → confirm to bypass Gatekeeper.
 
-> The application is not notarized, so macOS may display a security warning on first launch. Right-click and select **Open** to run it.
+> The application is not notarized, so macOS may display a security warning on first launch. Go to **System Settings > Privacy & Securit** and click **Open Anyway**.
+
+### Homebrew
+
+```bash
+brew tap CaoHaoran-Dev/apptap
+brew trust CaoHaoran-Dev/apptap
+brew install runprocess
+```
 
 ### Build from Source
 
@@ -150,7 +157,7 @@ Requires Xcode 16.0 or later.
 ### Try It Online
 
 Visit the GitHub Pages demo:
-[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+[RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
 
 ---
 

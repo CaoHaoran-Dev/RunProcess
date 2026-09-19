@@ -133,9 +133,16 @@ RunProcess 支援英文、簡體中文與繁體中文。若僅想為 RunProcess 
 
 1. 下載並解壓縮檔案。
 2. 將 `RunProcess.app` 移至 `Applications` 檔案夾。
-3. 在應用程式上按右鍵 → **打開** → 確認，以略過 Gatekeeper。
 
-> 本應用程式未經公證，因此 macOS 可能會在首次啟動時顯示安全警告。請按右鍵並選擇 **打開** 以執行。
+> 應用程式未經公證，因此 macOS 可能會在首次啟動時顯示安全性警告。請前往 **系統設定 > 隱私權與安全性**，然後按一下 **仍要打開**。
+
+### Homebrew
+
+```bash
+brew tap CaoHaoran-Dev/apptap
+brew trust CaoHaoran-Dev/apptap
+brew install runprocess
+```
 
 ### 從原始碼編譯
 
@@ -150,7 +157,7 @@ open RunProcess.xcodeproj
 ### 線上體驗
 
 前往 GitHub Pages 展示頁面：
-[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+[RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
 
 ---
 

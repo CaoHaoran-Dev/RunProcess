@@ -136,9 +136,16 @@ macOS 12.4+，Apple Silicon / Intel 都行
 
 1. 下载解压
 2. 把 `RunProcess.app` 拖进 `Applications` 文件夹
-3. 右键点击应用 → **打开** → 确认
 
-> 应用没公证，第一次打开 macOS 会提示不安全，右键打开就行了，不骗你。
+> 应用没公证，第一次打开 macOS 会提示不安全，设置里隐私与安全性点仍要打开，不骗你。
+
+### Homebrew
+
+```bash
+brew tap CaoHaoran-Dev/apptap
+brew trust CaoHaoran-Dev/apptap
+brew install runprocess
+```
 
 ### 从源码编译
 
@@ -153,7 +160,7 @@ open RunProcess.xcodeproj
 ### 在线体验
 
 访问 GitHub Pages：
-[https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+[RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
 
 ---
 
