@@ -7,146 +7,161 @@
 
 import Foundation
 
-/// 补全建议生成器
 class CommandSuggester {
-    private let history = CommandHistory()
+    private let history = CommandHistory.shared
     private let fileManager = FileManager.default
     private let queue = DispatchQueue(label: "com.runprocess.suggester", qos: .userInitiated)
-    
-    // 命令缓存
+
     private var cachedCommands: [String] = []
-    private var lastCacheUpdate: Date = Date.distantPast
-    private let cacheTTL: TimeInterval = 60 // ✅ 修复：60秒缓存，新命令更快生效
-    
-    /// 根据输入生成补全建议（异步回调，避免阻塞 UI）
+    private var lastCacheUpdate: Date = .distantPast
+    private let cacheTTL: TimeInterval = 60
+
     func suggest(for input: String, completion: @escaping ([Suggestion]) -> Void) {
         queue.async { [weak self] in
             guard let self = self else {
                 DispatchQueue.main.async { completion([]) }
                 return
             }
-            
             let results = self.generateSuggestions(for: input)
-            
-            DispatchQueue.main.async {
-                completion(results)
-            }
+            DispatchQueue.main.async { completion(results) }
         }
     }
-    
-    // MARK: - 私有方法
-    
+
     private func generateSuggestions(for input: String) -> [Suggestion] {
         let words = input.split(separator: " ", omittingEmptySubsequences: false)
-        guard let lastWord = words.last.map(String.init), !lastWord.isEmpty else {
-            return []
-        }
-        
-        if lastWord.hasPrefix("/") || lastWord.hasPrefix("~") {
+        guard let lastWord = words.last.map(String.init), !lastWord.isEmpty else { return [] }
+
+        // 第一个词才做命令/别名/历史补全，后续词做路径补全
+        let isFirstWord = words.count <= 1
+        if lastWord.hasPrefix("/") || lastWord.hasPrefix("~") || lastWord.hasPrefix(".") {
             return suggestPaths(for: lastWord)
         }
-        
-        return suggestCommandsAndHistory(for: lastWord)
-    }
-    
-    // MARK: - 路径补全
-    
-    private func suggestPaths(for input: String) -> [Suggestion] {
-        let path = (input as NSString).expandingTildeInPath
-        let partial = (path as NSString).lastPathComponent
-        let dir = (path as NSString).deletingLastPathComponent
-        
-        guard !dir.isEmpty,
-              let files = try? fileManager.contentsOfDirectory(atPath: dir) else {
-            return []
+        if isFirstWord {
+            return suggestCommandsHistoryAliases(for: lastWord)
         }
-        
-        return files
-            .filter { $0.hasPrefix(partial) }
-            .prefix(20)
-            .map { dir + "/" + $0 }
-            .map { ($0 as NSString).abbreviatingWithTildeInPath }
-            .map { $0.replacingOccurrences(of: " ", with: "\\ ") }
-            .map { Suggestion(text: $0, type: .path) }
+        // 参数位置：如果看起来像路径就给路径，否则也给命令（比如 git 的子命令）
+        return suggestCommandsHistoryAliases(for: lastWord)
     }
-    
-    // MARK: - 命令 + 历史补全
-    
-    private func suggestCommandsAndHistory(for prefix: String) -> [Suggestion] {
+
+    // MARK: - Aliases + History + Commands
+
+    private func suggestCommandsHistoryAliases(for prefix: String) -> [Suggestion] {
         guard !prefix.isEmpty else { return [] }
-        
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
-        
-        let historyEntries = history.query(prefix: prefix)
-        for entry in historyEntries {
-            if seen.insert(entry.command).inserted {
-                let suggestion = Suggestion(
-                    text: entry.command,
-                    type: .history,
-                    historyCount: entry.count
-                )
-                suggestions.append(suggestion)
+
+        // 1. 别名最高优先级
+        for alias in AliasStore.shared.match(prefix: prefix) {
+            if seen.insert(alias.name).inserted {
+                suggestions.append(Suggestion(
+                    text: alias.name, type: .alias, subtitle: alias.expansion))
             }
         }
-        
-        let commands = findSystemCommands(prefix: prefix)
-        for cmd in commands {
+
+        // 2. 历史（frecency 排序）
+        for entry in history.queryByFrecency(prefix: prefix) {
+            if seen.insert(entry.command).inserted {
+                suggestions.append(Suggestion(
+                    text: entry.command, type: .history, historyCount: entry.count))
+            }
+        }
+
+        // 3. 系统命令
+        for cmd in findSystemCommands(prefix: prefix) {
             if seen.insert(cmd).inserted {
                 suggestions.append(Suggestion(text: cmd, type: .command))
             }
         }
-        
+
         return suggestions.sorted { $0.priority > $1.priority }
     }
-    
-    // MARK: - 系统命令查找（带缓存）
-    
+
+    // MARK: - Paths
+
+    private func suggestPaths(for input: String) -> [Suggestion] {
+        let path = (input as NSString).expandingTildeInPath
+        let partial = (path as NSString).lastPathComponent
+        let dir = (path as NSString).deletingLastPathComponent
+
+        guard !dir.isEmpty,
+              let files = try? fileManager.contentsOfDirectory(atPath: dir) else { return [] }
+
+        let showHidden = partial.hasPrefix(".")
+        var isDir: ObjCBool = false
+
+        return files
+            .filter { showHidden || !$0.hasPrefix(".") }
+            .filter { $0.hasPrefix(partial) }
+            .sorted()
+            .prefix(20)
+            .map { name -> String in
+                let full = (dir as NSString).appendingPathComponent(name)
+                FileManager.default.fileExists(atPath: full, isDirectory: &isDir)
+                let suffix = isDir.boolValue ? "/" : ""
+                return dir + "/" + name + suffix
+            }
+            .map { ($0 as NSString).abbreviatingWithTildeInPath }
+            .map { $0.replacingOccurrences(of: " ", with: "\\ ") }
+            .map { Suggestion(text: $0, type: .path) }
+    }
+
+    // MARK: - System commands
+
     private func findSystemCommands(prefix: String) -> [String] {
         let now = Date()
         if now.timeIntervalSince(lastCacheUpdate) < cacheTTL && !cachedCommands.isEmpty {
             return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
         }
-        
-        let pathString = ProcessInfo.processInfo.environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
-        let paths = pathString.split(separator: ":").map(String.init)
-        
-        var allCommands: [String] = []
-        var seen = Set<String>()
-        
-        for path in paths {
-            guard !path.isEmpty else { continue }
-            guard let files = try? fileManager.contentsOfDirectory(atPath: path) else { continue }
-            
-            for file in files {
-                guard !file.hasPrefix(".") else { continue }
-                guard seen.insert(file).inserted else { continue }
-                
-                let fullPath = (path as NSString).appendingPathComponent(file)
-                // ✅ 修复：直接检查文件是否可执行，使用 stat 替代 access
-                if isFileExecutable(atPath: fullPath) {
-                    allCommands.append(file)
-                }
-            }
+
+        if let all = loadCommandsViaCompgen() {
+            cachedCommands = all
+        } else {
+            cachedCommands = loadCommandsViaPATH()
         }
-        
-        cachedCommands = allCommands.sorted()
         lastCacheUpdate = now
-        
         return cachedCommands.filter { $0.hasPrefix(prefix) }.prefix(20).map { $0 }
     }
-    
-    // MARK: - 安全文件检查（使用 stat 替代 access，避免 TOCTOU）
-    
+
+    private func loadCommandsViaCompgen() -> [String]? {
+        let task = Process()
+        let pipe = Pipe()
+        task.launchPath = "/bin/zsh"
+        task.arguments = ["-l", "-c", "compgen -c"]
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        do { try task.run() } catch { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        task.waitUntilExit()
+        guard task.terminationStatus == 0,
+              let text = String(data: data, encoding: .utf8) else { return nil }
+        let set = Set(text.split(separator: "\n").map(String.init).filter { !$0.isEmpty })
+        return set.sorted()
+    }
+
+    private func loadCommandsViaPATH() -> [String] {
+        let pathString = ProcessInfo.processInfo.environment["PATH"]
+            ?? "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/opt/homebrew/bin"
+        let paths = pathString.split(separator: ":").map(String.init)
+        var all: [String] = []
+        var seen = Set<String>()
+        for path in paths {
+            guard !path.isEmpty,
+                  let files = try? fileManager.contentsOfDirectory(atPath: path) else { continue }
+            for file in files {
+                guard !file.hasPrefix("."), seen.insert(file).inserted else { continue }
+                let full = (path as NSString).appendingPathComponent(file)
+                if isFileExecutable(atPath: full) { all.append(file) }
+            }
+        }
+        return all.sorted()
+    }
+
     private func isFileExecutable(atPath path: String) -> Bool {
-        var statInfo = stat()
-        guard stat(path, &statInfo) == 0 else { return false }
-        
-        // 检查是否为普通文件或符号链接，且拥有者可执行
-        let isRegular = (statInfo.st_mode & S_IFMT) == S_IFREG
-        let isSymlink = (statInfo.st_mode & S_IFMT) == S_IFLNK
-        let isExecutable = (statInfo.st_mode & S_IXUSR) != 0
-        
-        return (isRegular || isSymlink) && isExecutable
+        var info = stat()
+        guard lstat(path, &info) == 0 else { return false }
+        let isRegular = (info.st_mode & S_IFMT) == S_IFREG
+        let isSymlink = (info.st_mode & S_IFMT) == S_IFLNK
+        let isExec = (info.st_mode & S_IXUSR) != 0
+        return (isRegular || isSymlink) && isExec
     }
 }

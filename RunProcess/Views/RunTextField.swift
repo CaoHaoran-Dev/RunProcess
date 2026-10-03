@@ -14,7 +14,7 @@ struct RunTextField: NSViewRepresentable {
     let onEnter: () -> Void
     let onUp: () -> String?
     let onDown: () -> String?
-    
+
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
@@ -22,7 +22,7 @@ struct RunTextField: NSViewRepresentable {
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
         scrollView.borderType = .noBorder
-        
+
         let textView = CustomTextView()
         textView.delegate = context.coordinator
         textView.font = NSFont.monospacedSystemFont(ofSize: 18, weight: .regular)
@@ -35,164 +35,131 @@ struct RunTextField: NSViewRepresentable {
         textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: CGFloat.greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
         textView.autoresizingMask = [.width]
-        
-        // ✅ 动态颜色：按当前 effectiveAppearance 解析，深色白、浅色黑
-        //    不能在 makeNSView 时用 .labelColor 静态快照，否则会被冻结成浅色下的黑色
+
         let dynamicTextColor = NSColor(name: nil) { appearance in
             appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .white : .black
         }
         textView.textColor = dynamicTextColor
         textView.insertionPointColor = dynamicTextColor
-        
+
         textView.registerForDraggedTypes([NSPasteboard.PasteboardType("NSFilenamesPboardType")])
-        
-        // ✅ 固定行高让光标居中
+
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = 28
         paragraphStyle.maximumLineHeight = 28
         textView.defaultParagraphStyle = paragraphStyle
-        
-        // ✅ typingAttributes 必须显式带 .foregroundColor，否则新输入字符
-        //    会退回 textView.textColor 的旧快照（曾被解析为纯黑）
+
         textView.typingAttributes = [
             .font: NSFont.monospacedSystemFont(ofSize: 18, weight: .regular),
             .paragraphStyle: paragraphStyle,
             .foregroundColor: dynamicTextColor
         ]
-        
+
         scrollView.documentView = textView
-        
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
-        
         textView.string = text
-        
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        
-        // ✅ contentInsets 让内容居中
         scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-        
         return scrollView
     }
-    
+
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? CustomTextView else { return }
-        
-        if textView.string != text {
-            textView.string = text
-        }
-        
-        textView.textContainer?.containerSize = NSSize(width: nsView.contentSize.width, height: CGFloat.greatestFiniteMagnitude)
+        if textView.string != text { textView.string = text }
+        textView.textContainer?.containerSize = NSSize(width: nsView.contentSize.width, height: .greatestFiniteMagnitude)
         textView.layoutManager?.ensureLayout(for: textView.textContainer!)
-        
         nsView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-        
         let clipView = nsView.contentView
-        let documentHeight = textView.intrinsicContentSize.height
+        let docHeight = textView.intrinsicContentSize.height
         let visibleHeight = clipView.bounds.height
-        if documentHeight > visibleHeight {
-            let newOrigin = NSPoint(x: 0, y: documentHeight - visibleHeight)
-            clipView.scroll(to: newOrigin)
+        if docHeight > visibleHeight {
+            clipView.scroll(to: NSPoint(x: 0, y: docHeight - visibleHeight))
         }
     }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
     class Coordinator: NSObject, NSTextViewDelegate {
         var parent: RunTextField
         weak var textView: CustomTextView?
         weak var scrollView: NSScrollView?
-        private var isNavigatingHistory = false
-        
-        init(_ parent: RunTextField) {
-            self.parent = parent
-        }
-        
+
+        init(_ parent: RunTextField) { self.parent = parent }
+
         func textDidChange(_ notification: Notification) {
             guard let textView = textView else { return }
             parent.text = textView.string
-            
-            if let scrollView = scrollView {
-                scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
-            }
+            scrollView?.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         }
-        
+
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
             if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-                let event = NSApp.currentEvent
-                if let event = event, event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.command) {
+                if let event = NSApp.currentEvent,
+                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.command) {
                     insertNewline(textView)
                     return false
                 }
                 parent.onEnter()
                 return true
             }
-            
+
             if commandSelector == #selector(NSResponder.insertTab(_:)) {
                 parent.onTab()
                 return true
             }
-            
+
             if commandSelector == #selector(NSResponder.insertBacktab(_:)) {
-                insertTab(textView)
+                insertSpaces(textView)
                 return true
             }
-            
+
             if commandSelector == #selector(NSResponder.moveUp(_:)) {
-                let cursorPosition = textView.selectedRange.location
-                let text = textView.string as NSString
-                let lineRange = text.lineRange(for: NSRange(location: cursorPosition, length: 0))
-                
-                if cursorPosition == 0 || lineRange.location == 0 {
-                    if let command = parent.onUp() {
-                        isNavigatingHistory = true
-                        textView.string = command
-                        parent.text = command
-                        textView.selectedRange = NSRange(location: command.count, length: 0)
-                        isNavigatingHistory = false
+                let pos = textView.selectedRange.location
+                let ns = textView.string as NSString
+                let lineRange = ns.lineRange(for: NSRange(location: pos, length: 0))
+                if pos == 0 || lineRange.location == 0 {
+                    if let cmd = parent.onUp() {
+                        textView.string = cmd
+                        parent.text = cmd
+                        textView.selectedRange = NSRange(location: cmd.count, length: 0)
                     }
                     return true
                 }
                 return false
             }
-            
+
             if commandSelector == #selector(NSResponder.moveDown(_:)) {
-                let cursorPosition = textView.selectedRange.location
-                let text = textView.string as NSString
-                let lineRange = text.lineRange(for: NSRange(location: cursorPosition, length: 0))
-                
-                if cursorPosition == text.length || lineRange.location + lineRange.length == text.length {
-                    if let command = parent.onDown() {
-                        isNavigatingHistory = true
-                        textView.string = command
-                        parent.text = command
-                        textView.selectedRange = NSRange(location: command.count, length: 0)
-                        isNavigatingHistory = false
+                let pos = textView.selectedRange.location
+                let ns = textView.string as NSString
+                let lineRange = ns.lineRange(for: NSRange(location: pos, length: 0))
+                if pos == ns.length || lineRange.location + lineRange.length == ns.length {
+                    if let cmd = parent.onDown() {
+                        textView.string = cmd
+                        parent.text = cmd
+                        textView.selectedRange = NSRange(location: cmd.count, length: 0)
                     }
                     return true
                 }
                 return false
             }
-            
             return false
         }
-        
+
         private func insertNewline(_ textView: NSTextView) {
-            let currentText = textView.string as NSString
+            let ns = textView.string as NSString
             let range = textView.selectedRange
-            let newText = currentText.replacingCharacters(in: range, with: "\n")
+            let newText = ns.replacingCharacters(in: range, with: "\n")
             textView.string = newText
             textView.selectedRange = NSRange(location: range.location + 1, length: 0)
             parent.text = newText
         }
-        
-        private func insertTab(_ textView: NSTextView) {
-            let currentText = textView.string as NSString
+
+        private func insertSpaces(_ textView: NSTextView) {
+            let ns = textView.string as NSString
             let range = textView.selectedRange
-            let newText = currentText.replacingCharacters(in: range, with: "    ")
+            let newText = ns.replacingCharacters(in: range, with: "    ")
             textView.string = newText
             textView.selectedRange = NSRange(location: range.location + 4, length: 0)
             parent.text = newText
@@ -200,43 +167,32 @@ struct RunTextField: NSViewRepresentable {
     }
 }
 
-// MARK: - CustomTextView
-
 class CustomTextView: NSTextView {
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let pasteboardType = NSPasteboard.PasteboardType("NSFilenamesPboardType")
-        guard let board = sender.draggingPasteboard.propertyList(forType: pasteboardType) as? [String],
-              let path = board.first else { return false }
-        
-        let escaped = path.replacingOccurrences(of: " ", with: "\\ ")
-        
-        let currentText = self.string as NSString
+        let type = NSPasteboard.PasteboardType("NSFilenamesPboardType")
+        guard let paths = sender.draggingPasteboard.propertyList(forType: type) as? [String],
+              !paths.isEmpty else { return false }
+
+        // ✅ 多文件全部处理
+        let escaped = paths
+            .map { $0.replacingOccurrences(of: " ", with: "\\ ") }
+            .joined(separator: " ")
+
+        let ns = self.string as NSString
         let range = self.selectedRange
-        let newText = currentText.replacingCharacters(in: range, with: escaped)
+        let newText = ns.replacingCharacters(in: range, with: escaped)
         self.string = newText
-        let newCursor = range.location + (escaped as NSString).length
-        self.selectedRange = NSRange(location: newCursor, length: 0)
-        
+        self.selectedRange = NSRange(location: range.location + (escaped as NSString).length, length: 0)
         (delegate as? RunTextField.Coordinator)?.parent.text = newText
-        
         return true
     }
-    
-    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        return .copy
-    }
-    
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { .copy }
+
     override var intrinsicContentSize: NSSize {
-        guard let layoutManager = layoutManager,
-              let textContainer = textContainer else {
-            return super.intrinsicContentSize
-        }
-        
-        layoutManager.ensureLayout(for: textContainer)
-        let rect = layoutManager.usedRect(for: textContainer)
-        let height = max(rect.height + 10, 40)
-        let width = textContainer.containerSize.width
-        
-        return NSSize(width: width, height: height)
+        guard let lm = layoutManager, let tc = textContainer else { return super.intrinsicContentSize }
+        lm.ensureLayout(for: tc)
+        let rect = lm.usedRect(for: tc)
+        return NSSize(width: tc.containerSize.width, height: max(rect.height + 10, 40))
     }
 }

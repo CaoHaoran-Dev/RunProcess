@@ -12,20 +12,23 @@ internal import AppKit
 struct VisualEffectView: NSViewRepresentable {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-    
+    var isEmphasized: Bool = false
+
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = material
         view.blendingMode = blendingMode
         view.state = .active
+        view.isEmphasized = isEmphasized
         view.wantsLayer = true
         return view
     }
-    
+
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
         nsView.material = material
         nsView.blendingMode = blendingMode
         nsView.state = .active
+        nsView.isEmphasized = isEmphasized
     }
 }
 
@@ -39,7 +42,7 @@ struct AdaptiveGlassBackground: View {
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
     let cornerRadius: CGFloat
-    
+
     var body: some View {
         switch style {
         case .none:
@@ -51,12 +54,12 @@ struct AdaptiveGlassBackground: View {
             liquidGlass
         }
     }
-    
+
     private var frostedGlass: some View {
         VisualEffectView(material: material, blendingMode: blendingMode)
             .cornerRadius(cornerRadius)
     }
-    
+
     @ViewBuilder
     private var liquidGlass: some View {
         #if compiler(>=6.2)
@@ -77,23 +80,25 @@ struct AdaptiveWindowBackground: View {
     let style: AppearanceStyle
     let material: NSVisualEffectView.Material
     let blendingMode: NSVisualEffectView.BlendingMode
-    
+
     var body: some View {
         switch style {
         case .none:
+            // ⚠️ 纯色模式下让整个窗口有实体背景
             Color(NSColor.windowBackgroundColor)
         case .frostedGlass:
-            VisualEffectView(material: material, blendingMode: blendingMode)
+            // ✅ 用 .sidebar / .hudWindow 可见度更高；.underWindowBackground 在部分系统几乎透明
+            VisualEffectView(material: .sidebar, blendingMode: .behindWindow, isEmphasized: true)
         case .liquidGlass:
             #if compiler(>=6.2)
             if #available(macOS 26.0, *) {
                 Color.clear
                     .glassEffect(.regular, in: .rect(cornerRadius: 0))
             } else {
-                VisualEffectView(material: material, blendingMode: blendingMode)
+                VisualEffectView(material: .sidebar, blendingMode: .behindWindow, isEmphasized: true)
             }
             #else
-            VisualEffectView(material: material, blendingMode: blendingMode)
+            VisualEffectView(material: .sidebar, blendingMode: .behindWindow, isEmphasized: true)
             #endif
         }
     }

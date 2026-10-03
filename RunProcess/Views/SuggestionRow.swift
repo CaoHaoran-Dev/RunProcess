@@ -10,31 +10,34 @@ import SwiftUI
 struct SuggestionRow: View {
     let suggestion: Suggestion
     let isSelected: Bool
-    
+
     var body: some View {
         HStack(spacing: 10) {
-            // 类型图标（使用 SF Symbol）
             Image(systemName: suggestion.type.iconName)
                 .font(.system(size: 14))
-                .foregroundColor(isSelected ? .white : .secondary)
+                .foregroundColor(isSelected ? .white : iconColor)
                 .frame(width: 20, alignment: .center)
-            
-            // 命令文本
-            Text(suggestion.text)
-                .font(.system(size: 15, design: .monospaced))
-                .foregroundColor(isSelected ? .white : .primary)
-                .lineLimit(1)
-            
-            Spacer()
-            
-            // 如果是历史命令，显示频次
-            if suggestion.type == .history {
-                let count = suggestion.priority - 300
-                if count > 0 {
-                    Text("\(count)次")
-                        .font(.system(size: 11))
-                        .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(suggestion.text)
+                    .font(.system(size: 15, design: .monospaced))
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .lineLimit(1)
+
+                if let subtitle = suggestion.subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(isSelected ? .white.opacity(0.75) : .secondary.opacity(0.7))
+                        .lineLimit(1)
                 }
+            }
+
+            Spacer()
+
+            if suggestion.type == .history, let count = suggestion.historyCount, count > 0 {
+                Text("\(count)次")
+                    .font(.system(size: 11))
+                    .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
             }
         }
         .padding(.horizontal, 12)
@@ -44,5 +47,14 @@ struct SuggestionRow: View {
                 .fill(isSelected ? Color.accentColor : Color.clear)
         )
         .contentShape(Rectangle())
+    }
+
+    private var iconColor: Color {
+        switch suggestion.type {
+        case .alias: return .orange
+        case .history: return .secondary
+        case .command: return .secondary
+        case .path: return .secondary
+        }
     }
 }
