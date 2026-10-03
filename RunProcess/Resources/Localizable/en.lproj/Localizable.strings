@@ -3,51 +3,54 @@
   RunProcess
 */
 
-/* TextField */
+/* ========== TextField ========== */
 "textfield.placeholder" = "Enter command or drag file...";
 
-/* Toggle */
+/* ========== Toggle ========== */
 "sudo.toggle.label" = "Run as root";
+"sudo.toggle.locked.hint" = "Locked by \"Always run as root\" in Settings.";
 
-/* Buttons */
+/* ========== Buttons ========== */
 "button.cancel" = "Cancel";
 "button.cancel.tooltip" = "Cancel execution";
 "button.execute" = "Execute";
 "button.ok" = "OK";
 "button.confirm" = "Confirm";
 
-/* Menu */
+/* ========== Menu ========== */
 "menu.new.window" = "New Window";
 "menu.toggle.window" = "Show/Hide Window";
+"menu.history" = "Command History...";
 "menu.settings" = "Settings...";
 "menu.clear.history" = "Clear Command History";
+"menu.help" = "RunProcess Help";
 "menu.about" = "About RunProcess";
 "menu.quit" = "Quit";
 
-/* Alert */
+/* ========== Alert ========== */
 "alert.history.cleared.title" = "Cleared";
 "alert.history.cleared.message" = "All command history has been deleted";
 
-/* Hint */
+/* ========== Hint ========== */
 "hint.drag.file" = "Drop file";
 "hint.tab.completion" = "Tab complete";
 "hint.history.navigation" = "Up/Down History";
 "hint.hide.window" = "Cmd+W Hide";
 "hint.shift.enter" = "Shift+Enter Newline";
 
-/* Sudo Dialog */
+/* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "Administrator Privileges Required";
 "sudo.dialog.message" = "This command requires root privileges. Please enter your password.";
 "sudo.dialog.password.placeholder" = "Enter password";
 "sudo.dialog.security.hint" = "Password is used only in memory during execution and is never stored or logged";
 
-/* Output */
+/* ========== Output ========== */
 "output.success" = "Execution successful";
 "output.success.sudo" = "Execution successful (root privileges)";
 "output.cancelled" = "Execution cancelled";
 "output.clear.tooltip" = "Clear output";
 
-/* Errors */
+/* ========== Errors ========== */
 "error.interactive.command" = "Interactive commands (vim, python, top, etc.) are not supported. Please run this command in the system terminal.";
 "error.timeout" = "Command execution timed out (exceeded %@ seconds). For long-running commands, please run directly in the terminal.";
 "error.timeout.short" = "Command execution timed out (exceeded %@ seconds)";
@@ -55,48 +58,127 @@
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
 
-/* Window Titles */
+/* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess Settings";
 "window.about.title" = "About RunProcess";
+"window.help.title" = "RunProcess Help";
 "window.title.session" = "RunProcess - Session";
 
-/* Settings */
-"settings.section.shortcut" = "Shortcut";
-"settings.section.window" = "Window";
-"settings.section.appearance" = "Appearance";
-"settings.section.session" = "Session";
-"settings.section.workingDirectory" = "Working Directory";
-"settings.section.sudo" = "Sudo";
+/* ========== Settings — Categories ========== */
+"settings.category.general" = "General";
+"settings.category.appearance" = "Appearance";
+"settings.category.session" = "Session";
+"settings.category.workingDirectory" = "Working Directory";
+"settings.category.sudo" = "Sudo";
 
+/* ========== Settings — General ========== */
+"settings.shortcut.toggle" = "Show / Hide Window";
+"settings.shortcut.hint" = "Press the shortcut field to record a new key combination.";
 "settings.window.hideOnDeactivate" = "Hide windows when the app loses focus";
+"settings.section.language" = "Language";
+"settings.language.hint" = "To use a different language for RunProcess:\nSystem Settings → General → Language & Region → Applications";
 
+/* ========== Settings — Shortcut ========== */
+"shortcut.toggle.window.label" = "Show / Hide Window";
+
+/* ========== Settings — Appearance ========== */
 "settings.appearance.style" = "Style";
+"settings.appearance.hint" = "Liquid Glass requires macOS 26 or later.";
 "appearance.none" = "None";
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
+/* ========== Settings — Session ========== */
 "settings.session.enabled" = "Session Mode";
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
 
+/* ========== Settings — Working Directory ========== */
 "settings.workingDirectory.choose" = "Choose...";
 "settings.workingDirectory.reset" = "Reset";
 "settings.workingDirectory.invalid" = "The selected path does not exist. Falling back to your home directory.";
 "settings.workingDirectory.new.window.hint" = "Only affects newly opened windows.";
 "settings.workingDirectory.panel.prompt" = "Choose";
 
+/* ========== Settings — Sudo ========== */
+"settings.sudo.default" = "Always run as root";
+"settings.sudo.default.hint" = "When enabled, the main window's sudo toggle is locked on. Every command still asks for the password.";
 "settings.sudo.hint" = "Every sudo command requires entering your password. The password is used only in memory during execution and is never stored or logged.";
 
-"settings.section.language" = "Language";
-"settings.language.hint" = "To use a different language for RunProcess:\nSystem Settings → General → Language & Region → Applications";
-
-/* Shortcut */
-"shortcut.toggle.window.label" = "Show / Hide Window";
-
-/* Session */
+/* ========== Session ========== */
 "session.reset.notice" = "Session was reset";
 
-/* About */
+/* ========== History Search ========== */
+"history.search.placeholder" = "Search history...";
+"history.hint.navigate" = "navigate";
+"history.hint.apply" = "apply";
+"history.hint.close" = "close";
+
+/* ========== Help ========== */
+"help.search" = "Search";
+"help.home" = "Home";
+
+"help.topic.overview" = "Overview";
+"help.topic.shortcuts" = "Keyboard Shortcuts";
+"help.topic.tips" = "Command Tips";
+"help.topic.session" = "Session Mode";
+"help.topic.sudo" = "Running as Root";
+"help.topic.aliases" = "Aliases";
+"help.topic.appearance" = "Appearance";
+
+"help.overview.p1" = "RunProcess is a Spotlight-style command launcher for macOS. Type a shell command, press Enter, see the output.";
+"help.overview.p2" = "It lives in the menu bar (⚡) and stays out of your way until you need it.";
+"help.overview.quick" = "Quick Reference";
+
+"help.shortcuts.global" = "Global";
+"help.shortcuts.input" = "Input Field";
+"help.shortcuts.note" = "The show/hide hotkey can be changed in Settings.";
+
+"help.shortcut.toggle" = "Show / hide window globally";
+"help.shortcut.new" = "New window";
+"help.shortcut.history" = "Search command history";
+"help.shortcut.settings" = "Open settings";
+"help.shortcut.hide" = "Hide window";
+"help.shortcut.quit" = "Quit RunProcess";
+"help.shortcut.enter" = "Execute command";
+"help.shortcut.newline" = "Insert newline (multi-line input)";
+"help.shortcut.complete" = "Trigger completion popup";
+"help.shortcut.navigate" = "Navigate history by frecency";
+
+"help.tip.drag.title" = "Drag files from Finder";
+"help.tip.drag.desc" = "Drag any file into the input field. The path is inserted with proper escaping, ready to use as an argument.";
+
+"help.tip.app.title" = "Type a .app path";
+"help.tip.app.desc" = "If you type the path to an app bundle, RunProcess automatically prefixes it with open.";
+"help.tip.app.example" = "Pressing Enter on this path launches Safari.";
+
+"help.tip.multiline.title" = "Multi-line commands";
+"help.tip.multiline.desc" = "Press Shift+Enter to insert a newline, Enter to execute. Useful for multi-line shell scripts.";
+
+"help.session.desc" = "When enabled, each window keeps a long-running zsh process. Commands like cd and export persist across subsequent commands.";
+"help.session.bullet1" = "Only affects newly opened windows.";
+"help.session.bullet2" = "Window title shows the current directory.";
+"help.session.bullet3" = "If the shell crashes, it is rebuilt automatically.";
+"help.session.example" = "Example";
+"help.session.example.desc" = "After these two commands, the second one runs inside ~/Projects, not the original working directory.";
+
+"help.sudo.desc" = "Check \"Run as root\" before executing a command to receive a password prompt.";
+"help.sudo.bullet1" = "Every sudo command asks for the password again.";
+"help.sudo.bullet2" = "The password lives only in memory during that execution.";
+"help.sudo.bullet3" = "It is never stored or logged.";
+
+"help.aliases.desc" = "Aliases let you define short names for frequently used commands. They appear first in the completion popup.";
+"help.aliases.defaults" = "Built-in examples";
+"help.aliases.custom" = "Custom aliases";
+"help.aliases.custom.desc" = "Edit this JSON file to add or change aliases. Restart the app to apply changes.";
+
+"help.appearance.desc" = "Three appearance modes are available in Settings → Appearance:";
+"help.appearance.none" = "None — solid system window background.";
+"help.appearance.frosted" = "Frosted Glass — NSVisualEffectView blur.";
+"help.appearance.liquid" = "Liquid Glass — native material on macOS 26 and later.";
+"help.appearance.note" = "Liquid Glass is hidden on systems that do not support it.";
+
+/* ========== About ========== */
 "about.version" = "Version";
 "about.description" = "A Spotlight-style command launcher for macOS.";
 "about.repository" = "GitHub Repository";

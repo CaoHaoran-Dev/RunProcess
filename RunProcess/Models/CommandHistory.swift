@@ -7,152 +7,147 @@
 
 import Foundation
 
-/// 单条历史命令
 struct HistoryEntry: Codable {
     let command: String
     var count: Int
     var lastUsed: Date
-    
+
     init(command: String) {
         self.command = command
         self.count = 1
         self.lastUsed = Date()
     }
-    
-    /// 更新使用记录（频次+1，刷新时间）
+
     mutating func recordUsage() {
         count += 1
         lastUsed = Date()
     }
+
+    /// frecency：频次越高、越近，分越高
+    var frecency: Double {
+        let days = max(0, Date().timeIntervalSince(lastUsed) / 86400)
+        return Double(count) / (1.0 + days)
+    }
 }
 
-/// 历史命令管理器 - 负责读写和查询
 class CommandHistory {
+    static let shared = CommandHistory()
+
     private let maxEntries = 500
     private let fileURL: URL
     private var entries: [String: HistoryEntry] = [:]
     private let queue = DispatchQueue(label: "com.runprocess.history", qos: .background)
-    private let readWriteLock = NSLock()  // 保护 entries 的并发访问
-    
-    init() {
-        // 存储到 Application Support 目录
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    private let readWriteLock = NSLock()
+
+    private init() {
+        let appSupport = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask).first!
         let appDir = appSupport.appendingPathComponent("RunProcess")
-        
-        // 确保目录存在
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
-        
         fileURL = appDir.appendingPathComponent("history.json")
         load()
     }
-    
-    // MARK: - 私有方法
-    
-    /// 加载历史记录
+
     private func load() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
-        
         do {
             let data = try Data(contentsOf: fileURL)
             let decoded = try JSONDecoder().decode([String: HistoryEntry].self, from: data)
-            readWriteLock.lock()
-            entries = decoded
-            readWriteLock.unlock()
+            readWriteLock.lock(); entries = decoded; readWriteLock.unlock()
         } catch {
             print("⚠️ 加载历史记录失败: \(error)")
-            readWriteLock.lock()
-            entries = [:]
-            readWriteLock.unlock()
+            readWriteLock.lock(); entries = [:]; readWriteLock.unlock()
         }
     }
-    
-    /// 保存历史记录
-    private func save() {
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            self.readWriteLock.lock()
-            let entriesCopy = self.entries
-            self.readWriteLock.unlock()
-            
+
+    private func saveSync() {
+        readWriteLock.lock()
+        let copy = entries
+        readWriteLock.unlock()
+        queue.async { [fileURL] in
             do {
-                let data = try JSONEncoder().encode(entriesCopy)
-                try data.write(to: self.fileURL)
+                let data = try JSONEncoder().encode(copy)
+                try data.write(to: fileURL)
             } catch {
                 print("⚠️ 保存历史记录失败: \(error)")
             }
         }
     }
-    
-    // MARK: - 公开方法
-    
-    /// 记录一条命令执行
+
     func record(_ command: String) {
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            
-            self.readWriteLock.lock()
-            
-            if var existing = self.entries[trimmed] {
-                existing.recordUsage()
-                self.entries[trimmed] = existing
-            } else {
-                // 如果超过最大条目数，删除最旧的一条
-                if self.entries.count >= self.maxEntries {
-                    let oldest = self.entries.min { $0.value.lastUsed < $1.value.lastUsed }
-                    if let key = oldest?.key {
-                        self.entries.removeValue(forKey: key)
-                    }
-                }
-                self.entries[trimmed] = HistoryEntry(command: trimmed)
+
+        readWriteLock.lock()
+        if var existing = entries[trimmed] {
+            existing.recordUsage()
+            entries[trimmed] = existing
+        } else {
+            if entries.count >= maxEntries,
+               let oldest = entries.min(by: { $0.value.lastUsed < $1.value.lastUsed }) {
+                entries.removeValue(forKey: oldest.key)
             }
-            
-            self.readWriteLock.unlock()
-            self.save()
+            entries[trimmed] = HistoryEntry(command: trimmed)
         }
+        readWriteLock.unlock()
+        saveSync()
     }
-    
-    /// 查询匹配前缀的历史命令（按频次降序）
+
+    /// 按频次排序（旧接口）
     func query(prefix: String) -> [HistoryEntry] {
         guard !prefix.isEmpty else { return [] }
-        
-        readWriteLock.lock()
-        let entriesCopy = entries
-        readWriteLock.unlock()
-        
-        return entriesCopy.values
+        readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
+        return copy.values
             .filter { $0.command.hasPrefix(prefix) }
             .sorted { $0.count > $1.count }
-            .prefix(20)
-            .map { $0 }
+            .prefix(20).map { $0 }
     }
-    
-    /// 清空所有历史记录
-    func clearAll() {
-        queue.async { [weak self] in
-            guard let self = self else { return }
-            self.readWriteLock.lock()
-            self.entries.removeAll()
-            self.readWriteLock.unlock()
-            self.save()
+
+    /// 按 frecency 排序（新接口，补全用）
+    func queryByFrecency(prefix: String) -> [HistoryEntry] {
+        guard !prefix.isEmpty else { return [] }
+        readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
+        return copy.values
+            .filter { $0.command.hasPrefix(prefix) }
+            .sorted { $0.frecency > $1.frecency }
+            .prefix(20).map { $0 }
+    }
+
+    /// 模糊搜索（用于 ⌘R 历史面板）
+    func search(_ query: String) -> [HistoryEntry] {
+        readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
+        let q = query.lowercased()
+        guard !q.isEmpty else {
+            return copy.values.sorted { $0.frecency > $1.frecency }.prefix(50).map { $0 }
         }
+        return copy.values
+            .filter { fuzzyMatch(q, in: $0.command.lowercased()) }
+            .sorted { $0.frecency > $1.frecency }
+            .prefix(50).map { $0 }
     }
-    
-    /// 获取历史记录总数
+
+    private func fuzzyMatch(_ query: String, in text: String) -> Bool {
+        var qi = query.startIndex
+        for ch in text {
+            if qi < query.endIndex, ch == query[qi] {
+                qi = query.index(after: qi)
+            }
+        }
+        return qi == query.endIndex
+    }
+
+    func clearAll() {
+        readWriteLock.lock(); entries.removeAll(); readWriteLock.unlock()
+        saveSync()
+    }
+
     func count() -> Int {
-        readWriteLock.lock()
-        let count = entries.count
-        readWriteLock.unlock()
-        return count
+        readWriteLock.lock(); defer { readWriteLock.unlock() }
+        return entries.count
     }
-    
-    /// 获取所有历史命令（用于调试和历史导航）
+
     func getAll() -> [HistoryEntry] {
-        readWriteLock.lock()
-        let entriesCopy = entries
-        readWriteLock.unlock()
-        return Array(entriesCopy.values)
+        readWriteLock.lock(); defer { readWriteLock.unlock() }
+        return Array(entries.values)
     }
 }

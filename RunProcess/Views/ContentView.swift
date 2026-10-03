@@ -10,23 +10,21 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var viewModel: CommandViewModel
     @FocusState private var isFocused: Bool
-    
-    @State private var useSudo: Bool = false
-    @State private var showSudoPasswordDialog: Bool = false
-    @State private var sudoPassword: String = ""
+
+    // ✅ 用 AppSettings.defaultSudo 作为初始值
+    @State private var useSudo: Bool = AppSettings.defaultSudo
+    @State private var showSudoPasswordDialog = false
+    @State private var sudoPassword = ""
     @State private var outputHeight: CGFloat = 100
-    
-    /// 监听外观风格变化（设置面板改动后自动刷新）
-    @AppStorage("appearance.style") private var appearanceStyleRaw: String = AppSettings.appearanceStyleRaw.rawValue
-    
-    private var appearanceStyle: AppearanceStyle {
-        AppSettings.resolvedAppearanceStyle
-    }
-    
-    init(viewModel: CommandViewModel) {
-        self.viewModel = viewModel
-    }
-    
+
+    @AppStorage(AppSettings.Keys.appearanceStyle) private var appearanceStyleRaw: String = AppSettings.appearanceStyleRaw.rawValue
+    // ✅ 监听 defaultSudo，设置里改完主界面立刻同步
+    @AppStorage(AppSettings.Keys.defaultSudo) private var defaultSudo: Bool = false
+
+    private var appearanceStyle: AppearanceStyle { AppSettings.resolvedAppearanceStyle }
+
+    init(viewModel: CommandViewModel) { self.viewModel = viewModel }
+
     var body: some View {
         VStack(spacing: 12) {
             // 输入行
@@ -35,7 +33,7 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
                     .font(.system(size: 18))
                     .frame(height: 44)
-                
+
                 RunTextField(
                     text: $viewModel.inputText,
                     onTab: viewModel.requestSuggestions,
@@ -44,18 +42,13 @@ struct ContentView: View {
                     onDown: { viewModel.navigateHistoryDown() }
                 )
                 .font(.system(size: 18, design: .monospaced))
-                .textFieldStyle(.plain)
                 .focused($isFocused)
-                .onAppear {
-                    isFocused = true
-                }
+                .onAppear { isFocused = true }
                 .frame(height: 44)
                 .overlay(
-                    NSViewAccessor { nsView in
-                        viewModel.registerTextField(nsView)
-                    }
+                    NSViewAccessor { nsView in viewModel.registerTextField(nsView) }
                 )
-                
+
                 if viewModel.isRunning && viewModel.canCancel {
                     Button(action: viewModel.cancelExecution) {
                         Image(systemName: "stop.circle.fill")
@@ -64,9 +57,9 @@ struct ContentView: View {
                     }
                     .buttonStyle(.plain)
                     .frame(height: 44)
-                    .help(NSLocalizedString("button.cancel.tooltip", comment: "Cancel button tooltip"))
+                    .help(NSLocalizedString("button.cancel.tooltip", comment: ""))
                 }
-                
+
                 Button(action: executeCommand) {
                     Image(systemName: viewModel.isRunning ? "ellipsis.circle" : "return")
                         .foregroundColor(.secondary)
@@ -84,24 +77,27 @@ struct ContentView: View {
                     .fill(Color(NSColor.controlBackgroundColor).opacity(0.6))
                     .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             )
-            
+
             // 选项行
             HStack {
                 Toggle(isOn: $useSudo) {
                     HStack(spacing: 4) {
-                        Image(systemName: "lock.shield")
+                        Image(systemName: defaultSudo ? "lock.fill" : "lock.shield")
                             .font(.system(size: 12))
                             .foregroundColor(useSudo ? .orange : .secondary)
-                        Text(NSLocalizedString("sudo.toggle.label", comment: "Sudo toggle label"))
+                        Text(NSLocalizedString("sudo.toggle.label", comment: ""))
                             .font(.system(size: 12))
                             .foregroundColor(useSudo ? .orange : .secondary)
                     }
                 }
                 .toggleStyle(.checkbox)
-                .help(NSLocalizedString("sudo.toggle.label", comment: "Sudo toggle label"))
-                
+                .disabled(defaultSudo)
+                .help(defaultSudo
+                      ? NSLocalizedString("sudo.toggle.locked.hint", comment: "")
+                      : NSLocalizedString("sudo.toggle.label", comment: ""))
+
                 Spacer()
-                
+
                 if !viewModel.outputText.isEmpty {
                     Button(action: viewModel.clearOutput) {
                         Image(systemName: "xmark.circle.fill")
@@ -109,57 +105,72 @@ struct ContentView: View {
                             .foregroundColor(.secondary.opacity(0.5))
                     }
                     .buttonStyle(.plain)
-                    .help(NSLocalizedString("output.clear.tooltip", comment: "Clear output tooltip"))
+                    .help(NSLocalizedString("output.clear.tooltip", comment: ""))
+
+                    Button {
+                        let pb = NSPasteboard.general
+                        pb.clearContents()
+                        pb.setString(viewModel.outputText, forType: .string)
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary.opacity(0.7))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Copy output")
                 }
-                
+
                 if viewModel.isRunning {
-                    ProgressView()
-                        .controlSize(.small)
-                        .padding(.leading, 4)
+                    ProgressView().controlSize(.small).padding(.leading, 4)
                 }
             }
             .padding(.horizontal, 4)
-            
-            // 输出区域 / 底部提示
+            .onAppear {
+                if defaultSudo { useSudo = true }
+            }
+            .onChange(of: defaultSudo) { newValue in
+                if newValue { useSudo = true }
+            }
+
+            // 输出 / 提示
             if !viewModel.outputText.isEmpty {
                 ScrollView {
-                    Text(viewModel.outputText)
+                    Text(viewModel.outputAttributed)
                         .font(.system(size: 13, design: .monospaced))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)
                         .textSelection(.enabled)
                 }
-                .frame(minHeight: 60, maxHeight: 200)
-                .transition(.opacity)
+                .frame(height: outputHeight)
                 .background(
                     GeometryReader { _ in
                         Color.clear
                             .onChange(of: viewModel.outputText) { _ in
                                 let lines = viewModel.outputText.components(separatedBy: "\n").count
-                                let newHeight = min(max(CGFloat(lines) * 20 + 20, 60), 200)
+                                let newHeight = min(max(CGFloat(lines) * 20 + 20, 60), 220)
                                 withAnimation(.easeInOut(duration: 0.15)) {
                                     outputHeight = newHeight
                                 }
                             }
                             .onAppear {
                                 let lines = viewModel.outputText.components(separatedBy: "\n").count
-                                outputHeight = min(max(CGFloat(lines) * 20 + 20, 60), 200)
+                                outputHeight = min(max(CGFloat(lines) * 20 + 20, 60), 220)
                             }
                     }
                 )
-                .frame(height: outputHeight)
+                .transition(.opacity)
             } else {
                 HStack(spacing: 16) {
-                    Text(NSLocalizedString("hint.drag.file", comment: "Drag file hint"))
+                    Text(NSLocalizedString("hint.drag.file", comment: ""))
                     Text("·")
-                    Text(NSLocalizedString("hint.tab.completion", comment: "Tab completion hint"))
+                    Text(NSLocalizedString("hint.tab.completion", comment: ""))
                     Text("·")
-                    Text(NSLocalizedString("hint.history.navigation", comment: "History navigation hint"))
+                    Text(NSLocalizedString("hint.history.navigation", comment: ""))
                     Text("·")
-                    Text(NSLocalizedString("hint.hide.window", comment: "Hide window hint"))
+                    Text(NSLocalizedString("hint.hide.window", comment: ""))
                     Text("·")
-                    Text(NSLocalizedString("hint.shift.enter", comment: "Shift+Enter hint"))
+                    Text(NSLocalizedString("hint.shift.enter", comment: ""))
                 }
                 .font(.system(size: 11))
                 .foregroundColor(.secondary.opacity(0.6))
@@ -168,7 +179,8 @@ struct ContentView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: viewModel.outputText.isEmpty ? 160 : 240 + (outputHeight - 100))
+        .frame(width: 520)
+        .frame(height: viewModel.outputText.isEmpty ? 140 : 120 + outputHeight)
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
@@ -177,33 +189,24 @@ struct ContentView: View {
             )
             .ignoresSafeArea()
         )
-        .onExitCommand {
-            viewModel.closeSuggestions()
-        }
+        .onExitCommand { viewModel.closeSuggestions() }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("FocusTextField"))) { _ in
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                isFocused = true
-            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { isFocused = true }
         }
         .sheet(isPresented: $showSudoPasswordDialog) {
             SudoPasswordDialog(
                 password: $sudoPassword,
-                onConfirm: {
-                    executeWithSudo()
-                },
-                onCancel: {
-                    showSudoPasswordDialog = false
-                    sudoPassword = ""
-                }
+                onConfirm: { executeWithSudo() },
+                onCancel: { showSudoPasswordDialog = false; sudoPassword = "" }
             )
         }
+        .sheet(isPresented: $viewModel.showHistoryPanel) {
+            HistorySearchView(viewModel: viewModel)
+        }
     }
-    
-    // MARK: - 执行
-    
+
     func executeCommand() {
         guard !viewModel.inputText.isEmpty else { return }
-        
         if useSudo {
             showSudoPasswordDialog = true
             sudoPassword = ""
@@ -213,13 +216,11 @@ struct ContentView: View {
             }
         }
     }
-    
+
     func executeWithSudo() {
         showSudoPasswordDialog = false
-        
         let password = sudoPassword
         sudoPassword = ""
-        
         viewModel.executeCommand(useSudo: true, password: password) { _ in
             viewModel.closeSuggestions()
         }
@@ -232,61 +233,47 @@ struct SudoPasswordDialog: View {
     @Binding var password: String
     let onConfirm: () -> Void
     let onCancel: () -> Void
-    
-    @FocusState private var isPasswordFieldFocused: Bool
-    
+
+    @FocusState private var isFocused: Bool
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "lock.shield.fill")
                     .foregroundColor(.orange)
                     .font(.system(size: 18))
-                Text(NSLocalizedString("sudo.dialog.title", comment: "Sudo dialog title"))
+                Text(NSLocalizedString("sudo.dialog.title", comment: ""))
                     .font(.headline)
                 Spacer()
             }
             .padding(.horizontal, 4)
-            
-            Text(NSLocalizedString("sudo.dialog.message", comment: "Sudo dialog message"))
+
+            Text(NSLocalizedString("sudo.dialog.message", comment: ""))
                 .font(.system(size: 13))
                 .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
-            SecureField(
-                NSLocalizedString("sudo.dialog.password.placeholder", comment: "Password placeholder"),
-                text: $password
-            )
-            .textFieldStyle(.roundedBorder)
-            .focused($isPasswordFieldFocused)
-            .onAppear {
-                isPasswordFieldFocused = true
-            }
-            .onSubmit {
-                if !password.isEmpty {
-                    onConfirm()
-                }
-            }
-            
+
+            SecureField(NSLocalizedString("sudo.dialog.password.placeholder", comment: ""), text: $password)
+                .textFieldStyle(.roundedBorder)
+                .focused($isFocused)
+                .onAppear { isFocused = true }
+                .onSubmit { if !password.isEmpty { onConfirm() } }
+
             HStack {
                 Image(systemName: "info.circle")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.6))
-                Text(NSLocalizedString("sudo.dialog.security.hint", comment: "Security hint"))
+                Text(NSLocalizedString("sudo.dialog.security.hint", comment: ""))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.6))
                 Spacer()
             }
-            
+
             HStack(spacing: 12) {
-                Button(NSLocalizedString("button.cancel", comment: "Cancel button")) {
-                    onCancel()
-                }
-                .keyboardShortcut(.escape)
-                
-                Button(NSLocalizedString("button.execute", comment: "Execute button")) {
-                    if !password.isEmpty {
-                        onConfirm()
-                    }
+                Button(NSLocalizedString("button.cancel", comment: "")) { onCancel() }
+                    .keyboardShortcut(.escape)
+                Button(NSLocalizedString("button.execute", comment: "")) {
+                    if !password.isEmpty { onConfirm() }
                 }
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
@@ -307,18 +294,14 @@ struct SudoPasswordDialog: View {
     }
 }
 
-// MARK: - Helper Views
+// MARK: - Helper
 
 struct NSViewAccessor: NSViewRepresentable {
     let callback: (NSView) -> Void
-    
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
-        DispatchQueue.main.async {
-            callback(view)
-        }
+        DispatchQueue.main.async { callback(view) }
         return view
     }
-    
     func updateNSView(_ nsView: NSView, context: Context) {}
 }

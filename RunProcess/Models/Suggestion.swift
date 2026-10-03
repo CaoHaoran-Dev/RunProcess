@@ -7,52 +7,51 @@
 
 import Foundation
 
-/// 补全建议项
 struct Suggestion: Identifiable, Equatable, Sendable {
     let id = UUID()
     let text: String
     let type: SuggestionType
+    let subtitle: String?
+    let historyCount: Int?
     let priority: Int
-    
+
     enum SuggestionType: String, Sendable {
+        case alias = "wand.and.stars"
         case history = "clock.arrow.circlepath"
         case command = "terminal"
         case path = "folder"
-        
-        var iconName: String {
-            return self.rawValue
-        }
+
+        var iconName: String { rawValue }
     }
-    
-    init(text: String, type: SuggestionType) {
+
+    init(text: String, type: SuggestionType, subtitle: String? = nil) {
         self.text = text
         self.type = type
+        self.subtitle = subtitle
+        self.historyCount = nil
         switch type {
-        case .history:
-            self.priority = 300
-        case .command:
-            self.priority = 200
-        case .path:
-            self.priority = 100
+        case .alias:   self.priority = 500
+        case .history: self.priority = 300
+        case .command: self.priority = 200
+        case .path:    self.priority = 100
         }
     }
-    
+
     init(text: String, type: SuggestionType, historyCount: Int) {
         self.text = text
         self.type = type
-        let safeCount = min(max(historyCount, 0), 100)
+        self.subtitle = nil
+        let safe = min(max(historyCount, 0), 100)
+        self.historyCount = safe
         switch type {
-        case .history:
-            self.priority = 300 + safeCount
-        case .command:
-            self.priority = 200
-        case .path:
-            self.priority = 100
+        case .alias:   self.priority = 500
+        case .history: self.priority = 300 + safe
+        case .command: self.priority = 200
+        case .path:    self.priority = 100
         }
     }
-    
-    // 显式实现 Equatable，标记为 nonisolated 避免 MainActor 隔离问题
+
     nonisolated static func == (lhs: Suggestion, rhs: Suggestion) -> Bool {
-        return lhs.text == rhs.text && lhs.type == rhs.type
+        lhs.text == rhs.text && lhs.type == rhs.type
     }
 }

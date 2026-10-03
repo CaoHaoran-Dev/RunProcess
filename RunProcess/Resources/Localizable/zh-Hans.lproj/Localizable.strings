@@ -3,102 +3,184 @@
   RunProcess
 */
 
-/* TextField */
+/* ========== TextField ========== */
 "textfield.placeholder" = "输入命令或拖入文件...";
 
-/* Toggle */
+/* ========== Toggle ========== */
 "sudo.toggle.label" = "以 root 执行";
+"sudo.toggle.locked.hint" = "已在设置的\"默认以 root 执行\"中锁定。";
 
-/* Buttons */
+/* ========== Buttons ========== */
 "button.cancel" = "取消";
 "button.cancel.tooltip" = "取消执行";
 "button.execute" = "执行";
-"button.ok" = "确定";
+"button.ok" = "好";
 "button.confirm" = "确认";
 
-/* Menu */
+/* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
 "menu.toggle.window" = "显示/隐藏窗口";
+"menu.history" = "命令历史...";
 "menu.settings" = "设置...";
-"menu.clear.history" = "清空历史命令";
+"menu.clear.history" = "清除命令历史";
+"menu.help" = "RunProcess 帮助";
 "menu.about" = "关于 RunProcess";
 "menu.quit" = "退出";
 
-/* Alert */
-"alert.history.cleared.title" = "已清空";
-"alert.history.cleared.message" = "所有历史命令已删除";
+/* ========== Alert ========== */
+"alert.history.cleared.title" = "已清除";
+"alert.history.cleared.message" = "所有命令历史已删除";
 
-/* Hint */
+/* ========== Hint ========== */
 "hint.drag.file" = "拖入文件";
 "hint.tab.completion" = "Tab 补全";
-"hint.history.navigation" = "↑↓ 历史";
-"hint.hide.window" = "⌘W 隐藏";
-"hint.shift.enter" = "Shift↩ 换行";
+"hint.history.navigation" = "上下键历史";
+"hint.hide.window" = "Cmd+W 隐藏";
+"hint.shift.enter" = "Shift+Enter 换行";
 
-/* Sudo Dialog */
+/* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "需要管理员权限";
-"sudo.dialog.message" = "执行此命令需要 root 权限，请输入密码";
+"sudo.dialog.message" = "此命令需要 root 权限，请输入密码。";
 "sudo.dialog.password.placeholder" = "输入密码";
-"sudo.dialog.security.hint" = "密码仅在当次执行期间存在于内存中，不会被存储或记录";
+"sudo.dialog.security.hint" = "密码仅在执行期间存在于内存，不存储不记录";
 
-/* Output */
-"output.success" = "✅ 执行成功";
-"output.success.sudo" = "✅ 执行成功（root 权限）";
-"output.cancelled" = "⏹️ 已取消执行";
-"output.clear.tooltip" = "清空输出";
+/* ========== Output ========== */
+"output.success" = "执行成功";
+"output.success.sudo" = "执行成功（root 权限）";
+"output.cancelled" = "已取消执行";
+"output.clear.tooltip" = "清除输出";
 
-/* Errors */
-"error.interactive.command" = "⚠️ 交互式命令（如 vim、python、top 等）暂不支持\n💡 请在系统终端中执行此命令";
-"error.timeout" = "⏰ 命令执行超时（超过 %@ 秒）\n💡 如需执行耗时命令，请直接在终端中运行";
-"error.timeout.short" = "⏰ 命令执行超时（超过 %@ 秒）";
-"error.sudo.wrong.password" = "❌ 密码错误\n💡 请检查密码后重试";
+/* ========== Errors ========== */
+"error.interactive.command" = "不支持交互式命令（vim、python、top 等），请在系统终端中运行。";
+"error.timeout" = "命令执行超时（超过 %@ 秒）。长时间运行的命令请直接在终端中执行。";
+"error.timeout.short" = "命令执行超时（超过 %@ 秒）";
+"error.sudo.wrong.password" = "密码错误，请检查后重试。";
 "error.sudo.missing.password" = "sudo 命令需要密码。";
-"error.exit.code" = "命令执行失败（退出码: %ld）";
+"error.exit.code" = "命令执行失败（退出码：%ld）";
 
-/* Window Titles */
+/* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess 设置";
 "window.about.title" = "关于 RunProcess";
+"window.help.title" = "RunProcess 帮助";
 "window.title.session" = "RunProcess - 会话模式";
 
-/* Settings */
-"settings.section.shortcut" = "快捷键";
-"settings.section.window" = "窗口";
-"settings.section.appearance" = "外观";
-"settings.section.session" = "会话";
-"settings.section.workingDirectory" = "默认工作目录";
-"settings.section.sudo" = "Sudo";
+/* ========== Settings — Categories ========== */
+"settings.category.general" = "通用";
+"settings.category.appearance" = "外观";
+"settings.category.session" = "会话";
+"settings.category.workingDirectory" = "工作目录";
+"settings.category.sudo" = "Sudo";
 
-"settings.window.hideOnDeactivate" = "应用失去焦点时自动隐藏窗口";
+/* ========== Settings — General ========== */
+"settings.shortcut.toggle" = "显示 / 隐藏窗口";
+"settings.shortcut.hint" = "点击快捷键区域即可录制新的组合键。";
+"settings.window.hideOnDeactivate" = "应用失去焦点时隐藏窗口";
+"settings.section.language" = "语言";
+"settings.language.hint" = "若要单独为 RunProcess 设置语言：\n系统设置 → 通用 → 语言与地区 → 应用程序";
 
-"settings.appearance.style" = "风格";
+/* ========== Settings — Shortcut ========== */
+"shortcut.toggle.window.label" = "显示 / 隐藏窗口";
+
+/* ========== Settings — Appearance ========== */
+"settings.appearance.style" = "样式";
+"settings.appearance.hint" = "液态玻璃需要 macOS 26 或更高版本。";
 "appearance.none" = "无";
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液态玻璃";
 
+/* ========== Settings — Session ========== */
 "settings.session.enabled" = "会话模式";
-"settings.session.description" = "持久 shell，cd / export 跨命令生效";
+"settings.session.description" = "持久 shell；cd / export 跨命令生效";
 "settings.session.new.window.hint" = "仅影响新打开的窗口。";
 
+/* ========== Settings — Working Directory ========== */
 "settings.workingDirectory.choose" = "选择...";
-"settings.workingDirectory.reset" = "恢复默认";
-"settings.workingDirectory.invalid" = "所选路径不存在，已回退到用户主目录。";
+"settings.workingDirectory.reset" = "重置";
+"settings.workingDirectory.invalid" = "所选路径不存在，将回退到用户主目录。";
 "settings.workingDirectory.new.window.hint" = "仅影响新打开的窗口。";
 "settings.workingDirectory.panel.prompt" = "选择";
 
-"settings.sudo.hint" = "每次执行 sudo 命令都需要输入密码。密码仅在当次执行期间存在于内存中，不会被存储或记录。";
+/* ========== Settings — Sudo ========== */
+"settings.sudo.default" = "默认以 root 执行";
+"settings.sudo.default.hint" = "开启后，主界面的 sudo 开关固定为开且不可改。每次执行仍会弹出密码框。";
+"settings.sudo.hint" = "每次 sudo 命令都需要重新输入密码。密码仅在执行期间存在于内存，不存储不记录。";
 
-"settings.section.language" = "语言";
-"settings.language.hint" = "为 RunProcess 单独选择语言：\n系统设置 → 通用 → 语言与地区 → 应用程序";
-
-/* Shortcut */
-"shortcut.toggle.window.label" = "显示 / 隐藏窗口";
-
-/* Session */
+/* ========== Session ========== */
 "session.reset.notice" = "会话已重置";
 
-/* About */
+/* ========== History Search ========== */
+"history.search.placeholder" = "搜索历史...";
+"history.hint.navigate" = "选择";
+"history.hint.apply" = "应用";
+"history.hint.close" = "关闭";
+
+/* ========== Help ========== */
+"help.search" = "搜索";
+"help.home" = "主页";
+
+"help.topic.overview" = "概述";
+"help.topic.shortcuts" = "键盘快捷键";
+"help.topic.tips" = "命令技巧";
+"help.topic.session" = "会话模式";
+"help.topic.sudo" = "以 root 执行";
+"help.topic.aliases" = "别名";
+"help.topic.appearance" = "外观";
+
+"help.overview.p1" = "RunProcess 是 macOS 上的 Spotlight 风格命令启动器。输入 shell 命令，按回车执行，查看输出。";
+"help.overview.p2" = "它常驻菜单栏（⚡），不打扰你，需要时随叫随到。";
+"help.overview.quick" = "速查";
+
+"help.shortcuts.global" = "全局";
+"help.shortcuts.input" = "输入框";
+"help.shortcuts.note" = "显示 / 隐藏热键可在设置中自定义。";
+
+"help.shortcut.toggle" = "全局显示 / 隐藏窗口";
+"help.shortcut.new" = "新建窗口";
+"help.shortcut.history" = "搜索命令历史";
+"help.shortcut.settings" = "打开设置";
+"help.shortcut.hide" = "隐藏窗口";
+"help.shortcut.quit" = "退出 RunProcess";
+"help.shortcut.enter" = "执行命令";
+"help.shortcut.newline" = "插入换行（多行输入）";
+"help.shortcut.complete" = "呼出补全浮窗";
+"help.shortcut.navigate" = "按 frecency 浏览历史";
+
+"help.tip.drag.title" = "从 Finder 拖入文件";
+"help.tip.drag.desc" = "把任意文件拖进输入框，路径会自动转义并插入，可直接作为参数使用。";
+
+"help.tip.app.title" = "输入 .app 路径";
+"help.tip.app.desc" = "输入应用包路径时，RunProcess 会自动加 open 前缀。";
+"help.tip.app.example" = "在这个路径上按回车会启动 Safari。";
+
+"help.tip.multiline.title" = "多行命令";
+"help.tip.multiline.desc" = "Shift+Enter 换行，Enter 执行。适合多行 shell 脚本。";
+
+"help.session.desc" = "开启后，每个窗口持有长驻 zsh 进程，cd、export 等命令会在后续命令中生效。";
+"help.session.bullet1" = "仅影响新打开的窗口。";
+"help.session.bullet2" = "窗口标题显示当前目录。";
+"help.session.bullet3" = "shell 崩溃后会自动重建。";
+"help.session.example" = "示例";
+"help.session.example.desc" = "执行这两条命令后，第二条在 ~/Projects 里运行，而不是原始工作目录。";
+
+"help.sudo.desc" = "执行前勾选\"以 root 执行\"会弹出密码框。";
+"help.sudo.bullet1" = "每次 sudo 命令都需要重新输入密码。";
+"help.sudo.bullet2" = "密码仅在当次执行期间存在于内存。";
+"help.sudo.bullet3" = "不存储、不记录。";
+
+"help.aliases.desc" = "别名让你为常用命令定义短名称。它们在补全浮窗里排在最前。";
+"help.aliases.defaults" = "内置示例";
+"help.aliases.custom" = "自定义别名";
+"help.aliases.custom.desc" = "编辑这个 JSON 文件来增删别名。重启应用后生效。";
+
+"help.appearance.desc" = "设置 → 外观里有三种外观模式：";
+"help.appearance.none" = "无 —— 系统窗口纯色背景。";
+"help.appearance.frosted" = "毛玻璃 —— NSVisualEffectView 模糊。";
+"help.appearance.liquid" = "液态玻璃 —— macOS 26 及以上的原生材质。";
+"help.appearance.note" = "不支持的系统上\"液态玻璃\"选项会被隐藏。";
+
+/* ========== About ========== */
 "about.version" = "版本";
-"about.description" = "给 macOS 做的仿 Windows 运行框，常驻菜单栏。";
+"about.description" = "Spotlight 风格的 macOS 命令启动器。";
 "about.repository" = "GitHub 仓库";
 "about.license" = "MIT 许可证";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";

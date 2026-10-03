@@ -3,102 +3,184 @@
   RunProcess
 */
 
-/* TextField */
-"textfield.placeholder" = "輸入命令或拖入檔案...";
+/* ========== TextField ========== */
+"textfield.placeholder" = "輸入指令或拖入檔案...";
 
-/* Toggle */
+/* ========== Toggle ========== */
 "sudo.toggle.label" = "以 root 執行";
+"sudo.toggle.locked.hint" = "已在設定的「預設以 root 執行」中鎖定。";
 
-/* Buttons */
+/* ========== Buttons ========== */
 "button.cancel" = "取消";
 "button.cancel.tooltip" = "取消執行";
 "button.execute" = "執行";
-"button.ok" = "確定";
+"button.ok" = "好";
 "button.confirm" = "確認";
 
-/* Menu */
+/* ========== Menu ========== */
 "menu.new.window" = "新增視窗";
 "menu.toggle.window" = "顯示/隱藏視窗";
+"menu.history" = "指令記錄...";
 "menu.settings" = "設定...";
-"menu.clear.history" = "清除歷史命令";
+"menu.clear.history" = "清除指令記錄";
+"menu.help" = "RunProcess 輔助說明";
 "menu.about" = "關於 RunProcess";
 "menu.quit" = "結束";
 
-/* Alert */
+/* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
-"alert.history.cleared.message" = "所有歷史命令已刪除";
+"alert.history.cleared.message" = "所有指令記錄已刪除";
 
-/* Hint */
+/* ========== Hint ========== */
 "hint.drag.file" = "拖入檔案";
 "hint.tab.completion" = "Tab 補全";
-"hint.history.navigation" = "↑↓ 歷史";
-"hint.hide.window" = "⌘W 隱藏";
-"hint.shift.enter" = "Shift↩ 換行";
+"hint.history.navigation" = "上下鍵記錄";
+"hint.hide.window" = "Cmd+W 隱藏";
+"hint.shift.enter" = "Shift+Enter 換行";
 
-/* Sudo Dialog */
-"sudo.dialog.title" = "需要管理員權限";
-"sudo.dialog.message" = "執行此命令需要 root 權限，請輸入密碼";
+/* ========== Sudo Dialog ========== */
+"sudo.dialog.title" = "需要管理者權限";
+"sudo.dialog.message" = "此指令需要 root 權限，請輸入密碼。";
 "sudo.dialog.password.placeholder" = "輸入密碼";
-"sudo.dialog.security.hint" = "密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄";
+"sudo.dialog.security.hint" = "密碼僅在執行期間存在於記憶體，不儲存不記錄";
 
-/* Output */
-"output.success" = "✅ 執行成功";
-"output.success.sudo" = "✅ 執行成功（root 權限）";
-"output.cancelled" = "⏹️ 已取消執行";
+/* ========== Output ========== */
+"output.success" = "執行成功";
+"output.success.sudo" = "執行成功（root 權限）";
+"output.cancelled" = "已取消執行";
 "output.clear.tooltip" = "清除輸出";
 
-/* Errors */
-"error.interactive.command" = "⚠️ 互動式命令（如 vim、python、top 等）暫不支援\n💡 請在系統終端機中執行此命令";
-"error.timeout" = "⏰ 命令執行逾時（超過 %@ 秒）\n💡 如需執行耗時命令，請直接在終端機中執行";
-"error.timeout.short" = "⏰ 命令執行逾時（超過 %@ 秒）";
-"error.sudo.wrong.password" = "❌ 密碼錯誤\n💡 請檢查密碼後重試";
-"error.sudo.missing.password" = "sudo 命令需要密碼。";
-"error.exit.code" = "命令執行失敗（結束碼: %ld）";
+/* ========== Errors ========== */
+"error.interactive.command" = "不支援互動式指令（vim、python、top 等），請在系統終端機中執行。";
+"error.timeout" = "指令執行逾時（超過 %@ 秒）。長時間執行的指令請直接在終端機中執行。";
+"error.timeout.short" = "指令執行逾時（超過 %@ 秒）";
+"error.sudo.wrong.password" = "密碼錯誤，請檢查後重試。";
+"error.sudo.missing.password" = "sudo 指令需要密碼。";
+"error.exit.code" = "指令執行失敗（結束碼：%ld）";
 
-/* Window Titles */
+/* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess 設定";
 "window.about.title" = "關於 RunProcess";
+"window.help.title" = "RunProcess 輔助說明";
 "window.title.session" = "RunProcess - 工作階段模式";
 
-/* Settings */
-"settings.section.shortcut" = "快速鍵";
-"settings.section.window" = "視窗";
-"settings.section.appearance" = "外觀";
-"settings.section.session" = "工作階段";
-"settings.section.workingDirectory" = "預設工作目錄";
-"settings.section.sudo" = "Sudo";
+/* ========== Settings — Categories ========== */
+"settings.category.general" = "一般";
+"settings.category.appearance" = "外觀";
+"settings.category.session" = "工作階段";
+"settings.category.workingDirectory" = "工作目錄";
+"settings.category.sudo" = "Sudo";
 
-"settings.window.hideOnDeactivate" = "應用程式失去焦點時自動隱藏視窗";
+/* ========== Settings — General ========== */
+"settings.shortcut.toggle" = "顯示 / 隱藏視窗";
+"settings.shortcut.hint" = "點擊快速鍵欄位即可錄製新的組合鍵。";
+"settings.window.hideOnDeactivate" = "應用程式失去焦點時隱藏視窗";
+"settings.section.language" = "語言";
+"settings.language.hint" = "若要單獨為 RunProcess 設定語言：\n系統設定 → 一般 → 語言與地區 → 應用程式";
 
-"settings.appearance.style" = "風格";
+/* ========== Settings — Shortcut ========== */
+"shortcut.toggle.window.label" = "顯示 / 隱藏視窗";
+
+/* ========== Settings — Appearance ========== */
+"settings.appearance.style" = "樣式";
+"settings.appearance.hint" = "液態玻璃需要 macOS 26 或以上版本。";
 "appearance.none" = "無";
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液態玻璃";
 
+/* ========== Settings — Session ========== */
 "settings.session.enabled" = "工作階段模式";
-"settings.session.description" = "持久 shell，cd / export 跨命令生效";
+"settings.session.description" = "長駐 shell；cd / export 跨指令生效";
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
 
+/* ========== Settings — Working Directory ========== */
 "settings.workingDirectory.choose" = "選擇...";
-"settings.workingDirectory.reset" = "恢復預設";
-"settings.workingDirectory.invalid" = "所選路徑不存在，已退回使用者主目錄。";
+"settings.workingDirectory.reset" = "重設";
+"settings.workingDirectory.invalid" = "所選路徑不存在，將回退到使用者主目錄。";
 "settings.workingDirectory.new.window.hint" = "僅影響新開啟的視窗。";
 "settings.workingDirectory.panel.prompt" = "選擇";
 
-"settings.sudo.hint" = "每次執行 sudo 命令都需要輸入密碼。密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄。";
+/* ========== Settings — Sudo ========== */
+"settings.sudo.default" = "預設以 root 執行";
+"settings.sudo.default.hint" = "開啟後，主視窗的 sudo 開關固定為開且不可改。每次執行仍會彈出密碼框。";
+"settings.sudo.hint" = "每次 sudo 指令都需要重新輸入密碼。密碼僅在執行期間存在於記憶體，不儲存不記錄。";
 
-"settings.section.language" = "語言";
-"settings.language.hint" = "為 RunProcess 單獨選擇語言：\n系統設定 → 一般 → 語言與地區 → 應用程式";
+/* ========== Session ========== */
+"session.reset.notice" = "工作階段已重設";
 
-/* Shortcut */
-"shortcut.toggle.window.label" = "顯示 / 隱藏視窗";
+/* ========== History Search ========== */
+"history.search.placeholder" = "搜尋記錄...";
+"history.hint.navigate" = "選擇";
+"history.hint.apply" = "套用";
+"history.hint.close" = "關閉";
 
-/* Session */
-"session.reset.notice" = "工作階段已重置";
+/* ========== Help ========== */
+"help.search" = "搜尋";
+"help.home" = "首頁";
 
-/* About */
+"help.topic.overview" = "總覽";
+"help.topic.shortcuts" = "鍵盤快速鍵";
+"help.topic.tips" = "指令技巧";
+"help.topic.session" = "工作階段模式";
+"help.topic.sudo" = "以 root 執行";
+"help.topic.aliases" = "別名";
+"help.topic.appearance" = "外觀";
+
+"help.overview.p1" = "RunProcess 是 macOS 上的 Spotlight 風格指令啟動器。輸入 shell 指令，按 Enter 執行，查看輸出。";
+"help.overview.p2" = "它常駐選單列（⚡），不打擾你，需要時隨叫隨到。";
+"help.overview.quick" = "速查";
+
+"help.shortcuts.global" = "全域";
+"help.shortcuts.input" = "輸入框";
+"help.shortcuts.note" = "顯示 / 隱藏快速鍵可在設定中自訂。";
+
+"help.shortcut.toggle" = "全域顯示 / 隱藏視窗";
+"help.shortcut.new" = "新增視窗";
+"help.shortcut.history" = "搜尋指令記錄";
+"help.shortcut.settings" = "開啟設定";
+"help.shortcut.hide" = "隱藏視窗";
+"help.shortcut.quit" = "結束 RunProcess";
+"help.shortcut.enter" = "執行指令";
+"help.shortcut.newline" = "插入換行（多行輸入）";
+"help.shortcut.complete" = "呼出補全浮窗";
+"help.shortcut.navigate" = "依 frecency 瀏覽記錄";
+
+"help.tip.drag.title" = "從 Finder 拖入檔案";
+"help.tip.drag.desc" = "把任意檔案拖進輸入框，路徑會自動轉義並插入，可直接作為參數使用。";
+
+"help.tip.app.title" = "輸入 .app 路徑";
+"help.tip.app.desc" = "輸入應用程式套件路徑時，RunProcess 會自動加上 open 前綴。";
+"help.tip.app.example" = "在這個路徑上按 Enter 會啟動 Safari。";
+
+"help.tip.multiline.title" = "多行指令";
+"help.tip.multiline.desc" = "Shift+Enter 換行，Enter 執行。適合多行 shell 指令稿。";
+
+"help.session.desc" = "開啟後，每個視窗持有長駐 zsh 行程，cd、export 等指令會在後續指令中生效。";
+"help.session.bullet1" = "僅影響新開啟的視窗。";
+"help.session.bullet2" = "視窗標題顯示目前目錄。";
+"help.session.bullet3" = "shell 崩潰後會自動重建。";
+"help.session.example" = "範例";
+"help.session.example.desc" = "執行這兩條指令後，第二條在 ~/Projects 裡執行，而不是原始工作目錄。";
+
+"help.sudo.desc" = "執行前勾選「以 root 執行」會彈出密碼框。";
+"help.sudo.bullet1" = "每次 sudo 指令都需要重新輸入密碼。";
+"help.sudo.bullet2" = "密碼僅在當次執行期間存在於記憶體。";
+"help.sudo.bullet3" = "不儲存、不記錄。";
+
+"help.aliases.desc" = "別名讓你為常用指令定義短名稱。它們在補全浮窗裡排在最前。";
+"help.aliases.defaults" = "內建範例";
+"help.aliases.custom" = "自訂別名";
+"help.aliases.custom.desc" = "編輯這個 JSON 檔案來增刪別名。重新啟動應用程式後生效。";
+
+"help.appearance.desc" = "設定 → 外觀裡有三種外觀模式：";
+"help.appearance.none" = "無 —— 系統視窗純色背景。";
+"help.appearance.frosted" = "毛玻璃 —— NSVisualEffectView 模糊。";
+"help.appearance.liquid" = "液態玻璃 —— macOS 26 及以上的原生材質。";
+"help.appearance.note" = "不支援的系統上「液態玻璃」選項會被隱藏。";
+
+/* ========== About ========== */
 "about.version" = "版本";
-"about.description" = "為 macOS 打造的仿 Windows 執行方塊，常駐選單列。";
+"about.description" = "Spotlight 風格的 macOS 指令啟動器。";
 "about.repository" = "GitHub 儲存庫";
 "about.license" = "MIT 授權條款";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
