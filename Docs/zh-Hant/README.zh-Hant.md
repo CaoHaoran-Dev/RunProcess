@@ -117,7 +117,7 @@ macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不�
 記錄存放在：
 
 ```
-~/Library/Application Support/RunProcess/history.json
+~/Library/Application Support/RunProcess/history.yml
 ```
 
 最多 500 條，超出時先淘汰最久未用的。
@@ -142,12 +142,12 @@ macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不�
 自訂別名存放在：
 
 ```
-~/Library/Application Support/RunProcess/aliases.json
+~/Library/Application Support/RunProcess/aliases.yml
 ```
 
 格式：
 
-```json
+```yml
 [
   { "name": "gs", "expansion": "git status" },
   { "name": "serve", "expansion": "python3 -m http.server 8000" }
