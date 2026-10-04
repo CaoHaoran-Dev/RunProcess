@@ -173,10 +173,8 @@ class CustomTextView: NSTextView {
         guard let paths = sender.draggingPasteboard.propertyList(forType: type) as? [String],
               !paths.isEmpty else { return false }
 
-        // ✅ 多文件全部处理
-        let escaped = paths
-            .map { $0.replacingOccurrences(of: " ", with: "\\ ") }
-            .joined(separator: " ")
+        // 双引号包裹，转义 " 和 \
+        let escaped = ShellQuoting.quoteAll(paths)
 
         let ns = self.string as NSString
         let range = self.selectedRange

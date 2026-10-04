@@ -29,6 +29,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var helpWindow: NSWindow?
     private var keyMonitor: Any?
 
+    /// 启动后是否真正被激活过。用于忽略启动瞬间的 didResignActive。
+    private var hasBeenActive = false
+
     // MARK: - Menu
 
     private lazy var statusMenu: NSMenu = {
@@ -120,13 +123,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupKeyMonitor()
         setupAppActiveObserver()
 
-        _ = sessionManager.newSession()
+        if AppSettings.hideWindowOnLaunch {
+            // ✅ 静默启动：只创建会话，不显示窗口
+            _ = sessionManager.newSessionWithoutShowing()
+        } else {
+            _ = sessionManager.newSession()
+
+            // ✅ 主动激活 App，让首个窗口拿到键盘焦点
+            NSApp.activate(ignoringOtherApps: true)
+            hasBeenActive = true
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("FocusTextField"),
+                    object: nil
+                )
+            }
+        }
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         NotificationCenter.default.removeObserver(
             self,
             name: NSApplication.didResignActiveNotification,
+            object: nil
+        )
+        NotificationCenter.default.removeObserver(
+            self,
+            name: NSApplication.didBecomeActiveNotification,
             object: nil
         )
 
@@ -209,9 +233,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSApplication.didResignActiveNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
+    @objc func applicationDidBecomeActive() {
+        hasBeenActive = true
     }
 
     @objc func applicationDidResignActive() {
+        // 启动瞬间忽略一次失焦，避免新窗口被立刻隐藏
+        guard hasBeenActive else { return }
         guard AppSettings.hideOnDeactivate else { return }
         hideAllWindows()
     }
@@ -225,6 +261,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func newWindow() {
         _ = sessionManager.newSession()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("FocusTextField"),
+                object: nil
+            )
+        }
     }
 
     @objc func toggleWindow() {
@@ -248,6 +291,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 隐藏所有窗口（App 失活时调用）
     func hideAllWindows() {
         for session in sessionManager.allSessions {
             session.hide()
@@ -292,7 +336,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let hosting = NSHostingController(rootView: HelpView())
         let window = NSWindow(contentViewController: hosting)
         window.title = NSLocalizedString("window.help.title", comment: "Help window title")
-        // 透明窗口四件套（帮助窗口保留沉浸式）
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
         window.isOpaque = false
@@ -300,7 +343,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.isReleasedWhenClosed = false
         window.center()
         window.level = .normal
-        // ✅ 高度从 600 压到 480
         window.setContentSize(NSSize(width: 720, height: 480))
         window.minSize = NSSize(width: 680, height: 400)
 
@@ -406,7 +448,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let window = NSWindow(contentViewController: hostingController)
         window.title = NSLocalizedString("window.about.title", comment: "About window title")
-        // ✅ 标准标题栏：去掉 .fullSizeContentView 和 titlebarAppearsTransparent
         window.styleMask = [.titled, .closable]
         window.isOpaque = false
         window.backgroundColor = .clear

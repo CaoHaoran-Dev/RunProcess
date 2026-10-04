@@ -31,7 +31,6 @@ class CommandSuggester {
         let words = input.split(separator: " ", omittingEmptySubsequences: false)
         guard let lastWord = words.last.map(String.init), !lastWord.isEmpty else { return [] }
 
-        // 第一个词才做命令/别名/历史补全，后续词做路径补全
         let isFirstWord = words.count <= 1
         if lastWord.hasPrefix("/") || lastWord.hasPrefix("~") || lastWord.hasPrefix(".") {
             return suggestPaths(for: lastWord)
@@ -39,7 +38,6 @@ class CommandSuggester {
         if isFirstWord {
             return suggestCommandsHistoryAliases(for: lastWord)
         }
-        // 参数位置：如果看起来像路径就给路径，否则也给命令（比如 git 的子命令）
         return suggestCommandsHistoryAliases(for: lastWord)
     }
 
@@ -50,7 +48,7 @@ class CommandSuggester {
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
 
-        // 1. 别名最高优先级
+        // 1. 别名
         for alias in AliasStore.shared.match(prefix: prefix) {
             if seen.insert(alias.name).inserted {
                 suggestions.append(Suggestion(
@@ -101,7 +99,7 @@ class CommandSuggester {
                 return dir + "/" + name + suffix
             }
             .map { ($0 as NSString).abbreviatingWithTildeInPath }
-            .map { $0.replacingOccurrences(of: " ", with: "\\ ") }
+            .map { ShellQuoting.quote($0) }
             .map { Suggestion(text: $0, type: .path) }
     }
 

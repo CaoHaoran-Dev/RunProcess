@@ -23,6 +23,9 @@ final class Session {
     private var willCloseObserver: NSObjectProtocol?
     private var didBecomeKeyObserver: NSObjectProtocol?
 
+    /// ✅ 是否已经真正显示过。用于过滤 show() 之前的 willClose。
+    private var hasShown = false
+
     var onClose: (() -> Void)?
     var onBecomeKey: (() -> Void)?
 
@@ -45,7 +48,6 @@ final class Session {
 
         let window = NSWindow(contentViewController: hostingController)
         window.title = baseTitle
-        // ✅ 初始尺寸与 ContentView 自适应高度一致
         window.setContentSize(NSSize(width: 520, height: 140))
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
@@ -80,7 +82,8 @@ final class Session {
         willCloseObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: window, queue: .main
         ) { [weak self] _ in
-            guard let self = self else { return }
+            // ✅ 只有真正显示过之后才响应关闭
+            guard let self = self, self.hasShown else { return }
             self.onClose?()
         }
 
@@ -153,7 +156,18 @@ final class Session {
         window.title = "\(baseTitle) — \(displayCWD)"
     }
 
-    func show() { window.makeKeyAndOrderFront(nil) }
-    func hide() { window.orderOut(nil) }
-    func isVisible() -> Bool { window.isVisible }
+    // MARK: - Lifecycle
+
+    func show() {
+        hasShown = true
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    func hide() {
+        window.orderOut(nil)
+    }
+
+    func isVisible() -> Bool {
+        window.isVisible
+    }
 }

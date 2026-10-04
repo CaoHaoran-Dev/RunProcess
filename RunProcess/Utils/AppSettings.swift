@@ -21,7 +21,6 @@ enum AppearanceStyle: String, CaseIterable {
         }
     }
 
-    /// 当前系统是否支持该风格
     var isSupported: Bool {
         switch self {
         case .none, .frostedGlass:
@@ -46,6 +45,10 @@ enum AppSettings {
         static let appearanceStyle = "appearance.style"
         static let hideOnDeactivate = "window.hideOnDeactivate"
         static let defaultSudo = "sudo.default"
+        static let launchAtLogin = "startup.launchAtLogin"
+        static let hideWindowOnLaunch = "startup.hideOnLaunch"
+        static let outputColorsEnabled = "output.colorsEnabled"
+        static let outputColorScheme = "output.colorScheme"
     }
 
     private static let defaults = UserDefaults.standard
@@ -98,7 +101,6 @@ enum AppSettings {
 
     // MARK: - 外观风格
 
-    /// 用户选择的原始外观风格（可能包含 macOS 15 不支持的 liquidGlass）
     static var appearanceStyleRaw: AppearanceStyle {
         get {
             let raw = defaults.string(forKey: Keys.appearanceStyle) ?? ""
@@ -109,10 +111,6 @@ enum AppSettings {
         }
     }
 
-    /// 根据系统版本解析后的实际外观风格
-    ///
-    /// - macOS 15 及以下：liquidGlass 回退到 frostedGlass
-    /// - 默认值：macOS 26+ 为 liquidGlass，否则 frostedGlass
     static var resolvedAppearanceStyle: AppearanceStyle {
         let raw = appearanceStyleRaw
         if raw == .liquidGlass && !AppearanceStyle.liquidGlass.isSupported {
@@ -121,7 +119,6 @@ enum AppSettings {
         return raw
     }
 
-    /// 系统默认外观：macOS 26+ 液态玻璃，否则毛玻璃
     private static var defaultAppearance: AppearanceStyle {
         if #available(macOS 26.0, *) {
             return .liquidGlass
@@ -150,5 +147,57 @@ enum AppSettings {
     static var defaultSudo: Bool {
         get { defaults.bool(forKey: Keys.defaultSudo) }
         set { defaults.set(newValue, forKey: Keys.defaultSudo) }
+    }
+
+    // MARK: - 启动
+
+    /// 开机自启动偏好缓存。实际状态以 SMAppService 为准。
+    static var launchAtLogin: Bool {
+        get { defaults.bool(forKey: Keys.launchAtLogin) }
+        set { defaults.set(newValue, forKey: Keys.launchAtLogin) }
+    }
+
+    /// 启动后隐藏窗口，只保留菜单栏图标。
+    /// 默认 false。
+    static var hideWindowOnLaunch: Bool {
+        get { defaults.bool(forKey: Keys.hideWindowOnLaunch) }
+        set { defaults.set(newValue, forKey: Keys.hideWindowOnLaunch) }
+    }
+
+    // MARK: - 输出颜色
+
+    /// 是否解析并显示 ANSI 颜色
+    /// 默认 true
+    static var outputColorsEnabled: Bool {
+        get {
+            if defaults.object(forKey: Keys.outputColorsEnabled) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.outputColorsEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.outputColorsEnabled) }
+    }
+
+    /// 输出颜色的色板选择
+    enum OutputColorScheme: String, CaseIterable {
+        case auto
+        case dark
+        case light
+
+        var displayNameKey: String {
+            switch self {
+            case .auto:  return "output.colors.scheme.auto"
+            case .dark:  return "output.colors.scheme.dark"
+            case .light: return "output.colors.scheme.light"
+            }
+        }
+    }
+
+    static var outputColorScheme: OutputColorScheme {
+        get {
+            let raw = defaults.string(forKey: Keys.outputColorScheme) ?? ""
+            return OutputColorScheme(rawValue: raw) ?? .auto
+        }
+        set { defaults.set(newValue.rawValue, forKey: Keys.outputColorScheme) }
     }
 }

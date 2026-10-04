@@ -43,6 +43,116 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .appearance: return "paintbrush"
         }
     }
+
+    /// 该主题对应的全文，用于搜索
+    /// 从 Localizable.strings 里拼出来，跟 HelpContent 渲染的内容一致
+    var searchableText: String {
+        let keys: [String]
+        switch self {
+        case .overview:
+            keys = [
+                "help.overview.p1",
+                "help.overview.p2",
+                "help.overview.quick",
+                "help.shortcut.toggle",
+                "help.shortcut.new",
+                "help.shortcut.history",
+                "help.shortcut.settings",
+                "help.shortcut.enter",
+                "help.shortcut.newline",
+                "help.shortcut.complete",
+                "help.shortcut.navigate",
+            ]
+        case .shortcuts:
+            keys = [
+                "help.shortcuts.global",
+                "help.shortcut.toggle",
+                "help.shortcut.new",
+                "help.shortcut.history",
+                "help.shortcut.settings",
+                "help.shortcut.hide",
+                "help.shortcut.quit",
+                "help.shortcuts.input",
+                "help.shortcut.enter",
+                "help.shortcut.newline",
+                "help.shortcut.complete",
+                "help.shortcut.navigate",
+                "help.shortcuts.note",
+            ]
+        case .tips:
+            keys = [
+                "help.tip.drag.title",
+                "help.tip.drag.desc",
+                "help.tip.app.title",
+                "help.tip.app.desc",
+                "help.tip.app.example",
+                "help.tip.multiline.title",
+                "help.tip.multiline.desc",
+            ]
+        case .session:
+            keys = [
+                "help.session.desc",
+                "help.session.bullet1",
+                "help.session.bullet2",
+                "help.session.bullet3",
+                "help.session.example",
+                "help.session.example.desc",
+            ]
+        case .sudo:
+            keys = [
+                "help.sudo.desc",
+                "help.sudo.bullet1",
+                "help.sudo.bullet2",
+                "help.sudo.bullet3",
+            ]
+        case .aliases:
+            keys = [
+                "help.aliases.desc",
+                "help.aliases.defaults",
+                "help.aliases.custom",
+                "help.aliases.custom.desc",
+            ]
+        case .appearance:
+            keys = [
+                "help.appearance.desc",
+                "help.appearance.none",
+                "help.appearance.frosted",
+                "help.appearance.liquid",
+                "help.appearance.note",
+            ]
+        }
+
+        return keys
+            .map { NSLocalizedString($0, comment: "") }
+            .joined(separator: " ")
+    }
+
+    /// 是否匹配搜索词（标题或内容）
+    func matches(_ query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return true }
+        if title.localizedCaseInsensitiveContains(q) { return true }
+        return searchableText.localizedCaseInsensitiveContains(q)
+    }
+
+    /// 命中的片段（用于侧边栏下方预览）
+    func snippet(for query: String) -> String? {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return nil }
+        if title.localizedCaseInsensitiveContains(q) { return nil }
+
+        let text = searchableText
+        guard let range = text.range(of: q, options: .caseInsensitive) else { return nil }
+
+        // 取前后各 30 个字符
+        let start = text.index(range.lowerBound, offsetBy: -30, limitedBy: text.startIndex) ?? text.startIndex
+        let end = text.index(range.upperBound, offsetBy: 30, limitedBy: text.endIndex) ?? text.endIndex
+        var snippet = String(text[start..<end])
+
+        if start != text.startIndex { snippet = "…" + snippet }
+        if end != text.endIndex { snippet = snippet + "…" }
+        return snippet
+    }
 }
 
 // MARK: - 主视图
@@ -55,10 +165,9 @@ struct HelpView: View {
     private var appearanceStyle: AppearanceStyle { AppSettings.resolvedAppearanceStyle }
 
     private var filteredTopics: [HelpTopic] {
-        if searchText.isEmpty { return HelpTopic.allCases }
-        return HelpTopic.allCases.filter {
-            $0.title.localizedCaseInsensitiveContains(searchText)
-        }
+        let q = searchText.trimmingCharacters(in: .whitespaces)
+        if q.isEmpty { return HelpTopic.allCases }
+        return HelpTopic.allCases.filter { $0.matches(q) }
     }
 
     var body: some View {
@@ -70,7 +179,6 @@ struct HelpView: View {
             }
         }
         .frame(minWidth: 680, idealWidth: 720, minHeight: 400, idealHeight: 480)
-        // ✅ 毛玻璃 / 液态玻璃 / 无
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
@@ -93,6 +201,7 @@ struct HelpView: View {
             ToolbarItem(placement: .navigation) {
                 Button {
                     selected = .overview
+                    searchText = ""
                 } label: {
                     Image(systemName: "house")
                 }
@@ -103,7 +212,7 @@ struct HelpView: View {
 
     private var legacyLayout: some View {
         HStack(spacing: 0) {
-            sidebar.frame(width: 200)
+            sidebar.frame(width: 220)
             Divider()
             detailPane
         }
@@ -111,6 +220,7 @@ struct HelpView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
+            // 搜索框
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 11))
@@ -139,21 +249,37 @@ struct HelpView: View {
 
             Divider()
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
-                    ForEach(filteredTopics) { topic in
-                        TopicRow(
-                            topic: topic,
-                            isSelected: topic == selected,
-                            onTap: { selected = topic }
-                        )
-                    }
+            // 结果列表
+            if filteredTopics.isEmpty {
+                VStack(spacing: 6) {
+                    Spacer()
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 20))
+                        .foregroundColor(.secondary.opacity(0.5))
+                    Text(NSLocalizedString("help.search.noResults", comment: ""))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                    Spacer()
                 }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(filteredTopics) { topic in
+                            TopicRow(
+                                topic: topic,
+                                isSelected: topic == selected,
+                                snippet: topic.snippet(for: searchText),
+                                onTap: { selected = topic }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 6)
+                }
             }
         }
-        .background(Color.clear)   // ✅ 透明，露出毛玻璃
+        .background(Color.clear)
     }
 
     private var detailPane: some View {
@@ -163,7 +289,7 @@ struct HelpView: View {
                 .frame(maxWidth: 680, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.clear)   // ✅ 透明，露出毛玻璃
+        .background(Color.clear)
     }
 }
 
@@ -172,19 +298,30 @@ struct HelpView: View {
 private struct TopicRow: View {
     let topic: HelpTopic
     let isSelected: Bool
+    let snippet: String?
     let onTap: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: topic.icon)
-                .font(.system(size: 12))
-                .foregroundColor(isSelected ? .white : .accentColor)
-                .frame(width: 16)
-            Text(topic.title)
-                .font(.system(size: 12))
-                .foregroundColor(isSelected ? .white : .primary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Image(systemName: topic.icon)
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? .white : .accentColor)
+                    .frame(width: 16)
+                Text(topic.title)
+                    .font(.system(size: 12))
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+
+            if let snippet = snippet, !snippet.isEmpty {
+                Text(snippet)
+                    .font(.system(size: 10))
+                    .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
+                    .lineLimit(2)
+                    .padding(.leading, 24)
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
@@ -364,7 +501,7 @@ private struct TipsSection: View {
 
             HelpH2(NSLocalizedString("help.tip.app.title", comment: ""))
             HelpP(NSLocalizedString("help.tip.app.desc", comment: ""))
-            CodeBlock("/System/Applications/Safari.app")
+            CodeBlock("/Applications/Safari.app")
             HelpP(NSLocalizedString("help.tip.app.example", comment: ""))
 
             HelpH2(NSLocalizedString("help.tip.multiline.title", comment: ""))
@@ -414,7 +551,7 @@ private struct AliasesSection: View {
 
             HelpH2(NSLocalizedString("help.aliases.custom", comment: ""))
             HelpP(NSLocalizedString("help.aliases.custom.desc", comment: ""))
-            CodeBlock("~/Library/Application Support/RunProcess/aliases.json")
+            CodeBlock("~/Library/Application Support/RunProcess/aliases.yml")
         }
     }
 }

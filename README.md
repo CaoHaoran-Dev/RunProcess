@@ -253,6 +253,7 @@ Swift and SwiftUI
 
 - [简体中文 README](Docs/zh-Hans/README.zh-Hans.md)
 - [繁体中文 README](Docs/zh-Hant/README.zh-Hant.md)
+- [Contributing](CONTRIBUTING.md)
 - [License](LICENSE.md)
 
 ---

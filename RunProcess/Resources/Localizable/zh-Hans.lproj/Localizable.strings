@@ -16,6 +16,8 @@
 "button.execute" = "执行";
 "button.ok" = "好";
 "button.confirm" = "确认";
+"button.save" = "保存";
+"button.delete" = "删除";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
@@ -70,6 +72,8 @@
 "settings.category.session" = "会话";
 "settings.category.workingDirectory" = "工作目录";
 "settings.category.sudo" = "Sudo";
+"settings.category.aliases" = "别名";
+"settings.category.startup" = "启动";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "显示 / 隐藏窗口";
@@ -88,6 +92,14 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液态玻璃";
 
+/* ========== Settings — Output Colors ========== */
+"settings.output.colors.enabled" = "命令输出显示颜色";
+"settings.output.colors.hint" = "解析 git、ls、grep 等工具输出的 ANSI 转义序列。";
+"settings.output.colors.scheme" = "色板";
+"output.colors.scheme.auto" = "自动";
+"output.colors.scheme.dark" = "深色";
+"output.colors.scheme.light" = "浅色";
+
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "会话模式";
 "settings.session.description" = "持久 shell；cd / export 跨命令生效";
@@ -105,6 +117,33 @@
 "settings.sudo.default.hint" = "开启后，主界面的 sudo 开关固定为开且不可改。每次执行仍会弹出密码框。";
 "settings.sudo.hint" = "每次 sudo 命令都需要重新输入密码。密码仅在执行期间存在于内存，不存储不记录。";
 
+/* ========== Settings — Aliases ========== */
+"settings.aliases.add" = "添加别名";
+"settings.aliases.empty" = "还没有别名。点击 + 添加一个。";
+"settings.aliases.hint" = "别名在补全浮窗里排最前。改动会写入 aliases.yml 并立即生效。";
+"settings.aliases.edit" = "编辑";
+"settings.aliases.delete" = "删除";
+"settings.aliases.moveUp" = "上移";
+"settings.aliases.moveDown" = "下移";
+"settings.aliases.delete.title" = "删除别名？";
+"settings.aliases.delete.message" = "确定删除 \"%@\" 吗？此操作不可撤销。";
+"settings.aliases.add.title" = "新建别名";
+"settings.aliases.edit.title" = "编辑别名";
+"settings.aliases.field.name" = "短名称";
+"settings.aliases.field.expansion" = "展开为";
+"settings.aliases.editor.hint" = "短名称不能包含空格。在输入框输入它时，执行前会被替换成展开内容。";
+"settings.aliases.error.empty" = "不能为空。";
+"settings.aliases.error.space" = "短名称不能包含空格。";
+"settings.aliases.error.duplicate" = "已存在同名的别名。";
+
+/* ========== Settings — Startup ========== */
+"settings.startup.launchAtLogin" = "开机自启动";
+"settings.startup.launchAtLogin.hint" = "登录时自动启动 RunProcess。";
+"settings.startup.launchAtLogin.unsupported" = "需要 macOS 13 或更高版本。";
+"settings.startup.launchAtLogin.error" = "无法更新登录项。请检查系统设置 → 通用 → 登录项。";
+"settings.startup.hideOnLaunch" = "启动后隐藏窗口";
+"settings.startup.hideOnLaunch.hint" = "静默启动，只留菜单栏图标。按全局热键显示窗口。";
+
 /* ========== Session ========== */
 "session.reset.notice" = "会话已重置";
 
@@ -116,6 +155,7 @@
 
 /* ========== Help ========== */
 "help.search" = "搜索";
+"help.search.noResults" = "未找到";
 "help.home" = "主页";
 
 "help.topic.overview" = "概述";
@@ -170,7 +210,7 @@
 "help.aliases.desc" = "别名让你为常用命令定义短名称。它们在补全浮窗里排在最前。";
 "help.aliases.defaults" = "内置示例";
 "help.aliases.custom" = "自定义别名";
-"help.aliases.custom.desc" = "编辑这个 JSON 文件来增删别名。重启应用后生效。";
+"help.aliases.custom.desc" = "编辑这个 YAML 文件来增删别名。重启应用后生效。";
 
 "help.appearance.desc" = "设置 → 外观里有三种外观模式：";
 "help.appearance.none" = "无 —— 系统窗口纯色背景。";
