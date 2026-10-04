@@ -48,11 +48,14 @@ class CommandSuggester {
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
 
-        // 1. 别名
+        // 1. 别名：一条补全，大标题是展开内容，副标题是别名
         for alias in AliasStore.shared.match(prefix: prefix) {
-            if seen.insert(alias.name).inserted {
+            if seen.insert(alias.expansion).inserted {
                 suggestions.append(Suggestion(
-                    text: alias.name, type: .alias, subtitle: alias.expansion))
+                    text: alias.expansion,
+                    type: .alias,
+                    subtitle: alias.name
+                ))
             }
         }
 
