@@ -16,6 +16,8 @@
 "button.execute" = "Execute";
 "button.ok" = "OK";
 "button.confirm" = "Confirm";
+"button.save" = "Save";
+"button.delete" = "Delete";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -70,6 +72,8 @@
 "settings.category.session" = "Session";
 "settings.category.workingDirectory" = "Working Directory";
 "settings.category.sudo" = "Sudo";
+"settings.category.aliases" = "Aliases";
+"settings.category.startup" = "Startup";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "Show / Hide Window";
@@ -88,6 +92,14 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
+/* ========== Settings — Output Colors ========== */
+"settings.output.colors.enabled" = "Show colors in command output";
+"settings.output.colors.hint" = "Parse ANSI escape sequences from tools like git, ls, and grep.";
+"settings.output.colors.scheme" = "Palette";
+"output.colors.scheme.auto" = "Auto";
+"output.colors.scheme.dark" = "Dark";
+"output.colors.scheme.light" = "Light";
+
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "Session Mode";
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
@@ -105,6 +117,33 @@
 "settings.sudo.default.hint" = "When enabled, the main window's sudo toggle is locked on. Every command still asks for the password.";
 "settings.sudo.hint" = "Every sudo command requires entering your password. The password is used only in memory during execution and is never stored or logged.";
 
+/* ========== Settings — Aliases ========== */
+"settings.aliases.add" = "Add Alias";
+"settings.aliases.empty" = "No aliases yet. Click + to add one.";
+"settings.aliases.hint" = "Aliases appear first in the completion popup. Changes are saved to aliases.yml and applied immediately.";
+"settings.aliases.edit" = "Edit";
+"settings.aliases.delete" = "Delete";
+"settings.aliases.moveUp" = "Move Up";
+"settings.aliases.moveDown" = "Move Down";
+"settings.aliases.delete.title" = "Delete Alias?";
+"settings.aliases.delete.message" = "Delete \"%@\"? This cannot be undone.";
+"settings.aliases.add.title" = "New Alias";
+"settings.aliases.edit.title" = "Edit Alias";
+"settings.aliases.field.name" = "Short name";
+"settings.aliases.field.expansion" = "Expands to";
+"settings.aliases.editor.hint" = "The short name cannot contain spaces. When you type it in the input field, it is replaced by the expansion before execution.";
+"settings.aliases.error.empty" = "Cannot be empty.";
+"settings.aliases.error.space" = "Short name cannot contain spaces.";
+"settings.aliases.error.duplicate" = "An alias with this name already exists.";
+
+/* ========== Settings — Startup ========== */
+"settings.startup.launchAtLogin" = "Launch at Login";
+"settings.startup.launchAtLogin.hint" = "RunProcess starts automatically when you log in.";
+"settings.startup.launchAtLogin.unsupported" = "Requires macOS 13 or later.";
+"settings.startup.launchAtLogin.error" = "Could not update login item. Check System Settings → General → Login Items.";
+"settings.startup.hideOnLaunch" = "Hide window on launch";
+"settings.startup.hideOnLaunch.hint" = "Start silently in the menu bar. Press the global hotkey to show the window.";
+
 /* ========== Session ========== */
 "session.reset.notice" = "Session was reset";
 
@@ -116,6 +155,7 @@
 
 /* ========== Help ========== */
 "help.search" = "Search";
+"help.search.noResults" = "No results";
 "help.home" = "Home";
 
 "help.topic.overview" = "Overview";
@@ -170,7 +210,7 @@
 "help.aliases.desc" = "Aliases let you define short names for frequently used commands. They appear first in the completion popup.";
 "help.aliases.defaults" = "Built-in examples";
 "help.aliases.custom" = "Custom aliases";
-"help.aliases.custom.desc" = "Edit this JSON file to add or change aliases. Restart the app to apply changes.";
+"help.aliases.custom.desc" = "Edit this YAML file to add or change aliases. Restart the app to apply changes.";
 
 "help.appearance.desc" = "Three appearance modes are available in Settings → Appearance:";
 "help.appearance.none" = "None — solid system window background.";

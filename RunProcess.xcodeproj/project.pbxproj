@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD4ED43D3056BD9C0005644E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = AD4ED43C3056BD9C0005644E /* KeyboardShortcuts */; };
+		AD6BFBBA3071DA4E00689042 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = AD6BFBB93071DA4E00689042 /* Yams */; };
+		AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		ADF84792303D6F8A00462C27 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
 /* End PBXBuildFile section */
@@ -27,6 +29,7 @@
 		AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RunProcess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD49D2853036EE5E007BD3A5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		AD682D58303E762B00A624CF /* RunProcessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunProcessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
 		ADF84791303D6F8A00462C27 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -55,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD6BFBBA3071DA4E00689042 /* Yams in Frameworks */,
 				AD4ED43D3056BD9C0005644E /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -72,6 +76,7 @@
 		AD17FC623035CC7A00A52CD6 = {
 			isa = PBXGroup;
 			children = (
+				AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */,
 				ADF84791303D6F8A00462C27 /* README.md */,
 				ADF8478F303D6F5300462C27 /* Docs */,
 				AD49D2853036EE5E007BD3A5 /* .gitignore */,
@@ -130,6 +135,7 @@
 			name = RunProcess;
 			packageProductDependencies = (
 				AD4ED43C3056BD9C0005644E /* KeyboardShortcuts */,
+				AD6BFBB93071DA4E00689042 /* Yams */,
 			);
 			productName = RunProcess;
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
@@ -190,6 +196,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AD4ED43B3056BD9C0005644E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				AD6BFBB83071DA4E00689042 /* XCRemoteSwiftPackageReference "Yams" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
@@ -209,6 +216,7 @@
 			files = (
 				ADF84792303D6F8A00462C27 /* README.md in Resources */,
 				AD49D2863036EE74007BD3A5 /* .gitignore in Resources */,
+				AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */,
 				AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -375,7 +383,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3300.0;
+				CURRENT_PROJECT_VERSION = 3400.0;
 				DEVELOPMENT_TEAM = MVKBMZMN48;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -389,7 +397,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 3.1.0;
+				MARKETING_VERSION = 3.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -409,7 +417,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3300.0;
+				CURRENT_PROJECT_VERSION = 3400.0;
 				DEVELOPMENT_TEAM = MVKBMZMN48;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -423,7 +431,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 3.1.0;
+				MARKETING_VERSION = 3.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -517,6 +525,14 @@
 				minimumVersion = 3.1.0;
 			};
 		};
+		AD6BFBB83071DA4E00689042 /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.2.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -524,6 +540,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AD4ED43B3056BD9C0005644E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		AD6BFBB93071DA4E00689042 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD6BFBB83071DA4E00689042 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

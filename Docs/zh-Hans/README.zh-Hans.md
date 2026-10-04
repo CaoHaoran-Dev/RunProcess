@@ -254,6 +254,7 @@ Swift + SwiftUI，100% AI 生成代码
 
 - [English README](../../README.md)
 - [繁体中文 README](../zh-Hant/README.zh-Hant.md)
+- [贡献指南](CONTRIBUTING.zh-Hans.md)
 - [License](LICENSE.zh-Hans.md)
 
 ---

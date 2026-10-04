@@ -33,7 +33,14 @@ class CommandViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
 
+    /// 缓存上一次的颜色偏好，用于判断是否需要重算
+    private var cachedColorsEnabled = AppSettings.outputColorsEnabled
+    private var cachedColorScheme = AppSettings.outputColorScheme
+
+    // MARK: - Init
+
     init() {
+        // 输入变化：关闭补全、重置历史导航
         $inputText
             .dropFirst()
             .sink { [weak self] _ in
@@ -42,22 +49,57 @@ class CommandViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
+        // 输出变化：解析 ANSI
         $outputText
             .sink { [weak self] text in
                 self?.outputAttributed = ANSIParser.parse(text)
             }
             .store(in: &cancellables)
+
+        // 颜色偏好变化时重算已有输出
+        NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            let enabled = AppSettings.outputColorsEnabled
+            let scheme = AppSettings.outputColorScheme
+            if enabled != self.cachedColorsEnabled || scheme != self.cachedColorScheme {
+                self.cachedColorsEnabled = enabled
+                self.cachedColorScheme = scheme
+                self.outputAttributed = ANSIParser.parse(self.outputText)
+            }
+        }
     }
 
-    func registerTextField(_ view: NSView) { textField = view }
-    var positioningView: NSView? { textField }
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    // MARK: - TextField 注册
+
+    func registerTextField(_ view: NSView) {
+        textField = view
+    }
+
+    var positioningView: NSView? {
+        textField
+    }
+
+    // MARK: - 补全
 
     func requestSuggestions() {
-        guard !inputText.isEmpty else { closeSuggestions(); return }
+        guard !inputText.isEmpty else {
+            closeSuggestions()
+            return
+        }
+
         suggester.suggest(for: inputText) { [weak self] results in
             guard let self = self else { return }
-            if results.isEmpty { self.closeSuggestions() }
-            else {
+            if results.isEmpty {
+                self.closeSuggestions()
+            } else {
                 self.suggestions = results
                 self.selectedIndex = 0
                 SuggestionPanel.shared.show(with: self)
@@ -88,7 +130,7 @@ class CommandViewModel: ObservableObject {
         SuggestionPanel.shared.hide()
     }
 
-    // MARK: - History navigation
+    // MARK: - 历史导航
 
     func navigateHistoryUp() -> String? {
         if historyCommands.isEmpty {
@@ -98,8 +140,11 @@ class CommandViewModel: ObservableObject {
             currentInputBackup = inputText
         }
         guard !historyCommands.isEmpty else { return nil }
-        if historyIndex == -1 { historyIndex = historyCommands.count - 1 }
-        else if historyIndex > 0 { historyIndex -= 1 }
+        if historyIndex == -1 {
+            historyIndex = historyCommands.count - 1
+        } else if historyIndex > 0 {
+            historyIndex -= 1
+        }
         return historyCommands[historyIndex]
     }
 
@@ -121,7 +166,7 @@ class CommandViewModel: ObservableObject {
         currentInputBackup = ""
     }
 
-    // MARK: - Execute
+    // MARK: - 执行
 
     func executeCommand(useSudo: Bool, password: String?,
                         completion: @escaping (String) -> Void) {
@@ -130,10 +175,12 @@ class CommandViewModel: ObservableObject {
         // 1. .app 补全
         var processedCommand = CommandPreprocessor.process(inputText)
 
-        // 2. 别名展开：若第一个词命中别名，替换为 expansion
+        // 2. 别名展开
         processedCommand = expandAlias(in: processedCommand)
 
-        if processedCommand != inputText { inputText = processedCommand }
+        if processedCommand != inputText {
+            inputText = processedCommand
+        }
 
         if CommandPreprocessor.isInteractive(processedCommand) {
             isRunning = false
@@ -233,16 +280,17 @@ enum CommandPreprocessor {
 
         if lower.hasPrefix("open ") || lower.hasPrefix("start ") { return trimmed }
 
-        if trimmed.hasSuffix(".app") || trimmed.hasSuffix(".app/") {
-            let escaped = trimmed.contains(" ") ? "\"\(trimmed)\"" : trimmed
-            return "open \(escaped)"
+        // 先剥掉外层引号，再判断
+        let unwrapped = unwrapQuotes(trimmed)
+
+        if unwrapped.hasSuffix(".app") || unwrapped.hasSuffix(".app/") {
+            return "open \(ShellQuoting.quote(unwrapped))"
         }
 
-        if trimmed.contains(".app/Contents/") || trimmed.contains(".app/Contents/MacOS/") {
-            if let range = trimmed.range(of: ".app", options: .backwards) {
-                let appPath = String(trimmed[..<range.upperBound])
-                let escaped = appPath.contains(" ") ? "\"\(appPath)\"" : appPath
-                return "open \(escaped)"
+        if unwrapped.contains(".app/Contents/") || unwrapped.contains(".app/Contents/MacOS/") {
+            if let range = unwrapped.range(of: ".app", options: .backwards) {
+                let appPath = String(unwrapped[..<range.upperBound])
+                return "open \(ShellQuoting.quote(appPath))"
             }
         }
         return trimmed
@@ -275,6 +323,26 @@ enum CommandPreprocessor {
         return false
     }
 
+    /// 剥掉外层引号（单/双引号，成对出现且内层不含同类引号时）
+    ///
+    /// - `"/a b/c.app"` → `/a b/c.app`
+    /// - `/a b/c.app` → `/a b/c.app`（不变）
+    /// - `"/a" "b"` → `"/a" "b"`（不变，引号没包住整串）
+    /// - `"not closed` → `"not closed`（不变）
+    private static func unwrapQuotes(_ s: String) -> String {
+        guard s.count >= 2 else { return s }
+        let first = s.first!
+        let last = s.last!
+        if (first == "\"" && last == "\"") || (first == "'" && last == "'") {
+            let inner = String(s.dropFirst().dropLast())
+            if !inner.contains(first) {
+                return inner
+            }
+        }
+        return s
+    }
+
+    /// 去掉单/双引号内的内容，避免 `echo "a > b"` 被误判
     private static func stripQuotes(_ s: String) -> String {
         var result = ""
         var inSingle = false

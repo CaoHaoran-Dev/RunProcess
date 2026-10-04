@@ -6,8 +6,9 @@
 //
 
 import Foundation
+import Yams
 
-struct HistoryEntry: Codable {
+nonisolated struct HistoryEntry: Codable {
     let command: String
     var count: Int
     var lastUsed: Date
@@ -23,11 +24,15 @@ struct HistoryEntry: Codable {
         lastUsed = Date()
     }
 
-    /// frecency：频次越高、越近，分越高
     var frecency: Double {
         let days = max(0, Date().timeIntervalSince(lastUsed) / 86400)
         return Double(count) / (1.0 + days)
     }
+}
+
+/// YAML 顶层结构
+private nonisolated struct HistoryFile: Codable {
+    var entries: [HistoryEntry]
 }
 
 class CommandHistory {
@@ -44,35 +49,78 @@ class CommandHistory {
             for: .applicationSupportDirectory, in: .userDomainMask).first!
         let appDir = appSupport.appendingPathComponent("RunProcess")
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
-        fileURL = appDir.appendingPathComponent("history.json")
+        fileURL = appDir.appendingPathComponent("history.yml")
         load()
     }
 
+    // MARK: - 加载
+
     private func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            loadYAML()
+            return
+        }
+        let legacyURL = fileURL
+            .deletingPathExtension()
+            .appendingPathExtension("json")
+        if FileManager.default.fileExists(atPath: legacyURL.path) {
+            loadLegacyJSON(from: legacyURL)
+            saveSync()
+            try? FileManager.default.removeItem(at: legacyURL)
+        }
+    }
+
+    private func loadYAML() {
         do {
-            let data = try Data(contentsOf: fileURL)
-            let decoded = try JSONDecoder().decode([String: HistoryEntry].self, from: data)
-            readWriteLock.lock(); entries = decoded; readWriteLock.unlock()
+            let text = try String(contentsOf: fileURL, encoding: .utf8)
+            let file = try YAMLDecoder().decode(HistoryFile.self, from: text)
+            readWriteLock.lock()
+            entries = Dictionary(uniqueKeysWithValues: file.entries.map { ($0.command, $0) })
+            readWriteLock.unlock()
         } catch {
             print("⚠️ 加载历史记录失败: \(error)")
             readWriteLock.lock(); entries = [:]; readWriteLock.unlock()
         }
     }
 
+    private func loadLegacyJSON(from url: URL) {
+        do {
+            let data = try Data(contentsOf: url)
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .deferredToDate
+            let decoded = try decoder.decode([String: HistoryEntry].self, from: data)
+            readWriteLock.lock()
+            entries = decoded
+            readWriteLock.unlock()
+        } catch {
+            print("⚠️ 迁移旧历史失败: \(error)")
+            readWriteLock.lock(); entries = [:]; readWriteLock.unlock()
+        }
+    }
+
+    // MARK: - 保存
+
     private func saveSync() {
         readWriteLock.lock()
-        let copy = entries
+        let copy = Array(entries.values)
         readWriteLock.unlock()
-        queue.async { [fileURL] in
+
+        let file = HistoryFile(entries: copy.sorted { $0.lastUsed > $1.lastUsed })
+        let url = fileURL
+
+        queue.async {
             do {
-                let data = try JSONEncoder().encode(copy)
-                try data.write(to: fileURL)
+                let encoder = YAMLEncoder()
+                encoder.options.indent = 2
+                let yaml = try encoder.encode(file)
+                try yaml.write(to: url, atomically: true, encoding: .utf8)
             } catch {
                 print("⚠️ 保存历史记录失败: \(error)")
             }
         }
     }
+
+    // MARK: - 记录
 
     func record(_ command: String) {
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -93,7 +141,8 @@ class CommandHistory {
         saveSync()
     }
 
-    /// 按频次排序（旧接口）
+    // MARK: - 查询
+
     func query(prefix: String) -> [HistoryEntry] {
         guard !prefix.isEmpty else { return [] }
         readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
@@ -103,7 +152,6 @@ class CommandHistory {
             .prefix(20).map { $0 }
     }
 
-    /// 按 frecency 排序（新接口，补全用）
     func queryByFrecency(prefix: String) -> [HistoryEntry] {
         guard !prefix.isEmpty else { return [] }
         readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
@@ -113,7 +161,6 @@ class CommandHistory {
             .prefix(20).map { $0 }
     }
 
-    /// 模糊搜索（用于 ⌘R 历史面板）
     func search(_ query: String) -> [HistoryEntry] {
         readWriteLock.lock(); let copy = entries; readWriteLock.unlock()
         let q = query.lowercased()
@@ -135,6 +182,8 @@ class CommandHistory {
         }
         return qi == query.endIndex
     }
+
+    // MARK: - 管理
 
     func clearAll() {
         readWriteLock.lock(); entries.removeAll(); readWriteLock.unlock()

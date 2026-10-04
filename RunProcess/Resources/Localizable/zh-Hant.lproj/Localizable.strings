@@ -16,6 +16,8 @@
 "button.execute" = "執行";
 "button.ok" = "好";
 "button.confirm" = "確認";
+"button.save" = "儲存";
+"button.delete" = "刪除";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新增視窗";
@@ -70,6 +72,8 @@
 "settings.category.session" = "工作階段";
 "settings.category.workingDirectory" = "工作目錄";
 "settings.category.sudo" = "Sudo";
+"settings.category.aliases" = "別名";
+"settings.category.startup" = "啟動";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "顯示 / 隱藏視窗";
@@ -88,6 +92,14 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液態玻璃";
 
+/* ========== Settings — Output Colors ========== */
+"settings.output.colors.enabled" = "指令輸出顯示顏色";
+"settings.output.colors.hint" = "解析 git、ls、grep 等工具輸出的 ANSI 轉義序列。";
+"settings.output.colors.scheme" = "色板";
+"output.colors.scheme.auto" = "自動";
+"output.colors.scheme.dark" = "深色";
+"output.colors.scheme.light" = "淺色";
+
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "工作階段模式";
 "settings.session.description" = "長駐 shell；cd / export 跨指令生效";
@@ -105,6 +117,33 @@
 "settings.sudo.default.hint" = "開啟後，主視窗的 sudo 開關固定為開且不可改。每次執行仍會彈出密碼框。";
 "settings.sudo.hint" = "每次 sudo 指令都需要重新輸入密碼。密碼僅在執行期間存在於記憶體，不儲存不記錄。";
 
+/* ========== Settings — Aliases ========== */
+"settings.aliases.add" = "新增別名";
+"settings.aliases.empty" = "還沒有別名。點擊 + 新增一個。";
+"settings.aliases.hint" = "別名在補全浮窗裡排最前。改動會寫入 aliases.yml 並立即生效。";
+"settings.aliases.edit" = "編輯";
+"settings.aliases.delete" = "刪除";
+"settings.aliases.moveUp" = "上移";
+"settings.aliases.moveDown" = "下移";
+"settings.aliases.delete.title" = "刪除別名？";
+"settings.aliases.delete.message" = "確定刪除 \"%@\" 嗎？此操作無法復原。";
+"settings.aliases.add.title" = "新增別名";
+"settings.aliases.edit.title" = "編輯別名";
+"settings.aliases.field.name" = "短名稱";
+"settings.aliases.field.expansion" = "展開為";
+"settings.aliases.editor.hint" = "短名稱不能包含空格。在輸入框輸入它時，執行前會被替換成展開內容。";
+"settings.aliases.error.empty" = "不能為空。";
+"settings.aliases.error.space" = "短名稱不能包含空格。";
+"settings.aliases.error.duplicate" = "已存在同名的別名。";
+
+/* ========== Settings — Startup ========== */
+"settings.startup.launchAtLogin" = "開機自動啟動";
+"settings.startup.launchAtLogin.hint" = "登入時自動啟動 RunProcess。";
+"settings.startup.launchAtLogin.unsupported" = "需要 macOS 13 或以上版本。";
+"settings.startup.launchAtLogin.error" = "無法更新登入項目。請檢查系統設定 → 一般 → 登入項目。";
+"settings.startup.hideOnLaunch" = "啟動後隱藏視窗";
+"settings.startup.hideOnLaunch.hint" = "靜默啟動，只留選單列圖示。按全域快速鍵顯示視窗。";
+
 /* ========== Session ========== */
 "session.reset.notice" = "工作階段已重設";
 
@@ -116,6 +155,7 @@
 
 /* ========== Help ========== */
 "help.search" = "搜尋";
+"help.search.noResults" = "未找到";
 "help.home" = "首頁";
 
 "help.topic.overview" = "總覽";
@@ -170,7 +210,7 @@
 "help.aliases.desc" = "別名讓你為常用指令定義短名稱。它們在補全浮窗裡排在最前。";
 "help.aliases.defaults" = "內建範例";
 "help.aliases.custom" = "自訂別名";
-"help.aliases.custom.desc" = "編輯這個 JSON 檔案來增刪別名。重新啟動應用程式後生效。";
+"help.aliases.custom.desc" = "編輯這個 YAML 檔案來增刪別名。重新啟動應用程式後生效。";
 
 "help.appearance.desc" = "設定 → 外觀裡有三種外觀模式：";
 "help.appearance.none" = "無 —— 系統視窗純色背景。";
