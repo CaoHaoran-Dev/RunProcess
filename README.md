@@ -115,7 +115,7 @@ Every executed command is recorded. The history powers two features:
 History is stored at:
 
 ```
-~/Library/Application Support/RunProcess/history.json
+~/Library/Application Support/RunProcess/history.yml
 ```
 
 Maximum 500 entries. The oldest least-recently-used entries are pruned first.
@@ -140,12 +140,12 @@ Built-in examples:
 Custom aliases live in:
 
 ```
-~/Library/Application Support/RunProcess/aliases.json
+~/Library/Application Support/RunProcess/aliases.yml
 ```
 
 Format:
 
-```json
+```yml
 [
   { "name": "gs", "expansion": "git status" },
   { "name": "serve", "expansion": "python3 -m http.server 8000" }
