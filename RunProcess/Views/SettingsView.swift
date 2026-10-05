@@ -8,6 +8,7 @@
 import SwiftUI
 internal import AppKit
 import KeyboardShortcuts
+import Sparkle
 
 // MARK: - 分类
 
@@ -19,6 +20,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case sudo
     case aliases
     case startup
+    case updates
 
     var id: String { rawValue }
 
@@ -31,6 +33,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .sudo:             return NSLocalizedString("settings.category.sudo", comment: "")
         case .aliases:          return NSLocalizedString("settings.category.aliases", comment: "")
         case .startup:          return NSLocalizedString("settings.category.startup", comment: "")
+        case .updates:          return NSLocalizedString("settings.category.updates", comment: "")
         }
     }
 
@@ -43,6 +46,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .sudo:             return "lock.shield"
         case .aliases:          return "wand.and.stars"
         case .startup:          return "power"
+        case .updates:          return "arrow.triangle.2.circlepath"
         }
     }
 }
@@ -120,6 +124,7 @@ struct SettingsView: View {
                 case .sudo:             SudoPane()
                 case .aliases:          AliasesPane()
                 case .startup:          StartupPane()
+                case .updates:          UpdatesPane()
                 }
             }
             .padding(16)
@@ -493,7 +498,6 @@ private struct AliasesPane: View {
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        // 用 .sheet(item:) 保证 content 拿到非 nil 值
         .sheet(item: $editing) { item in
             AliasEditorSheet(
                 alias: item,
@@ -522,10 +526,7 @@ private struct AliasesPane: View {
         }
     }
 
-    // MARK: - 操作
-
     private func saveAlias(_ alias: CommandAlias, original: CommandAlias) {
-        // 改名：先删旧的
         if original.name != alias.name, !original.name.isEmpty {
             AliasStore.shared.remove(name: original.name)
         }
@@ -785,6 +786,149 @@ private struct StartupPane: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+    }
+}
+
+// MARK: - 更新
+
+private struct UpdatesPane: View {
+    @State private var automaticallyChecksForUpdates = true
+    @State private var automaticallyDownloadsUpdates = false
+    @State private var lastCheckDate: Date? = nil
+    @State private var isChecking = false
+    @State private var statusMessage: String? = nil
+
+    private var updater: SPUUpdater? {
+        (NSApp.delegate as? AppDelegate)?.updaterControllerForSettings?.updater
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            PaneTitle(NSLocalizedString("settings.category.updates", comment: ""))
+
+            // 当前版本
+            SettingGroup {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(NSLocalizedString("settings.updates.currentVersion", comment: ""))
+                            .font(.system(size: 12))
+                        Spacer()
+                        Text(currentVersionString)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                    Text(NSLocalizedString("settings.updates.currentVersion.hint", comment: ""))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            // 检查更新
+            SettingGroup {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Button {
+                            checkForUpdates()
+                        } label: {
+                            HStack(spacing: 4) {
+                                if isChecking {
+                                    ProgressView().controlSize(.small)
+                                }
+                                Text(NSLocalizedString("settings.updates.checkNow", comment: ""))
+                            }
+                        }
+                        .disabled(isChecking)
+
+                        Spacer()
+
+                        if let date = lastCheckDate {
+                            Text(String(
+                                format: NSLocalizedString("settings.updates.lastCheck", comment: ""),
+                                formatted(date)
+                            ))
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        }
+                    }
+
+                    if let msg = statusMessage {
+                        Text(msg)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+
+            // 自动更新
+            SettingGroup {
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle(isOn: $automaticallyChecksForUpdates) {
+                        Text(NSLocalizedString("settings.updates.autoCheck", comment: ""))
+                            .font(.system(size: 12))
+                    }
+                    .onChange(of: automaticallyChecksForUpdates) { newValue in
+                        updater?.automaticallyChecksForUpdates = newValue
+                    }
+
+                    Text(NSLocalizedString("settings.updates.autoCheck.hint", comment: ""))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Divider().padding(.vertical, 2)
+
+                    Toggle(isOn: $automaticallyDownloadsUpdates) {
+                        Text(NSLocalizedString("settings.updates.autoDownload", comment: ""))
+                            .font(.system(size: 12))
+                    }
+                    .onChange(of: automaticallyDownloadsUpdates) { newValue in
+                        updater?.automaticallyDownloadsUpdates = newValue
+                    }
+
+                    Text(NSLocalizedString("settings.updates.autoDownload.hint", comment: ""))
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            SettingGroup {
+                Text(NSLocalizedString("settings.updates.note", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onAppear {
+            automaticallyChecksForUpdates = updater?.automaticallyChecksForUpdates ?? true
+            automaticallyDownloadsUpdates = updater?.automaticallyDownloadsUpdates ?? false
+        }
+    }
+
+    private var currentVersionString: String {
+        let v = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let b = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(v) (\(b))"
+    }
+
+    private func formatted(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.dateStyle = .short
+        f.timeStyle = .short
+        return f.string(from: date)
+    }
+
+    private func checkForUpdates() {
+        isChecking = true
+        statusMessage = nil
+        (NSApp.delegate as? AppDelegate)?.checkForUpdatesFromSettings()
+        lastCheckDate = Date()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isChecking = false
         }
     }
 }

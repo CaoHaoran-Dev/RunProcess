@@ -26,6 +26,7 @@
 "menu.settings" = "設定...";
 "menu.clear.history" = "清除指令記錄";
 "menu.help" = "RunProcess 輔助說明";
+"menu.check.updates" = "檢查更新…";
 "menu.about" = "關於 RunProcess";
 "menu.quit" = "結束";
 
@@ -74,6 +75,7 @@
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "別名";
 "settings.category.startup" = "啟動";
+"settings.category.updates" = "更新";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "顯示 / 隱藏視窗";
@@ -143,6 +145,17 @@
 "settings.startup.launchAtLogin.error" = "無法更新登入項目。請檢查系統設定 → 一般 → 登入項目。";
 "settings.startup.hideOnLaunch" = "啟動後隱藏視窗";
 "settings.startup.hideOnLaunch.hint" = "靜默啟動，只留選單列圖示。按全域快速鍵顯示視窗。";
+
+/* ========== Settings — Updates ========== */
+"settings.updates.currentVersion" = "目前版本";
+"settings.updates.currentVersion.hint" = "目前執行中的應用程式版本與建置號。";
+"settings.updates.checkNow" = "檢查更新";
+"settings.updates.lastCheck" = "上次檢查：%@";
+"settings.updates.autoCheck" = "自動檢查更新";
+"settings.updates.autoCheck.hint" = "每天在背景自動檢查一次新版本。";
+"settings.updates.autoDownload" = "自動下載更新";
+"settings.updates.autoDownload.hint" = "在背景下載新版本。安裝仍需你確認。";
+"settings.updates.note" = "RunProcess 使用 Sparkle 分發更新。更新套件經過加密簽章，安裝前會驗證。";
 
 /* ========== Session ========== */
 "session.reset.notice" = "工作階段已重設";

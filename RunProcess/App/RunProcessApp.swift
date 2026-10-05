@@ -7,6 +7,7 @@
 
 import SwiftUI
 import KeyboardShortcuts
+import Sparkle
 
 @main
 struct RunProcessApp: App {
@@ -28,6 +29,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var aboutWindow: NSWindow?
     private var helpWindow: NSWindow?
     private var keyMonitor: Any?
+
+    /// Sparkle 更新控制器
+    private var updaterController: SPUStandardUpdaterController?
+
+    /// 供设置页访问
+    var updaterControllerForSettings: SPUStandardUpdaterController? {
+        updaterController
+    }
 
     /// 启动后是否真正被激活过。用于忽略启动瞬间的 didResignActive。
     private var hasBeenActive = false
@@ -84,6 +93,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // 检查更新
+        let checkUpdateItem = NSMenuItem(
+            title: NSLocalizedString("menu.check.updates", comment: "Check for updates menu item"),
+            action: #selector(checkForUpdates),
+            keyEquivalent: ""
+        )
+        checkUpdateItem.target = self
+        menu.addItem(checkUpdateItem)
+
+        menu.addItem(NSMenuItem.separator())
+
         let helpItem = NSMenuItem(
             title: NSLocalizedString("menu.help", comment: "Help menu item"),
             action: #selector(openHelp),
@@ -116,6 +136,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // ✅ 初始化 Sparkle（必须在 setupStatusBar 之前）
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
+
         NSApp.setActivationPolicy(.accessory)
 
         setupStatusBar()
@@ -463,6 +490,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    // MARK: - Updates
+
+    @objc func checkForUpdates() {
+        updaterController?.checkForUpdates(nil)
+    }
+
+    /// 供设置页调用的更新检查入口
+    func checkForUpdatesFromSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        updaterController?.checkForUpdates(nil)
     }
 
     // MARK: - Quit
