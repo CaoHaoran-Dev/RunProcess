@@ -123,6 +123,7 @@
 				AD17FC673035CC7A00A52CD6 /* Sources */,
 				AD17FC683035CC7A00A52CD6 /* Frameworks */,
 				AD17FC693035CC7A00A52CD6 /* Resources */,
+				AD6398DF30736E1000D9E56E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -229,6 +230,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AD6398DF30736E1000D9E56E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"${SRCROOT}\"\n\nBUILD_NUMBER=$(git tag | wc -l | tr -d ' ')\n\nif [ -z \"$BUILD_NUMBER\" ] || [ \"$BUILD_NUMBER\" -lt 1 ]; then\n    BUILD_NUMBER=1\nfi\n\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \\\n  \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n\necho \"✅ CFBundleVersion = $BUILD_NUMBER\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AD17FC673035CC7A00A52CD6 /* Sources */ = {
