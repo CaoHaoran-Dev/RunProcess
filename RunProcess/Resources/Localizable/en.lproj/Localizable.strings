@@ -26,6 +26,7 @@
 "menu.settings" = "Settings...";
 "menu.clear.history" = "Clear Command History";
 "menu.help" = "RunProcess Help";
+"menu.check.updates" = "Check for Updates…";
 "menu.about" = "About RunProcess";
 "menu.quit" = "Quit";
 
@@ -74,6 +75,7 @@
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "Aliases";
 "settings.category.startup" = "Startup";
+"settings.category.updates" = "Updates";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "Show / Hide Window";
@@ -143,6 +145,17 @@
 "settings.startup.launchAtLogin.error" = "Could not update login item. Check System Settings → General → Login Items.";
 "settings.startup.hideOnLaunch" = "Hide window on launch";
 "settings.startup.hideOnLaunch.hint" = "Start silently in the menu bar. Press the global hotkey to show the window.";
+
+/* ========== Settings — Updates ========== */
+"settings.updates.currentVersion" = "Current Version";
+"settings.updates.currentVersion.hint" = "The version and build number of the running app.";
+"settings.updates.checkNow" = "Check for Updates";
+"settings.updates.lastCheck" = "Last checked: %@";
+"settings.updates.autoCheck" = "Automatically check for updates";
+"settings.updates.autoCheck.hint" = "RunProcess checks for new versions in the background once a day.";
+"settings.updates.autoDownload" = "Automatically download updates";
+"settings.updates.autoDownload.hint" = "Download new versions in the background. Installation still requires your confirmation.";
+"settings.updates.note" = "RunProcess uses Sparkle to deliver updates. Update packages are cryptographically signed and verified before installation.";
 
 /* ========== Session ========== */
 "session.reset.notice" = "Session was reset";
