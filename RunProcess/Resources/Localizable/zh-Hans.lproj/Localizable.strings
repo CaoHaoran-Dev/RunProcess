@@ -18,6 +18,8 @@
 "button.confirm" = "确认";
 "button.save" = "保存";
 "button.delete" = "删除";
+"button.copy" = "拷贝";
+"button.selectAll" = "全选";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
@@ -76,6 +78,16 @@
 "settings.category.aliases" = "别名";
 "settings.category.startup" = "启动";
 "settings.category.updates" = "更新";
+
+/* ========== Settings — Subtitles ========== */
+"settings.general.subtitle" = "配置全局快捷键和窗口行为。";
+"settings.appearance.subtitle" = "自定义 RunProcess 的外观和风格。";
+"settings.session.subtitle" = "控制命令的执行方式和状态保持。";
+"settings.workingDirectory.subtitle" = "设置新窗口的默认工作目录。";
+"settings.sudo.subtitle" = "配置 root 权限执行。";
+"settings.aliases.subtitle" = "为常用命令定义快捷方式。";
+"settings.startup.subtitle" = "控制 RunProcess 的启动方式。";
+"settings.updates.subtitle" = "管理自动更新和版本信息。";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "显示 / 隐藏窗口";
@@ -149,13 +161,11 @@
 /* ========== Settings — Updates ========== */
 "settings.updates.currentVersion" = "当前版本";
 "settings.updates.currentVersion.hint" = "当前运行的应用版本和构建号。";
-"settings.updates.checkNow" = "检查更新";
-"settings.updates.lastCheck" = "上次检查：%@";
 "settings.updates.autoCheck" = "自动检查更新";
 "settings.updates.autoCheck.hint" = "每天在后台自动检查一次新版本。";
 "settings.updates.autoDownload" = "自动下载更新";
 "settings.updates.autoDownload.hint" = "在后台下载新版本。安装仍需你确认。";
-"settings.updates.note" = "RunProcess 使用 Sparkle 分发更新。更新包经过加密签名，安装前会验证。";
+"settings.updates.note" = "RunProcess 使用 Sparkle 分发更新。更新包经过加密签名，安装前会验证。手动检查更新请使用菜单栏中的「检查更新」（⌘U）。";
 
 /* ========== Session ========== */
 "session.reset.notice" = "会话已重置";

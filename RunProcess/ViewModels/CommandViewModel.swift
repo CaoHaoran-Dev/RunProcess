@@ -7,11 +7,12 @@
 
 import SwiftUI
 import Combine
+internal import AppKit
 
 class CommandViewModel: ObservableObject {
     @Published var inputText: String = ""
     @Published var outputText: String = ""
-    @Published var outputAttributed: AttributedString = AttributedString()
+    @Published var outputAttributed: NSAttributedString = NSAttributedString()
     @Published var isRunning: Bool = false
     @Published var canCancel: Bool = false
     @Published var suggestions: [Suggestion] = []
@@ -33,6 +34,9 @@ class CommandViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
 
+    /// 持有 RunTextField 的 Coordinator，用于关闭面板后恢复焦点
+    private weak var textFieldCoordinator: RunTextField.Coordinator?
+
     /// 缓存上一次的颜色偏好，用于判断是否需要重算
     private var cachedColorsEnabled = AppSettings.outputColorsEnabled
     private var cachedColorScheme = AppSettings.outputColorScheme
@@ -40,7 +44,6 @@ class CommandViewModel: ObservableObject {
     // MARK: - Init
 
     init() {
-        // 输入变化：关闭补全、重置历史导航
         $inputText
             .dropFirst()
             .sink { [weak self] _ in
@@ -49,7 +52,7 @@ class CommandViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // 输出变化：解析 ANSI
+        // 输出变化：解析 ANSI（返回 NSAttributedString）
         $outputText
             .sink { [weak self] text in
                 self?.outputAttributed = ANSIParser.parse(text)
@@ -83,8 +86,29 @@ class CommandViewModel: ObservableObject {
         textField = view
     }
 
+    func registerTextFieldCoordinator(_ coordinator: RunTextField.Coordinator) {
+        textFieldCoordinator = coordinator
+    }
+
+    /// 把键盘焦点还给输入框。
+    func restoreInputFocus() {
+        if let coordinator = textFieldCoordinator {
+            coordinator.restoreFocus()
+        } else if let tv = textField as? NSTextView, let win = tv.window {
+            guard win.isKeyWindow, win.attachedSheet == nil else { return }
+            win.makeFirstResponder(tv)
+        }
+    }
+
     var positioningView: NSView? {
         textField
+    }
+
+    // MARK: - 窗口宽度
+
+    /// 输出内容变宽 / 变窄时调用，通知 Session 平滑改变窗口宽度。
+    func resizeWindow(to width: CGFloat) {
+        session?.setContentWidth(width)
     }
 
     // MARK: - 补全
@@ -172,10 +196,7 @@ class CommandViewModel: ObservableObject {
                         completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
 
-        // 1. .app 补全
         var processedCommand = CommandPreprocessor.process(inputText)
-
-        // 2. 别名展开
         processedCommand = expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
@@ -223,7 +244,6 @@ class CommandViewModel: ObservableObject {
         }
     }
 
-    /// 只替换命令的第一个词（别名）
     private func expandAlias(in command: String) -> String {
         let parts = command.split(separator: " ", maxSplits: 1,
                                   omittingEmptySubsequences: false)
@@ -250,7 +270,15 @@ class CommandViewModel: ObservableObject {
 
     func clearOutput() {
         outputText = ""
-        outputAttributed = AttributedString()
+        outputAttributed = NSAttributedString()
+    }
+
+    /// 复制输出到剪贴板，并把焦点还给输入框
+    func copyOutputToPasteboard() {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(outputText, forType: .string)
+        restoreInputFocus()
     }
 
     func showSessionResetNotice() {
@@ -267,6 +295,7 @@ class CommandViewModel: ObservableObject {
         }
         closeSuggestions()
         resetHistoryNavigation()
+        restoreInputFocus()
     }
 }
 
@@ -280,7 +309,6 @@ enum CommandPreprocessor {
 
         if lower.hasPrefix("open ") || lower.hasPrefix("start ") { return trimmed }
 
-        // 先剥掉外层引号，再判断
         let unwrapped = unwrapQuotes(trimmed)
 
         if unwrapped.hasSuffix(".app") || unwrapped.hasSuffix(".app/") {
@@ -323,12 +351,6 @@ enum CommandPreprocessor {
         return false
     }
 
-    /// 剥掉外层引号（单/双引号，成对出现且内层不含同类引号时）
-    ///
-    /// - `"/a b/c.app"` → `/a b/c.app`
-    /// - `/a b/c.app` → `/a b/c.app`（不变）
-    /// - `"/a" "b"` → `"/a" "b"`（不变，引号没包住整串）
-    /// - `"not closed` → `"not closed`（不变）
     private static func unwrapQuotes(_ s: String) -> String {
         guard s.count >= 2 else { return s }
         let first = s.first!
@@ -342,7 +364,6 @@ enum CommandPreprocessor {
         return s
     }
 
-    /// 去掉单/双引号内的内容，避免 `echo "a > b"` 被误判
     private static func stripQuotes(_ s: String) -> String {
         var result = ""
         var inSingle = false

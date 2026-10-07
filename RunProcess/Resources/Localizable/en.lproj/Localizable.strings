@@ -18,6 +18,8 @@
 "button.confirm" = "Confirm";
 "button.save" = "Save";
 "button.delete" = "Delete";
+"button.copy" = "Copy";
+"button.selectAll" = "Select All";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -76,6 +78,16 @@
 "settings.category.aliases" = "Aliases";
 "settings.category.startup" = "Startup";
 "settings.category.updates" = "Updates";
+
+/* ========== Settings — Subtitles ========== */
+"settings.general.subtitle" = "Configure the global shortcut and window behavior.";
+"settings.appearance.subtitle" = "Customize the look and feel of RunProcess.";
+"settings.session.subtitle" = "Control how commands are executed and persisted.";
+"settings.workingDirectory.subtitle" = "Set the default directory for new windows.";
+"settings.sudo.subtitle" = "Configure root privilege execution.";
+"settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
+"settings.startup.subtitle" = "Control how RunProcess starts.";
+"settings.updates.subtitle" = "Manage automatic updates and version information.";
 
 /* ========== Settings — General ========== */
 "settings.shortcut.toggle" = "Show / Hide Window";
@@ -149,13 +161,11 @@
 /* ========== Settings — Updates ========== */
 "settings.updates.currentVersion" = "Current Version";
 "settings.updates.currentVersion.hint" = "The version and build number of the running app.";
-"settings.updates.checkNow" = "Check for Updates";
-"settings.updates.lastCheck" = "Last checked: %@";
 "settings.updates.autoCheck" = "Automatically check for updates";
 "settings.updates.autoCheck.hint" = "RunProcess checks for new versions in the background once a day.";
 "settings.updates.autoDownload" = "Automatically download updates";
 "settings.updates.autoDownload.hint" = "Download new versions in the background. Installation still requires your confirmation.";
-"settings.updates.note" = "RunProcess uses Sparkle to deliver updates. Update packages are cryptographically signed and verified before installation.";
+"settings.updates.note" = "RunProcess uses Sparkle to deliver updates. Update packages are cryptographically signed and verified before installation. To check for updates manually, use Check for Updates (⌘U) in the menu bar.";
 
 /* ========== Session ========== */
 "session.reset.notice" = "Session was reset";

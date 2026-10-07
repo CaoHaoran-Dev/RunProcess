@@ -7,6 +7,7 @@
 
 internal import AppKit
 import SwiftUI
+import QuartzCore
 
 final class Session {
 
@@ -82,7 +83,6 @@ final class Session {
         willCloseObserver = NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification, object: window, queue: .main
         ) { [weak self] _ in
-            // ✅ 只有真正显示过之后才响应关闭
             guard let self = self, self.hasShown else { return }
             self.onClose?()
         }
@@ -101,6 +101,32 @@ final class Session {
         if let token = didBecomeKeyObserver { NotificationCenter.default.removeObserver(token) }
         persistentShell?.teardown()
         sudoAuth.revoke()
+    }
+
+    // MARK: - 窗口尺寸
+
+    /// 输出内容变宽 / 变窄时调用，平滑改变窗口宽度。
+    /// - Parameter width: 目标内容区宽度（不含窗口边框）
+    func setContentWidth(_ width: CGFloat, animated: Bool = true) {
+        guard let contentView = window.contentView else { return }
+        let currentWidth = contentView.frame.width
+        guard abs(currentWidth - width) > 1 else { return }
+
+        var frame = window.frame
+        let delta = width - currentWidth
+        frame.size.width += delta
+        // 居中扩展：左右各推 delta/2，视觉上是「从中心长出来」
+        frame.origin.x -= delta / 2
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.18
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                window.animator().setFrame(frame, display: true)
+            }
+        } else {
+            window.setFrame(frame, display: true)
+        }
     }
 
     // MARK: - Execution
