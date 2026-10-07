@@ -15,18 +15,19 @@ B 站看多了「我修復了 Linux 執行框」的影片，手癢在 macOS 上�
 ## 功能
 
 - **指令執行** —— 輸入指令，執行，即時看輸出/錯誤
-- **ANSI 顏色** —— `git status`、`ls -G`、`grep --color` 等的輸出會帶顏色顯示
+- **ANSI 顏色** —— 完整支援 8/16/256 色與 24 位元真彩色。`git status`、`ls -G`、`grep --color` 等輸出會帶顏色顯示
 - **Tab 補全** —— 別名、指令記錄、系統指令、檔案路徑
 - **指令記錄** —— ↑ / ↓ 依 frecency（頻次 × 最近使用）排序瀏覽
 - **記錄搜尋** —— 按 ⌘R 全文模糊搜尋歷史指令
 - **別名** —— 定義 `gs` → `git status` 之類的短名稱，補全裡排最前
+- **自訂路徑** —— 新增 `/Applications`、`~/bin` 等資料夾。其中的命令列工具可直接用名稱執行；`.app` 也可直接用名稱啟動（如 `Safari`）
 - **拖放檔案** —— 從 Finder 拖入，自動轉義路徑
 - **Root 執行** —— 勾選後彈密碼框，密碼僅在當次執行期間存在於記憶體，不儲存不記錄
 - **預設 Sudo** —— 可把主視窗鎖定為「一律以 root 執行」
 - **全域快速鍵** —— ⌘⌥R 顯示/隱藏視窗（可在設定中自訂）
 - **選單列常駐** —— Dock 不顯示
 - **三種外觀** —— 無、毛玻璃、液態玻璃（macOS 26+）。主視窗、設定、輔助說明、關於、密碼框全部跟隨
-- **浮動視窗** —— 類似 Spotlight
+- **浮動視窗** —— 類似 Spotlight，視窗寬度平滑動畫
 - **多行輸入** —— Shift+Enter 換行
 - **多視窗** —— 每個視窗獨立工作階段
 - **工作階段模式（選用）** —— 長駐 shell，`cd` / `export` 跨指令生效
@@ -55,6 +56,7 @@ B 站看多了「我修復了 Linux 執行框」的影片，手癢在 macOS 上�
 | 按鍵 | 作用 |
 |------|------|
 | `⌘⌥R` | 全域顯示/隱藏視窗（可在設定中自訂） |
+| `⌘U` | 檢查更新 |
 | `⌘N` | 新增視窗 |
 | `⌘R` | 搜尋指令記錄 |
 | `⌘,` | 開啟設定 |
@@ -158,13 +160,45 @@ macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不�
 
 ---
 
-## 預設工作目錄
+## 路徑
 
-在 **設定 → 工作目錄** 中設定。不設定時使用使用者主目錄。
+**設定 → 路徑** 面板有兩個部分。
 
-只影響 **新開啟的視窗**。已開啟視窗的 shell 已經啟動，工作目錄不會被強制改變。
+### 預設工作目錄
+
+設定新視窗的工作目錄。不設定時使用使用者主目錄。僅影響新開啟的視窗。
 
 如果設定的路徑不存在（例如目錄被刪除），會自動回退到使用者主目錄，並在設定面板中顯示警告。
+
+### 自訂路徑
+
+新增資料夾，其中的命令列工具與 `.app` 可直接用名稱執行。
+
+| 輸入 | 執行 |
+|------|------|
+| `myscript`（在 `~/bin`，已加入這裡） | `~/bin/myscript` |
+| `fastfetch`（Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
+| `Safari`（`/Applications` 已加入這裡） | `/Applications/Safari.app` |
+| `Keynote`（同上） | `/Applications/Keynote.app` |
+
+這裡的資料夾會被**追加到 PATH**，所以系統 PATH 和你 `~/.zshrc` 裡設定的 PATH 都會保留。命令列工具由 `zsh` 自己按 PATH 查找。`.app` 會大小寫不敏感比對，並透過 `open -b <bundleId>` 啟動，所以輸入 `keynote` 能開啟 `Keynote.app`。
+
+自訂路徑存放於：
+
+```
+~/Library/Application Support/RunProcess/paths.yml
+```
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+修改後立即生效。
 
 ---
 
@@ -177,6 +211,18 @@ macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不�
 ### 預設 Sudo
 
 在 **設定 → Sudo** 中開啟 **預設以 root 執行**，主視窗的 sudo 開關會鎖定為開且不可改，圖示變成實心鎖。每次執行仍會彈出密碼框。
+
+---
+
+## 更新
+
+RunProcess 使用 [Sparkle](https://sparkle-project.org) 分發更新。
+
+- **檢查更新** —— 在選單列裡（⌘U）
+- **自動檢查** —— 設定 → 更新 裡的開關。每天在背景自動檢查一次
+- **自動下載** —— 設定 → 更新 裡的開關。安裝仍需確認
+
+更新套件經過加密簽章，安裝前會驗證。
 
 ---
 
@@ -244,6 +290,49 @@ open RunProcess.xcodeproj
 
 ---
 
+## 設定檔
+
+RunProcess 把使用者資料存在：
+
+```
+~/Library/Application Support/RunProcess/
+├── aliases.yml      # 指令別名
+├── history.yml      # 指令記錄（最多 500 筆）
+└── paths.yml        # 自訂可執行檔搜尋路徑
+```
+
+### aliases.yml
+
+格式：
+
+```yml
+[
+  { "name": "gs", "expansion": "git status" },
+  { "name": "serve", "expansion": "python3 -m http.server 8000" }
+]
+```
+
+### history.yml
+
+自動維護，最多 500 筆。
+
+### paths.yml
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+### 遷移
+
+舊的 JSON 檔案（`aliases.json`、`history.json`）首次啟動會自動遷移。
+
+---
+
 ## 技術棧
 
 Swift + SwiftUI，100% AI 生成程式碼
@@ -267,4 +356,3 @@ AI 寫程式，人類提需求，一個下午搞定。這就是 2026 年的開�
 ## License
 
 MIT © 2026 CaoHaoran-Dev
-

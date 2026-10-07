@@ -15,6 +15,9 @@ struct RunTextField: NSViewRepresentable {
     let onUp: () -> String?
     let onDown: () -> String?
 
+    /// 把 Coordinator 注册回 ViewModel
+    var onCoordinatorReady: ((Coordinator) -> Void)? = nil
+
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
@@ -62,6 +65,11 @@ struct RunTextField: NSViewRepresentable {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.heightAnchor.constraint(equalToConstant: 44).isActive = true
         scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
+
+        DispatchQueue.main.async {
+            onCoordinatorReady?(context.coordinator)
+        }
+
         return scrollView
     }
 
@@ -87,6 +95,15 @@ struct RunTextField: NSViewRepresentable {
         weak var scrollView: NSScrollView?
 
         init(_ parent: RunTextField) { self.parent = parent }
+
+        /// 把 first responder 还给输入框
+        func restoreFocus() {
+            guard let textView = textView, let window = textView.window else { return }
+            guard window.isKeyWindow else { return }
+            guard window.attachedSheet == nil else { return }
+            guard window.firstResponder !== textView else { return }
+            window.makeFirstResponder(textView)
+        }
 
         func textDidChange(_ notification: Notification) {
             guard let textView = textView else { return }
@@ -173,7 +190,6 @@ class CustomTextView: NSTextView {
         guard let paths = sender.draggingPasteboard.propertyList(forType: type) as? [String],
               !paths.isEmpty else { return false }
 
-        // 双引号包裹，转义 " 和 \
         let escaped = ShellQuoting.quoteAll(paths)
 
         let ns = self.string as NSString

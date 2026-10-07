@@ -83,7 +83,7 @@ Concrete use cases beat abstract ideas. "I run `docker ps` ten times a day and w
 
 ### Requirements
 
-- macOS 12.4 or later
+- macOS 14.5 or later
 - Xcode 16.0 or later
 - Swift 5.9+ (bundled with Xcode)
 
@@ -135,7 +135,6 @@ CI runs the same on both `arm64` and `x86_64` for every PR.
 
 ### Swift Conventions
 
-- **Indentation**: 4 spaces, no tabs
 - **Line length**: aim for 120 characters; hard limit at 150
 - **Naming**: `UpperCamelCase` for types, `lowerCamelCase` for members
 - **Access control**: prefer `private` by default, widen only when needed

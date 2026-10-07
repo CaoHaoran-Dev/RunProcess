@@ -15,18 +15,19 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 ## 功能
 
 - **命令执行** —— 输入命令，执行，实时看输出/报错
-- **ANSI 颜色** —— `git status`、`ls -G`、`grep --color` 等的输出会带颜色显示
+- **ANSI 颜色** —— 完整支持 8/16/256 色和 24 位真彩色。`git status`、`ls -G`、`grep --color` 等输出会带颜色显示
 - **Tab 补全** —— 别名、命令历史、系统命令、文件路径
 - **命令历史** —— ↑ / ↓ 按 frecency（频次 × 最近使用）排序浏览
 - **历史搜索** —— 按 ⌘R 全量模糊搜索历史命令
 - **别名** —— 定义 `gs` → `git status` 之类的短名称，补全里排最前
+- **自定义路径** —— 添加 `/Applications`、`~/bin` 等文件夹。里面的命令行工具可直接用名字运行；`.app` 也可直接用名字启动（如 `Safari`）
 - **拖拽文件** —— 从 Finder 拖入，自动转义路径
 - **Root 执行** —— 勾选后弹密码框，密码仅在当次执行期间存在于内存，不存储不记录
 - **默认 Sudo** —— 可把主界面锁定为"始终以 root 执行"
 - **全局热键** —— ⌘⌥R 显示/隐藏窗口（可在设置中自定义）
 - **菜单栏常驻** —— Dock 不显示
 - **三种外观** —— 无、毛玻璃、液态玻璃（macOS 26+）。主界面、设置、帮助、关于、密码框全部跟随
-- **浮动窗口** —— 类似 Spotlight
+- **浮动窗口** —— 类似 Spotlight，窗口宽度平滑动画
 - **多行输入** —— Shift+Enter 换行
 - **多窗口** —— 每个窗口独立会话
 - **会话模式（可选）** —— 持久 shell，`cd` / `export` 跨命令生效
@@ -55,6 +56,7 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 | 按键 | 作用 |
 |------|------|
 | `⌘⌥R` | 全局显示/隐藏窗口（可在设置中自定义） |
+| `⌘U` | 检查更新 |
 | `⌘N` | 新建窗口 |
 | `⌘R` | 搜索命令历史 |
 | `⌘,` | 打开设置 |
@@ -158,13 +160,45 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 
 ---
 
-## 默认工作目录
+## 路径
 
-在 **设置 → 工作目录** 中配置。不设置时使用用户主目录。
+**设置 → 路径** 面板有两个部分。
 
-只影响 **新打开的窗口**。已打开窗口的 shell 已经启动，工作目录不会被强制改变。
+### 默认工作目录
+
+配置新窗口的工作目录。不设置时使用用户主目录。只影响新打开的窗口。
 
 如果设置的路径不存在（比如目录被删除），会自动回退到用户主目录，并在设置面板中显示警告。
+
+### 自定义路径
+
+添加文件夹，里面的命令行工具和 `.app` 可直接用名字运行。
+
+| 输入 | 运行 |
+|------|------|
+| `myscript`（在 `~/bin`，已添加到这里） | `~/bin/myscript` |
+| `fastfetch`（Homebrew 安装） | `/opt/homebrew/bin/fastfetch` |
+| `Safari`（`/Applications` 已添加到这里） | `/Applications/Safari.app` |
+| `Keynote`（同上） | `/Applications/Keynote.app` |
+
+这里的文件夹会被**追加到 PATH**，所以系统 PATH 和你 `~/.zshrc` 里设置的 PATH 都会保留。命令行工具由 `zsh` 自己按 PATH 查找。`.app` 会大小写不敏感匹配，并通过 `open -b <bundleId>` 启动，所以输入 `keynote` 能打开 `Keynote.app`。
+
+自定义路径存放于：
+
+```
+~/Library/Application Support/RunProcess/paths.yml
+```
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+修改后立即生效。
 
 ---
 
@@ -177,6 +211,18 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 ### 默认 Sudo
 
 在 **设置 → Sudo** 中开启 **默认以 root 执行**，主界面的 sudo 开关会锁定为开且不可改，图标变成实心锁。每次执行仍会弹出密码框。
+
+---
+
+## 更新
+
+RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
+
+- **检查更新** —— 在菜单栏里（⌘U）
+- **自动检查** —— 设置 → 更新 里的开关。每天在后台自动检查一次
+- **自动下载** —— 设置 → 更新 里的开关。安装仍需确认
+
+更新包经过加密签名，安装前会验证。
 
 ---
 
@@ -241,6 +287,49 @@ open RunProcess.xcodeproj
 
 访问 GitHub Pages：
 [RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+
+---
+
+## 配置文件
+
+RunProcess 把用户数据存在：
+
+```
+~/Library/Application Support/RunProcess/
+├── aliases.yml      # 命令别名
+├── history.yml      # 命令历史（最多 500 条）
+└── paths.yml        # 自定义可执行文件搜索路径
+```
+
+### aliases.yml
+
+格式：
+
+```yml
+[
+  { "name": "gs", "expansion": "git status" },
+  { "name": "serve", "expansion": "python3 -m http.server 8000" }
+]
+```
+
+### history.yml
+
+自动维护，最多 500 条。
+
+### paths.yml
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+### 迁移
+
+旧的 JSON 文件（`aliases.json`、`history.json`）首次启动会自动迁移。
 
 ---
 
