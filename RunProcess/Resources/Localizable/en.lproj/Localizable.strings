@@ -73,7 +73,7 @@
 "settings.category.general" = "General";
 "settings.category.appearance" = "Appearance";
 "settings.category.session" = "Session";
-"settings.category.workingDirectory" = "Working Directory";
+"settings.category.paths" = "Paths";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "Aliases";
 "settings.category.startup" = "Startup";
@@ -83,7 +83,7 @@
 "settings.general.subtitle" = "Configure the global shortcut and window behavior.";
 "settings.appearance.subtitle" = "Customize the look and feel of RunProcess.";
 "settings.session.subtitle" = "Control how commands are executed and persisted.";
-"settings.workingDirectory.subtitle" = "Set the default directory for new windows.";
+"settings.paths.subtitle" = "Set the default working directory and custom executable search paths.";
 "settings.sudo.subtitle" = "Configure root privilege execution.";
 "settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
 "settings.startup.subtitle" = "Control how RunProcess starts.";
@@ -119,12 +119,19 @@
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
 
-/* ========== Settings — Working Directory ========== */
+/* ========== Settings — Paths ========== */
+"settings.workingDirectory.title" = "Default Working Directory";
 "settings.workingDirectory.choose" = "Choose...";
 "settings.workingDirectory.reset" = "Reset";
 "settings.workingDirectory.invalid" = "The selected path does not exist. Falling back to your home directory.";
 "settings.workingDirectory.new.window.hint" = "Only affects newly opened windows.";
 "settings.workingDirectory.panel.prompt" = "Choose";
+
+"settings.paths.title" = "Custom Paths";
+"settings.paths.empty" = "No custom paths yet. Click Add Path to add a folder.";
+"settings.paths.add" = "Add Path...";
+"settings.paths.hint" = "Folders here are appended to PATH. Command-line tools found in them can be run by name. .app bundles in them can be launched by name (e.g. Safari). Supports ~ for your home directory. Changes take effect immediately.";
+"settings.paths.panel.prompt" = "Add";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "Always run as root";

@@ -15,7 +15,7 @@ final class PersistentShell {
         let cwd: String
     }
 
-    // MARK: - State (all accessed on `queue`)
+    // MARK: - State
 
     private var process: Process?
     private var stdinPipe: Pipe?
@@ -45,9 +45,6 @@ final class PersistentShell {
     }
 
     deinit {
-        // ⚠️ 不在这里调 teardown()：
-        // teardown 里 queue.sync 在 deinit 阶段可能与正在执行的 queue 块重入，
-        // 触发 EXC_BAD_INSTRUCTION。改由 Session 显式调用 teardown()。
         stdoutPipe?.fileHandleForReading.readabilityHandler = nil
         stderrPipe?.fileHandleForReading.readabilityHandler = nil
         if let p = process, p.isRunning { p.terminate() }
@@ -56,7 +53,6 @@ final class PersistentShell {
     // MARK: - Start / Stop
 
     func start() throws {
-        // ✅ 用 async + 信号量，避免 queue.sync 嵌套
         var thrown: Error?
         let sem = DispatchSemaphore(value: 0)
         queue.async { [weak self] in
@@ -82,11 +78,22 @@ final class PersistentShell {
 
         task.currentDirectoryURL = URL(fileURLWithPath: currentWorkingDirectory)
         task.launchPath = "/bin/zsh"
-        task.arguments = ["-l", "-c", Self.bootstrapScript]
+
+        // ✅ 只把用户自定义路径替换进脚本，让 zsh 自己加载 .zshrc 的 PATH，
+        //    bootstrap 只追加用户路径，不覆盖。
+        let customPath = PathStore.shared.customPathString()
+        let script = Self.bootstrapScript.replacingOccurrences(
+            of: "__RP_CUSTOM_PATH__",
+            with: customPath
+        )
+        task.arguments = ["-l", "-c", script]
 
         task.standardInput = stdinPipe
         task.standardOutput = stdoutPipe
         task.standardError = stderrPipe
+
+        // ✅ 不再设置 task.environment["PATH"]，让 zsh 自己从 shell 配置里加载 PATH。
+        //    否则会覆盖掉用户 .zshrc / .zprofile 里的 PATH。
 
         self.process = task
         self.stdinPipe = stdinPipe
@@ -143,7 +150,6 @@ final class PersistentShell {
         }
 
         try task.run()
-        // ✅ setpgid 让 shell 独立成组
         let pid = task.processIdentifier
         if pid > 0 { _ = setpgid(pid, pid) }
 
@@ -151,7 +157,6 @@ final class PersistentShell {
     }
 
     func teardown() {
-        // 同样避免 sync 重入：用信号量等待 queue 完成
         let sem = DispatchSemaphore(value: 0)
         queue.async { [weak self] in
             guard let self = self else { sem.signal(); return }
@@ -266,7 +271,7 @@ final class PersistentShell {
         }
     }
 
-    // MARK: - Result extraction (on `queue`)
+    // MARK: - Result extraction
 
     private func tryExtractResultLocked() {
         guard let marker = pendingMarker else { return }
@@ -351,6 +356,10 @@ final class PersistentShell {
     private static let bootstrapScript = """
     if [ -f ~/.zshrc ]; then
         source ~/.zshrc
+    fi
+    # ✅ 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已经设好的 PATH
+    if [ -n "__RP_CUSTOM_PATH__" ]; then
+        export PATH="$PATH:__RP_CUSTOM_PATH__"
     fi
     unsetopt PROMPT_SP 2>/dev/null
     unsetopt PROMPT_CR 2>/dev/null

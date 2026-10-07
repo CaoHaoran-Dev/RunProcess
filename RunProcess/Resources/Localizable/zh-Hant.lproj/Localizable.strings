@@ -73,7 +73,7 @@
 "settings.category.general" = "一般";
 "settings.category.appearance" = "外觀";
 "settings.category.session" = "工作階段";
-"settings.category.workingDirectory" = "工作目錄";
+"settings.category.paths" = "路徑";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "別名";
 "settings.category.startup" = "啟動";
@@ -83,7 +83,7 @@
 "settings.general.subtitle" = "設定全域快速鍵與視窗行為。";
 "settings.appearance.subtitle" = "自訂 RunProcess 的外觀與風格。";
 "settings.session.subtitle" = "控制指令的執行方式與狀態保持。";
-"settings.workingDirectory.subtitle" = "設定新視窗的預設工作目錄。";
+"settings.paths.subtitle" = "設定預設工作目錄與自訂可執行檔搜尋路徑。";
 "settings.sudo.subtitle" = "設定 root 權限執行。";
 "settings.aliases.subtitle" = "為常用指令定義快捷方式。";
 "settings.startup.subtitle" = "控制 RunProcess 的啟動方式。";
@@ -119,12 +119,19 @@
 "settings.session.description" = "長駐 shell；cd / export 跨指令生效";
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
 
-/* ========== Settings — Working Directory ========== */
+/* ========== Settings — Paths ========== */
+"settings.workingDirectory.title" = "預設工作目錄";
 "settings.workingDirectory.choose" = "選擇...";
 "settings.workingDirectory.reset" = "重設";
 "settings.workingDirectory.invalid" = "所選路徑不存在，將回退到使用者主目錄。";
 "settings.workingDirectory.new.window.hint" = "僅影響新開啟的視窗。";
 "settings.workingDirectory.panel.prompt" = "選擇";
+
+"settings.paths.title" = "自訂路徑";
+"settings.paths.empty" = "還沒有自訂路徑。點擊「新增路徑」選擇一個資料夾。";
+"settings.paths.add" = "新增路徑...";
+"settings.paths.hint" = "這裡的資料夾會被追加到 PATH。其中的命令列工具可直接用名稱執行；其中的 .app 也可直接用名稱啟動（如 Safari）。支援 ~ 表示使用者主目錄。修改後立即生效。";
+"settings.paths.panel.prompt" = "新增";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "預設以 root 執行";

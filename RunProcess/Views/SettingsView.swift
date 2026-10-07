@@ -16,7 +16,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case general
     case appearance
     case session
-    case workingDirectory
+    case paths
     case sudo
     case aliases
     case startup
@@ -26,55 +26,53 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .general:          return NSLocalizedString("settings.category.general", comment: "")
-        case .appearance:       return NSLocalizedString("settings.category.appearance", comment: "")
-        case .session:          return NSLocalizedString("settings.category.session", comment: "")
-        case .workingDirectory: return NSLocalizedString("settings.category.workingDirectory", comment: "")
-        case .sudo:             return NSLocalizedString("settings.category.sudo", comment: "")
-        case .aliases:          return NSLocalizedString("settings.category.aliases", comment: "")
-        case .startup:          return NSLocalizedString("settings.category.startup", comment: "")
-        case .updates:          return NSLocalizedString("settings.category.updates", comment: "")
+        case .general:    return NSLocalizedString("settings.category.general", comment: "")
+        case .appearance: return NSLocalizedString("settings.category.appearance", comment: "")
+        case .session:    return NSLocalizedString("settings.category.session", comment: "")
+        case .paths:      return NSLocalizedString("settings.category.paths", comment: "")
+        case .sudo:       return NSLocalizedString("settings.category.sudo", comment: "")
+        case .aliases:    return NSLocalizedString("settings.category.aliases", comment: "")
+        case .startup:    return NSLocalizedString("settings.category.startup", comment: "")
+        case .updates:    return NSLocalizedString("settings.category.updates", comment: "")
         }
     }
 
-    /// 线描（outline）SF Symbol，不带 .fill
     var icon: String {
         switch self {
-        case .general:          return "gearshape"
-        case .appearance:       return "paintbrush"
-        case .session:          return "terminal"
-        case .workingDirectory: return "folder"
-        case .sudo:             return "lock.shield"
-        case .aliases:          return "wand.and.stars"
-        case .startup:          return "power"
-        case .updates:          return "arrow.triangle.2.circlepath"
+        case .general:    return "gearshape"
+        case .appearance: return "paintbrush"
+        case .session:    return "terminal"
+        case .paths:      return "folder"
+        case .sudo:       return "lock.shield"
+        case .aliases:    return "wand.and.stars"
+        case .startup:    return "power"
+        case .updates:    return "arrow.triangle.2.circlepath"
         }
     }
 
-    /// 侧边栏图标颜色
     var iconColor: Color {
         switch self {
-        case .general:          return .gray
-        case .appearance:       return .blue
-        case .session:          return .indigo
-        case .workingDirectory: return .teal
-        case .sudo:             return .red
-        case .aliases:          return .purple
-        case .startup:          return .orange
-        case .updates:          return .green
+        case .general:    return .gray
+        case .appearance: return .blue
+        case .session:    return .indigo
+        case .paths:      return .teal
+        case .sudo:       return .red
+        case .aliases:    return .purple
+        case .startup:    return .orange
+        case .updates:    return .green
         }
     }
 
     var subtitle: String {
         switch self {
-        case .general:          return NSLocalizedString("settings.general.subtitle", comment: "")
-        case .appearance:       return NSLocalizedString("settings.appearance.subtitle", comment: "")
-        case .session:          return NSLocalizedString("settings.session.subtitle", comment: "")
-        case .workingDirectory: return NSLocalizedString("settings.workingDirectory.subtitle", comment: "")
-        case .sudo:             return NSLocalizedString("settings.sudo.subtitle", comment: "")
-        case .aliases:          return NSLocalizedString("settings.aliases.subtitle", comment: "")
-        case .startup:          return NSLocalizedString("settings.startup.subtitle", comment: "")
-        case .updates:          return NSLocalizedString("settings.updates.subtitle", comment: "")
+        case .general:    return NSLocalizedString("settings.general.subtitle", comment: "")
+        case .appearance: return NSLocalizedString("settings.appearance.subtitle", comment: "")
+        case .session:    return NSLocalizedString("settings.session.subtitle", comment: "")
+        case .paths:      return NSLocalizedString("settings.paths.subtitle", comment: "")
+        case .sudo:       return NSLocalizedString("settings.sudo.subtitle", comment: "")
+        case .aliases:    return NSLocalizedString("settings.aliases.subtitle", comment: "")
+        case .startup:    return NSLocalizedString("settings.startup.subtitle", comment: "")
+        case .updates:    return NSLocalizedString("settings.updates.subtitle", comment: "")
         }
     }
 }
@@ -109,8 +107,6 @@ struct SettingsView: View {
         )
     }
 
-    // MARK: - 侧边栏
-
     private var sidebar: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 1) {
@@ -127,8 +123,6 @@ struct SettingsView: View {
         }
         .background(Color.clear)
     }
-
-    // MARK: - 详情面板
 
     private var detailPane: some View {
         Group {
@@ -168,14 +162,14 @@ struct SettingsView: View {
             }
 
             switch selected {
-            case .general:          GeneralPane()
-            case .appearance:       AppearancePane()
-            case .session:          SessionPane()
-            case .workingDirectory: WorkingDirectoryPane()
-            case .sudo:             SudoPane()
-            case .aliases:          AliasesPane()
-            case .startup:          StartupPane()
-            case .updates:          UpdatesPane()
+            case .general:    GeneralPane()
+            case .appearance: AppearancePane()
+            case .session:    SessionPane()
+            case .paths:      PathsPane()
+            case .sudo:       SudoPane()
+            case .aliases:    AliasesPane()
+            case .startup:    StartupPane()
+            case .updates:    UpdatesPane()
             }
         }
     }
@@ -227,7 +221,6 @@ private struct GeneralPane: View {
                 Text(NSLocalizedString("settings.shortcut.toggle", comment: ""))
                     .font(.system(size: 13))
                 Spacer(minLength: 12)
-                // ✅ 不带 label，避免和外层 Text 重复显示
                 KeyboardShortcuts.Recorder(for: .toggleWindow)
             }
 
@@ -312,13 +305,15 @@ private struct SessionPane: View {
     }
 }
 
-// MARK: - 工作目录
+// MARK: - 路径
 
-private struct WorkingDirectoryPane: View {
+private struct PathsPane: View {
     @State private var workingDirectoryDisplay = AppSettings.displayWorkingDirectory
     @State private var workingDirectoryIsValid = AppSettings.isWorkingDirectoryValid
+    @State private var paths: [String] = PathStore.shared.paths
 
     var body: some View {
+        // Section 1: 默认工作目录
         Section {
             HStack(spacing: 8) {
                 Text(displayPath)
@@ -348,6 +343,52 @@ private struct WorkingDirectoryPane: View {
             Text(NSLocalizedString("settings.workingDirectory.new.window.hint", comment: ""))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
+        } header: {
+            Text(NSLocalizedString("settings.workingDirectory.title", comment: ""))
+        }
+
+        // Section 2: 自定义路径列表
+        Section {
+            if paths.isEmpty {
+                Text(NSLocalizedString("settings.paths.empty", comment: ""))
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(Array(paths.enumerated()), id: \.offset) { idx, path in
+                    PathRow(
+                        path: path,
+                        isFirst: idx == 0,
+                        isLast: idx == paths.count - 1,
+                        onDelete: {
+                            PathStore.shared.remove(path)
+                            reload()
+                        },
+                        onMoveUp: {
+                            PathStore.shared.move(from: idx, to: idx - 1)
+                            reload()
+                        },
+                        onMoveDown: {
+                            PathStore.shared.move(from: idx, to: idx + 1)
+                            reload()
+                        }
+                    )
+                }
+            }
+
+            Button(NSLocalizedString("settings.paths.add", comment: "")) {
+                choosePath()
+            }
+
+            Text(NSLocalizedString("settings.paths.hint", comment: ""))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+        } header: {
+            Text(NSLocalizedString("settings.paths.title", comment: ""))
+        }
+        .onAppear {
+            // ✅ 打开这个面板时重新读一遍 paths.yml，
+            //    这样外部手动编辑文件后切到这里就能刷新。
+            PathStore.shared.reload()
+            paths = PathStore.shared.paths
         }
     }
 
@@ -385,6 +426,78 @@ private struct WorkingDirectoryPane: View {
         AppSettings.defaultWorkingDirectoryRaw = ""
         workingDirectoryDisplay = ""
         workingDirectoryIsValid = true
+    }
+
+    private func choosePath() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        panel.prompt = NSLocalizedString("settings.paths.panel.prompt", comment: "")
+
+        if panel.runModal() == .OK, let url = panel.url {
+            PathStore.shared.add(url.path)
+            reload()
+        }
+    }
+
+    private func reload() {
+        paths = PathStore.shared.paths
+    }
+}
+
+// MARK: - 路径行
+
+private struct PathRow: View {
+    let path: String
+    let isFirst: Bool
+    let isLast: Bool
+    let onDelete: () -> Void
+    let onMoveUp: () -> Void
+    let onMoveDown: () -> Void
+
+    @State private var isHovering = false
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(path)
+                .font(.system(size: 12, design: .monospaced))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .foregroundColor(isValid ? .primary : .red)
+
+            Spacer(minLength: 0)
+
+            if isHovering {
+                HStack(spacing: 4) {
+                    Button(action: onMoveUp) {
+                        Image(systemName: "chevron.up").font(.system(size: 10))
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(isFirst)
+
+                    Button(action: onMoveDown) {
+                        Image(systemName: "chevron.down").font(.system(size: 10))
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(isLast)
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: 10))
+                            .foregroundColor(.red)
+                    }
+                    .buttonStyle(.borderless)
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .onHover { isHovering = $0 }
+    }
+
+    private var isValid: Bool {
+        PathStore.shared.isValid(path)
     }
 }
 

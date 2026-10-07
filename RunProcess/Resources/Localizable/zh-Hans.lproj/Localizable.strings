@@ -73,7 +73,7 @@
 "settings.category.general" = "通用";
 "settings.category.appearance" = "外观";
 "settings.category.session" = "会话";
-"settings.category.workingDirectory" = "工作目录";
+"settings.category.paths" = "路径";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "别名";
 "settings.category.startup" = "启动";
@@ -83,7 +83,7 @@
 "settings.general.subtitle" = "配置全局快捷键和窗口行为。";
 "settings.appearance.subtitle" = "自定义 RunProcess 的外观和风格。";
 "settings.session.subtitle" = "控制命令的执行方式和状态保持。";
-"settings.workingDirectory.subtitle" = "设置新窗口的默认工作目录。";
+"settings.paths.subtitle" = "设置默认工作目录和自定义可执行文件搜索路径。";
 "settings.sudo.subtitle" = "配置 root 权限执行。";
 "settings.aliases.subtitle" = "为常用命令定义快捷方式。";
 "settings.startup.subtitle" = "控制 RunProcess 的启动方式。";
@@ -119,12 +119,19 @@
 "settings.session.description" = "持久 shell；cd / export 跨命令生效";
 "settings.session.new.window.hint" = "仅影响新打开的窗口。";
 
-/* ========== Settings — Working Directory ========== */
+/* ========== Settings — Paths ========== */
+"settings.workingDirectory.title" = "默认工作目录";
 "settings.workingDirectory.choose" = "选择...";
 "settings.workingDirectory.reset" = "重置";
 "settings.workingDirectory.invalid" = "所选路径不存在，将回退到用户主目录。";
 "settings.workingDirectory.new.window.hint" = "仅影响新打开的窗口。";
 "settings.workingDirectory.panel.prompt" = "选择";
+
+"settings.paths.title" = "自定义路径";
+"settings.paths.empty" = "还没有自定义路径。点击「添加路径」选择一个文件夹。";
+"settings.paths.add" = "添加路径...";
+"settings.paths.hint" = "这里的文件夹会被追加到 PATH。其中的命令行工具可直接用名字运行；其中的 .app 也可直接用名字启动（如 Safari）。支持 ~ 表示用户主目录。修改后立即生效。";
+"settings.paths.panel.prompt" = "添加";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "默认以 root 执行";

@@ -52,14 +52,12 @@ class CommandViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // 输出变化：解析 ANSI（返回 NSAttributedString）
         $outputText
             .sink { [weak self] text in
                 self?.outputAttributed = ANSIParser.parse(text)
             }
             .store(in: &cancellables)
 
-        // 颜色偏好变化时重算已有输出
         NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification,
             object: nil,
@@ -90,7 +88,6 @@ class CommandViewModel: ObservableObject {
         textFieldCoordinator = coordinator
     }
 
-    /// 把键盘焦点还给输入框。
     func restoreInputFocus() {
         if let coordinator = textFieldCoordinator {
             coordinator.restoreFocus()
@@ -196,7 +193,13 @@ class CommandViewModel: ObservableObject {
                         completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
 
+        // 1. .app 补全
         var processedCommand = CommandPreprocessor.process(inputText)
+
+        // 2. 自定义路径里的 .app 查找
+        processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
+
+        // 3. 别名展开
         processedCommand = expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
@@ -322,6 +325,29 @@ enum CommandPreprocessor {
             }
         }
         return trimmed
+    }
+
+    /// 只处理 `.app` bundle。命令行工具交给子进程 PATH 机制，
+    /// 由 zsh 自己按 PATH 顺序查找。
+    static func resolveCustomPath(_ command: String) -> String {
+        let parts = command.split(separator: " ", maxSplits: 1,
+                                  omittingEmptySubsequences: false)
+        guard let first = parts.first, !first.isEmpty else { return command }
+        let name = String(first)
+
+        // 已带路径分隔符，跳过
+        if name.contains("/") { return command }
+
+        // 只查 .app
+        guard let appPath = PathStore.shared.findApp(named: name) else {
+            return command
+        }
+
+        if parts.count == 1 {
+            return "open \(ShellQuoting.quote(appPath))"
+        } else {
+            return "open -a \(ShellQuoting.quote(name)) \(parts[1])"
+        }
     }
 
     static func isInteractive(_ command: String) -> Bool {
