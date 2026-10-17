@@ -286,7 +286,51 @@ open RunProcess.xcodeproj
 ### 在线体验
 
 访问 GitHub Pages：
-[RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+[Process WebHub](https://CaoHaoran-Dev.github.io/Process-WebHub/runprocess)
+
+
+---
+
+## 配置文件
+
+RunProcess 把用户数据存在：
+
+```
+~/Library/Application Support/RunProcess/
+├── aliases.yml      # 命令别名
+├── history.yml      # 命令历史（最多 500 条）
+└── paths.yml        # 自定义可执行文件搜索路径
+```
+
+### aliases.yml
+
+格式：
+
+```yml
+[
+  { "name": "gs", "expansion": "git status" },
+  { "name": "serve", "expansion": "python3 -m http.server 8000" }
+]
+```
+
+### history.yml
+
+自动维护，最多 500 条。
+
+### paths.yml
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+### 迁移
+
+旧的 JSON 文件（`aliases.json`、`history.json`）首次启动会自动迁移。
 
 ---
 

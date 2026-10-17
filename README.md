@@ -285,7 +285,50 @@ Requires Xcode 16.0 or later.
 ### Try It Online
 
 Visit the GitHub Pages demo:
-[RunProcess WebDemo](https://CaoHaoran-Dev.github.io/RunProcess-WebDemo/)
+[Process WebHub](https://CaoHaoran-Dev.github.io/Process-WebHub/runprocess)
+
+---
+
+## Configuration Files
+
+RunProcess stores user data in:
+
+```
+~/Library/Application Support/RunProcess/
+├── aliases.yml      # command aliases
+├── history.yml      # command history (max 500 entries)
+└── paths.yml        # custom executable search paths
+```
+
+### aliases.yml
+
+Format:
+
+```yml
+[
+  { "name": "gs", "expansion": "git status" },
+  { "name": "serve", "expansion": "python3 -m http.server 8000" }
+]
+```
+
+### history.yml
+
+Managed automatically. Maximum 500 entries.
+
+### paths.yml
+
+Format:
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+### Migration
+
+Older JSON files (`aliases.json`, `history.json`) are migrated automatically on first launch.
 
 ---
 
