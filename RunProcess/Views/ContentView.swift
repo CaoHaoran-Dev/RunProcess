@@ -39,7 +39,10 @@ struct ContentView: View {
                     onTab: viewModel.requestSuggestions,
                     onEnter: executeCommand,
                     onUp: { viewModel.navigateHistoryUp() },
-                    onDown: { viewModel.navigateHistoryDown() }
+                    onDown: { viewModel.navigateHistoryDown() },
+                    onCoordinatorReady: { coordinator in
+                        viewModel.registerTextFieldCoordinator(coordinator)
+                    }
                 )
                 .font(.system(size: 18, design: .monospaced))
                 .focused($isFocused)
@@ -108,9 +111,7 @@ struct ContentView: View {
                     .help(NSLocalizedString("output.clear.tooltip", comment: ""))
 
                     Button {
-                        let pb = NSPasteboard.general
-                        pb.clearContents()
-                        pb.setString(viewModel.outputText, forType: .string)
+                        viewModel.copyOutputToPasteboard()
                     } label: {
                         Image(systemName: "doc.on.doc")
                             .font(.system(size: 12))
@@ -134,30 +135,21 @@ struct ContentView: View {
 
             // 输出 / 提示
             if !viewModel.outputText.isEmpty {
-                ScrollView {
-                    Text(viewModel.outputAttributed)
-                        .font(.system(size: 13, design: .monospaced))
-                        .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 4)
-                        .textSelection(.enabled)
-                }
-                .frame(height: outputHeight)
-                .background(
-                    GeometryReader { _ in
-                        Color.clear
-                            .onChange(of: viewModel.outputText) { _ in
-                                let lines = viewModel.outputText.components(separatedBy: "\n").count
-                                let newHeight = min(max(CGFloat(lines) * 20 + 20, 60), 220)
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    outputHeight = newHeight
-                                }
-                            }
-                            .onAppear {
-                                let lines = viewModel.outputText.components(separatedBy: "\n").count
-                                outputHeight = min(max(CGFloat(lines) * 20 + 20, 60), 220)
-                            }
+                OutputTextView(
+                    attributed: viewModel.outputAttributed,
+                    height: outputHeight,
+                    onContentWidth: { width in
+                        let target = min(max(width + 40, 520), 1200)
+                        viewModel.resizeWindow(to: target)
                     }
+                )
+                .frame(height: outputHeight)
+                .padding(.horizontal, 4)
+                .background(
+                    OutputHeightMeasurer(
+                        outputText: viewModel.outputText,
+                        outputHeight: $outputHeight
+                    )
                 )
                 .transition(.opacity)
             } else {
@@ -179,7 +171,7 @@ struct ContentView: View {
             }
         }
         .padding(20)
-        .frame(width: 520)
+        .frame(maxWidth: .infinity)
         .frame(height: viewModel.outputText.isEmpty ? 140 : 120 + outputHeight)
         .background(
             AdaptiveWindowBackground(
@@ -203,6 +195,15 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.showHistoryPanel) {
             HistorySearchView(viewModel: viewModel)
         }
+        // 历史面板关闭后把焦点还给输入框
+        .onChange(of: viewModel.showHistoryPanel) { isShowing in
+            if !isShowing {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    isFocused = true
+                    viewModel.restoreInputFocus()
+                }
+            }
+        }
     }
 
     func executeCommand() {
@@ -223,6 +224,33 @@ struct ContentView: View {
         sudoPassword = ""
         viewModel.executeCommand(useSudo: true, password: password) { _ in
             viewModel.closeSuggestions()
+        }
+    }
+}
+
+// MARK: - 输出区高度测量（独立 View，避免 ContentView.body 类型推断爆炸）
+
+private struct OutputHeightMeasurer: View {
+    let outputText: String
+    @Binding var outputHeight: CGFloat
+
+    var body: some View {
+        GeometryReader { _ in
+            Color.clear
+                .onChange(of: outputText) { _ in
+                    updateHeight()
+                }
+                .onAppear {
+                    updateHeight()
+                }
+        }
+    }
+
+    private func updateHeight() {
+        let lines = outputText.components(separatedBy: "\n").count
+        let newHeight = min(max(CGFloat(lines) * 20 + 20, 60), 220)
+        withAnimation(.easeInOut(duration: 0.15)) {
+            outputHeight = newHeight
         }
     }
 }

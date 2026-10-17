@@ -34,9 +34,22 @@ class CommandExecutor {
 
         task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
         task.launchPath = "/bin/zsh"
-        task.arguments = ["-l", "-c", input]
+
+        // ✅ 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已经设好的 PATH
+        let customPath = PathStore.shared.customPathString()
+        let wrappedCommand: String
+        if customPath.isEmpty {
+            wrappedCommand = input
+        } else {
+            wrappedCommand = "export PATH=\"$PATH:\(ShellQuoting.quote(customPath))\"; \(input)"
+        }
+        task.arguments = ["-l", "-c", wrappedCommand]
+
         task.standardOutput = outputPipe
         task.standardError = errorPipe
+
+        // ✅ 不再设置 task.environment["PATH"]
+        //    让 zsh 自己加载用户的 PATH，bootstrap 里再追加用户路径
 
         stateQueue.sync {
             self.state.task = task
@@ -45,7 +58,6 @@ class CommandExecutor {
 
         do {
             try task.run()
-            // ✅ 立即把子进程移入独立进程组，之后 kill(-pid) 才能杀整组
             let pid = task.processIdentifier
             if pid > 0 {
                 _ = setpgid(pid, pid)
@@ -71,8 +83,17 @@ class CommandExecutor {
 
         task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
         task.launchPath = "/usr/bin/sudo"
-        // ✅ 用 zsh -c 包裹，正确处理引号
-        task.arguments = ["-S", "-k", "/bin/zsh", "-c", command]
+
+        // ✅ 追加用户自定义路径
+        let customPath = PathStore.shared.customPathString()
+        let wrappedCommand: String
+        if customPath.isEmpty {
+            wrappedCommand = command
+        } else {
+            wrappedCommand = "export PATH=\"$PATH:\(ShellQuoting.quote(customPath))\"; \(command)"
+        }
+        task.arguments = ["-S", "-k", "/bin/zsh", "-l", "-c", wrappedCommand]
+
         task.standardOutput = outputPipe
         task.standardError = errorPipe
         task.standardInput = inputPipe
@@ -94,7 +115,6 @@ class CommandExecutor {
             return
         }
 
-        // 写密码
         let passwordData = "\(password)\n".data(using: .utf8)!
         inputPipe.fileHandleForWriting.write(passwordData)
         inputPipe.fileHandleForWriting.closeFile()
@@ -155,7 +175,6 @@ class CommandExecutor {
             }
         }
 
-        // 超时：杀整个进程组
         let timeoutWork = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
             self.killProcessGroup(task)
@@ -181,7 +200,6 @@ class CommandExecutor {
             outputPipe.fileHandleForReading.readabilityHandler = nil
             errorPipe.fileHandleForReading.readabilityHandler = nil
 
-            // ✅ 带超时的 waitUntilExit，避免永久阻塞
             self.waitUntilExit(task, timeout: 3.0)
 
             let wasCancelled: Bool = self.stateQueue.sync {
@@ -204,7 +222,6 @@ class CommandExecutor {
                 return
             }
 
-            // 超时判定：进程被我们杀掉（SIGKILL=9 / SIGTERM=15）
             let status = task.terminationStatus
             if status == 9 || status == 15 {
                 let format = isSudo
@@ -221,7 +238,6 @@ class CommandExecutor {
                 return
             }
 
-            // sudo 密码错误判定
             if isSudo {
                 let lower = trimmed.lowercased()
                 let isPasswordError = lower.contains("sorry") ||
@@ -242,7 +258,6 @@ class CommandExecutor {
         }
     }
 
-    /// 杀整个进程组，确保子进程一起死
     private func killProcessGroup(_ task: Process) {
         let pid = task.processIdentifier
         if pid > 0 {
@@ -256,7 +271,6 @@ class CommandExecutor {
         }
     }
 
-    /// 带超时的 waitUntilExit，避免主线程被卡
     private func waitUntilExit(_ task: Process, timeout: TimeInterval) {
         let deadline = Date().addingTimeInterval(timeout)
         while task.isRunning && Date() < deadline {
