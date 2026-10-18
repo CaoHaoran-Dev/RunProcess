@@ -48,14 +48,14 @@
 		AD1516093084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"/Users/haoran/Documents/Workspace/Codes/Project/RunProcess/RunProcess/beta-Info.plist",
+				"beta-Info.plist",
 			);
 			target = AD17FC6A3035CC7A00A52CD6 /* RunProcess */;
 		};
 		AD15160A3084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess-Beta" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				"/Users/haoran/Documents/Workspace/Codes/Project/RunProcess/RunProcess/beta-Info.plist",
+				"beta-Info.plist",
 			);
 			target = AD1515C73084B3E500073710 /* RunProcess-Beta */;
 		};
