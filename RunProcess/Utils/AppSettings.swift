@@ -32,9 +32,20 @@ enum AppearanceStyle: String, CaseIterable {
     }
 }
 
+/// 主界面风格
+enum MainUIMode: String, CaseIterable {
+    case classic
+    case lite
+
+    var displayNameKey: String {
+        switch self {
+        case .classic: return "interface.mode.classic"
+        case .lite:    return "interface.mode.lite"
+        }
+    }
+}
+
 /// 全局设置，封装 UserDefaults
-///
-/// 注意：不要叫 `Settings`，会与 SwiftUI 的 `Settings` 场景类型冲突。
 enum AppSettings {
 
     // MARK: - Keys
@@ -43,6 +54,7 @@ enum AppSettings {
         static let sessionModeEnabled = "session.enabled"
         static let defaultWorkingDirectory = "workingDirectory.default"
         static let appearanceStyle = "appearance.style"
+        static let mainUIMode = "interface.mainUIMode" // 👈 新增
         static let hideOnDeactivate = "window.hideOnDeactivate"
         static let defaultSudo = "sudo.default"
         static let launchAtLogin = "startup.launchAtLogin"
@@ -53,6 +65,18 @@ enum AppSettings {
 
     private static let defaults = UserDefaults.standard
 
+    // MARK: - 界面模式
+
+    static var mainUIMode: MainUIMode {
+        get {
+            let raw = defaults.string(forKey: Keys.mainUIMode) ?? ""
+            return MainUIMode(rawValue: raw) ?? .classic // 默认 Classic
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: Keys.mainUIMode)
+        }
+    }
+
     // MARK: - 会话模式
 
     static var sessionModeEnabled: Bool {
@@ -61,12 +85,12 @@ enum AppSettings {
     }
 
     // MARK: - 默认工作目录
-
+    // (以下保持不变)
     static var defaultWorkingDirectoryRaw: String {
         get { defaults.string(forKey: Keys.defaultWorkingDirectory) ?? "" }
         set { defaults.set(newValue, forKey: Keys.defaultWorkingDirectory) }
     }
-
+    
     static var resolvedWorkingDirectory: String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let raw = defaultWorkingDirectoryRaw
@@ -128,8 +152,6 @@ enum AppSettings {
 
     // MARK: - 失焦关闭
 
-    /// 窗口失去焦点（App 不再 active）时是否自动隐藏
-    /// 默认 true
     static var hideOnDeactivate: Bool {
         get {
             if defaults.object(forKey: Keys.hideOnDeactivate) == nil {
@@ -142,8 +164,6 @@ enum AppSettings {
 
     // MARK: - 默认 Sudo
 
-    /// 默认以 root 执行。开启后主界面 sudo 开关固定为开且不可改。
-    /// 默认 false。
     static var defaultSudo: Bool {
         get { defaults.bool(forKey: Keys.defaultSudo) }
         set { defaults.set(newValue, forKey: Keys.defaultSudo) }
@@ -151,14 +171,11 @@ enum AppSettings {
 
     // MARK: - 启动
 
-    /// 开机自启动偏好缓存。实际状态以 SMAppService 为准。
     static var launchAtLogin: Bool {
         get { defaults.bool(forKey: Keys.launchAtLogin) }
         set { defaults.set(newValue, forKey: Keys.launchAtLogin) }
     }
 
-    /// 启动后隐藏窗口，只保留菜单栏图标。
-    /// 默认 false。
     static var hideWindowOnLaunch: Bool {
         get { defaults.bool(forKey: Keys.hideWindowOnLaunch) }
         set { defaults.set(newValue, forKey: Keys.hideWindowOnLaunch) }
@@ -166,8 +183,6 @@ enum AppSettings {
 
     // MARK: - 输出颜色
 
-    /// 是否解析并显示 ANSI 颜色
-    /// 默认 true
     static var outputColorsEnabled: Bool {
         get {
             if defaults.object(forKey: Keys.outputColorsEnabled) == nil {
@@ -178,7 +193,6 @@ enum AppSettings {
         set { defaults.set(newValue, forKey: Keys.outputColorsEnabled) }
     }
 
-    /// 输出颜色的色板选择
     enum OutputColorScheme: String, CaseIterable {
         case auto
         case dark

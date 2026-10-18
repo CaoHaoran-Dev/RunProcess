@@ -9,8 +9,12 @@ internal import AppKit
 import SwiftUI
 import QuartzCore
 
-final class Session {
+class BorderlessWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
 
+final class Session {
     let id = UUID()
     let window: NSWindow
     let viewModel: CommandViewModel
@@ -23,8 +27,6 @@ final class Session {
 
     private var willCloseObserver: NSObjectProtocol?
     private var didBecomeKeyObserver: NSObjectProtocol?
-
-    /// ✅ 是否已经真正显示过。用于过滤 show() 之前的 willClose。
     private var hasShown = false
 
     var onClose: (() -> Void)?
@@ -47,15 +49,60 @@ final class Session {
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
-        let window = NSWindow(contentViewController: hostingController)
+        let window = BorderlessWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false
+        )
+        window.contentViewController = hostingController
         window.title = baseTitle
-        window.setContentSize(NSSize(width: 520, height: 140))
+        
+        window.isReleasedWhenClosed = false
+        
+        #if BETA
+        if AppSettings.mainUIMode == .lite {
+            window.styleMask = [.borderless, .fullSizeContentView, .resizable]
+            window.titleVisibility = .hidden
+            window.isMovableByWindowBackground = true
+            
+            window.contentView?.wantsLayer = true
+            window.contentView?.layer?.cornerRadius = 12
+            window.contentView?.layer?.masksToBounds = true
+            
+            window.setContentSize(NSSize(width: 600, height: 56))
+            window.minSize = NSSize(width: 400, height: 56)
+            
+            if let screen = NSScreen.main {
+                let screenRect = screen.visibleFrame
+                let x = screenRect.midX - 300
+                let y = screenRect.maxY - (screenRect.height / 4)
+                window.setFrameOrigin(NSPoint(x: x, y: y))
+            }
+        } else {
+            window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+            window.titlebarAppearsTransparent = true
+            window.setContentSize(NSSize(width: 600, height: 140))
+            window.minSize = NSSize(width: 520, height: 140)
+            
+            if let screen = NSScreen.main {
+                let screenRect = screen.visibleFrame
+                let x = screenRect.midX - 300
+                let y = screenRect.maxY - (screenRect.height / 4)
+                window.setFrameOrigin(NSPoint(x: x, y: y))
+            }
+        }
+        #else
         window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
         window.titlebarAppearsTransparent = true
+        window.setContentSize(NSSize(width: 600, height: 140))
+        window.minSize = NSSize(width: 520, height: 140)
+        window.center()
+        #endif
+
         window.isMovableByWindowBackground = true
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.center()
         window.level = .normal
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
@@ -63,6 +110,7 @@ final class Session {
         viewModel.session = self
 
         if usesSessionMode {
+            // 👇 窗口创建后立刻开始异步加载 zsh，不阻塞界面
             let shell = PersistentShell(initialCWD: initialCWD)
             shell.onCWDChange = { [weak self] cwd in
                 self?.currentWorkingDirectory = cwd
@@ -70,7 +118,9 @@ final class Session {
             }
             shell.onCrash = { [weak self] in self?.handleShellCrash() }
             self.persistentShell = shell
-            try? shell.start()
+            
+            // 👇 这里去掉了 try，直接调用
+            shell.start()
         }
 
         viewModel.executeHandler = { [weak self] command, useSudo, password, completion in
@@ -103,10 +153,6 @@ final class Session {
         sudoAuth.revoke()
     }
 
-    // MARK: - 窗口尺寸
-
-    /// 输出内容变宽 / 变窄时调用，平滑改变窗口宽度。
-    /// - Parameter width: 目标内容区宽度（不含窗口边框）
     func setContentWidth(_ width: CGFloat, animated: Bool = true) {
         guard let contentView = window.contentView else { return }
         let currentWidth = contentView.frame.width
@@ -115,7 +161,6 @@ final class Session {
         var frame = window.frame
         let delta = width - currentWidth
         frame.size.width += delta
-        // 居中扩展：左右各推 delta/2，视觉上是「从中心长出来」
         frame.origin.x -= delta / 2
 
         if animated {
@@ -128,8 +173,6 @@ final class Session {
             window.setFrame(frame, display: true)
         }
     }
-
-    // MARK: - Execution
 
     private func execute(command: String, useSudo: Bool, password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
@@ -172,7 +215,9 @@ final class Session {
             }
             shell.onCrash = { [weak self] in self?.handleShellCrash() }
             self.persistentShell = shell
-            try? shell.start()
+            
+            // 👇 这里去掉了 try，直接调用
+            shell.start()
         }
     }
 
@@ -181,8 +226,6 @@ final class Session {
         let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
         window.title = "\(baseTitle) — \(displayCWD)"
     }
-
-    // MARK: - Lifecycle
 
     func show() {
         hasShown = true

@@ -24,7 +24,22 @@ struct AboutView: View {
                 .frame(width: 80, height: 80)
 
             VStack(spacing: 4) {
-                Text("RunProcess").font(.title2.weight(.semibold))
+                // 👇 这里加了 HStack 来放置 Beta 标签
+                HStack(spacing: 8) {
+                    Text("RunProcess")
+                        .font(.title2.weight(.semibold))
+                    
+                    #if BETA
+                    Text("Beta")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange)
+                        .cornerRadius(4)
+                    #endif
+                }
+                
                 Text(NSLocalizedString("about.version", comment: "") + " " + version)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)

@@ -30,19 +30,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var helpWindow: NSWindow?
     private var keyMonitor: Any?
 
-    /// Sparkle 更新控制器
     private var updaterController: SPUStandardUpdaterController?
 
-    /// 供设置页访问
     var updaterControllerForSettings: SPUStandardUpdaterController? {
         updaterController
     }
 
-    /// 启动后是否真正被激活过。用于忽略启动瞬间的 didResignActive。
     private var hasBeenActive = false
 
     // MARK: - Menu
-
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
 
@@ -93,7 +89,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 检查更新，菜单里显示 ⌘U 提示
         let checkUpdateItem = NSMenuItem(
             title: NSLocalizedString("menu.check.updates", comment: "Check for updates menu item"),
             action: #selector(checkForUpdates),
@@ -137,8 +132,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // ✅ 初始化 Sparkle
-        // 菜单栏应用（.accessory）需要 userDriverDelegate 处理 gentle reminders
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,
@@ -223,6 +216,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
+            // 👇 新增：全局拦截 ⌘W，无论是无边框还是有边框，都能关闭当前窗口
+            if flags == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "w" {
+                if let active = self.sessionManager.activeSession() {
+                    active.hide()
+                    // 如果想让 Cmd+W 直接销毁 Session 导致进程结束，可以用：
+                    // active.window.close()
+                } else {
+                    self.hideAllWindows()
+                }
+                return nil
+            }
+
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "n" {
                 self.newWindow()
@@ -247,8 +253,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
 
-            // ✅ ⌘U 检查更新（不依赖 NSMenuItem.keyEquivalent，
-            //    因为 statusItem.menu 是临时赋值的，菜单关闭后 keyEquivalent 失效）
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "u" {
                 self.checkForUpdates()
@@ -325,7 +329,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 隐藏所有窗口（App 失活时调用）
     func hideAllWindows() {
         for session in sessionManager.allSessions {
             session.hide()
@@ -501,17 +504,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Updates
 
-    /// 菜单栏「检查更新」。绑定 ⌘U。
-    ///
-    /// 菜单栏应用（.accessory）点击菜单项时，Sparkle 的独立窗口可能不会弹出。
-    /// 参考 Sparkle 官方文档：需要临时切换到 .regular，让更新窗口能正常显示。
-    /// https://sparkle-project.org/documentation/gentle-reminders/
     @objc func checkForUpdates() {
-        // ✅ 临时切换到 regular，让 Sparkle 窗口能正常弹出
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        // 延迟一拍，等 activation 完成
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self = self, let controller = self.updaterController else {
                 print("⚠️ updaterController 未初始化")
@@ -531,14 +527,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 // MARK: - SPUUpdaterDelegate
 
 extension AppDelegate: SPUUpdaterDelegate {
-    /// 更新检查周期结束（无论成功、无更新、还是出错）后回调。
-    /// 切回 .accessory，让 App 回到菜单栏模式。
     func updater(_ updater: SPUUpdater,
                  didFinishUpdateCycleFor updateCheck: SPUUpdateCheck,
                  error: Error?) {
-        // 延迟 1 秒切回，给 Sparkle 窗口关闭留出时间
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // 只在当前是 regular 时才切回，避免误改
             if NSApp.activationPolicy() == .regular {
                 NSApp.setActivationPolicy(.accessory)
             }
@@ -549,18 +541,10 @@ extension AppDelegate: SPUUpdaterDelegate {
 // MARK: - SPUStandardUserDriverDelegate
 
 extension AppDelegate: SPUStandardUserDriverDelegate {
-    /// 声明支持 gentle scheduled update reminders。
     var supportsGentleScheduledUpdateReminders: Bool {
         return true
     }
 
-    /// 决定 Sparkle 是否应该处理 scheduled update 的弹窗。
-    ///
-    /// 返回 `immediateFocus`：如果 Sparkle 认为这次检查是「即时焦点」
-    /// （比如用户主动点击检查更新），就由 Sparkle 弹窗到前台。
-    /// 否则（后台自动检查）由 App 决定如何处理。
-    ///
-    /// 参考：https://sparkle-project.org/documentation/gentle-reminders/
     func standardUserDriverShouldHandleShowingScheduledUpdate(
         _ update: SUAppcastItem,
         andInImmediateFocus immediateFocus: Bool

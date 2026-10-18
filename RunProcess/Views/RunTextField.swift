@@ -12,10 +12,11 @@ struct RunTextField: NSViewRepresentable {
     @Binding var text: String
     let onTab: () -> Void
     let onEnter: () -> Void
+    let onOptionEnter: () -> Void // Option+Enter 触发（Root）
     let onUp: () -> String?
     let onDown: () -> String?
+    var onCancel: (() -> Void)? = nil
 
-    /// 把 Coordinator 注册回 ViewModel
     var onCoordinatorReady: ((Coordinator) -> Void)? = nil
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -62,8 +63,8 @@ struct RunTextField: NSViewRepresentable {
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
         textView.string = text
+        
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.heightAnchor.constraint(equalToConstant: 44).isActive = true
         scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
 
         DispatchQueue.main.async {
@@ -96,7 +97,6 @@ struct RunTextField: NSViewRepresentable {
 
         init(_ parent: RunTextField) { self.parent = parent }
 
-        /// 把 first responder 还给输入框
         func restoreFocus() {
             guard let textView = textView, let window = textView.window else { return }
             guard window.isKeyWindow else { return }
@@ -111,14 +111,10 @@ struct RunTextField: NSViewRepresentable {
             scrollView?.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
         }
 
+        // 👇 这里只处理非回车键（Tab、上下方向键等）
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-                if let event = NSApp.currentEvent,
-                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.command) {
-                    insertNewline(textView)
-                    return false
-                }
-                parent.onEnter()
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                parent.onCancel?()
                 return true
             }
 
@@ -164,15 +160,6 @@ struct RunTextField: NSViewRepresentable {
             return false
         }
 
-        private func insertNewline(_ textView: NSTextView) {
-            let ns = textView.string as NSString
-            let range = textView.selectedRange
-            let newText = ns.replacingCharacters(in: range, with: "\n")
-            textView.string = newText
-            textView.selectedRange = NSRange(location: range.location + 1, length: 0)
-            parent.text = newText
-        }
-
         private func insertSpaces(_ textView: NSTextView) {
             let ns = textView.string as NSString
             let range = textView.selectedRange
@@ -185,6 +172,35 @@ struct RunTextField: NSViewRepresentable {
 }
 
 class CustomTextView: NSTextView {
+    // 👇 核心：在这里拦截回车键，直接和系统默认行为（Option+Return = 换行）解耦
+    override func keyDown(with event: NSEvent) {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let isReturn = event.keyCode == 36 || event.keyCode == 76 // 主键盘回车 / 小键盘回车
+
+        if isReturn {
+            if flags.contains(.option) {
+                // Option + Enter：提权
+                (delegate as? RunTextField.Coordinator)?.parent.onOptionEnter()
+                return
+            } else if flags.contains(.shift) {
+                // Shift + Enter：插入换行
+                self.insertNewline(nil)
+                return
+            } else if flags.contains(.command) {
+                // Command + Enter：也插入换行（因为原来代码里有这个逻辑，顺手保留）
+                self.insertNewline(nil)
+                return
+            } else {
+                // 纯 Enter：执行
+                (delegate as? RunTextField.Coordinator)?.parent.onEnter()
+                return
+            }
+        }
+
+        // 其他按键正常向下传递
+        super.keyDown(with: event)
+    }
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let type = NSPasteboard.PasteboardType("NSFilenamesPboardType")
         guard let paths = sender.draggingPasteboard.propertyList(forType: type) as? [String],

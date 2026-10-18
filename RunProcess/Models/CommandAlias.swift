@@ -34,7 +34,8 @@ final class AliasStore {
     private init() {
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("RunProcess")
+        // 👇 修改了这里
+        let dir = appSupport.appendingPathComponent(AppEnvironment.appSupportFolderName)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         fileURL = dir.appendingPathComponent("aliases.yml")
 

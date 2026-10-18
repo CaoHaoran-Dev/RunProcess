@@ -52,20 +52,19 @@ final class PersistentShell {
 
     // MARK: - Start / Stop
 
-    func start() throws {
-        var thrown: Error?
-        let sem = DispatchSemaphore(value: 0)
+    /// 👇 核心优化：彻底的异步启动，绝不阻塞主线程
+    func start(completion: (() -> Void)? = nil) {
         queue.async { [weak self] in
-            guard let self = self else { sem.signal(); return }
+            guard let self = self else { return }
             do {
                 try self.startLocked()
             } catch {
-                thrown = error
+                print("⚠️ Shell 启动失败: \(error)")
             }
-            sem.signal()
+            DispatchQueue.main.async {
+                completion?()
+            }
         }
-        sem.wait()
-        if let e = thrown { throw e }
     }
 
     private func startLocked() throws {
@@ -79,8 +78,6 @@ final class PersistentShell {
         task.currentDirectoryURL = URL(fileURLWithPath: currentWorkingDirectory)
         task.launchPath = "/bin/zsh"
 
-        // ✅ 只把用户自定义路径替换进脚本，让 zsh 自己加载 .zshrc 的 PATH，
-        //    bootstrap 只追加用户路径，不覆盖。
         let customPath = PathStore.shared.customPathString()
         let script = Self.bootstrapScript.replacingOccurrences(
             of: "__RP_CUSTOM_PATH__",
@@ -91,9 +88,6 @@ final class PersistentShell {
         task.standardInput = stdinPipe
         task.standardOutput = stdoutPipe
         task.standardError = stderrPipe
-
-        // ✅ 不再设置 task.environment["PATH"]，让 zsh 自己从 shell 配置里加载 PATH。
-        //    否则会覆盖掉用户 .zshrc / .zprofile 里的 PATH。
 
         self.process = task
         self.stdinPipe = stdinPipe
@@ -200,9 +194,10 @@ final class PersistentShell {
         self.isAlive = false
     }
 
-    func restart() throws {
+    /// 👇 这里是之前会引发 `try` 警告的源头，把它改成非 throws 的方法
+    func restart() {
         teardown()
-        try start()
+        start()
     }
 
     // MARK: - Execute
@@ -345,7 +340,12 @@ final class PersistentShell {
 
             self.suppressCrashCallback = true
             self.teardownLocked()
-            do { try self.startLocked() } catch { /* ignore */ }
+            // 👇 这里原来是 try，也去掉了，因为 startLocked 是同步抛错，但这里在异步闭包里没法 catch 到外层，所以改成 do-catch
+            do {
+                try self.startLocked()
+            } catch {
+                print("⚠️ 超时后重启 Shell 失败: \(error)")
+            }
 
             DispatchQueue.main.async { completion?(.failure(error)) }
         }
@@ -357,7 +357,6 @@ final class PersistentShell {
     if [ -f ~/.zshrc ]; then
         source ~/.zshrc
     fi
-    # ✅ 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已经设好的 PATH
     if [ -n "__RP_CUSTOM_PATH__" ]; then
         export PATH="$PATH:__RP_CUSTOM_PATH__"
     fi

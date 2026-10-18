@@ -4,6 +4,13 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>RunProcess copy.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>isShown</key>
+			<true/>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
 		<key>RunProcess.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
@@ -12,6 +19,11 @@
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>AD1515C73084B3E500073710</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>AD17FC6A3035CC7A00A52CD6</key>
 		<dict>
 			<key>primary</key>

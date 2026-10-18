@@ -47,7 +47,8 @@ class CommandHistory {
     private init() {
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDir = appSupport.appendingPathComponent("RunProcess")
+        // 👇 修改了这里
+        let appDir = appSupport.appendingPathComponent(AppEnvironment.appSupportFolderName)
         try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
         fileURL = appDir.appendingPathComponent("history.yml")
         load()
