@@ -54,13 +54,14 @@ enum AppSettings {
         static let sessionModeEnabled = "session.enabled"
         static let defaultWorkingDirectory = "workingDirectory.default"
         static let appearanceStyle = "appearance.style"
-        static let mainUIMode = "interface.mainUIMode" // 👈 新增
+        static let mainUIMode = "interface.mainUIMode"
         static let hideOnDeactivate = "window.hideOnDeactivate"
         static let defaultSudo = "sudo.default"
         static let launchAtLogin = "startup.launchAtLogin"
         static let hideWindowOnLaunch = "startup.hideOnLaunch"
         static let outputColorsEnabled = "output.colorsEnabled"
         static let outputColorScheme = "output.colorScheme"
+        static let explainErrors = "output.explainErrors" // 👈 新增
     }
 
     private static let defaults = UserDefaults.standard
@@ -70,7 +71,7 @@ enum AppSettings {
     static var mainUIMode: MainUIMode {
         get {
             let raw = defaults.string(forKey: Keys.mainUIMode) ?? ""
-            return MainUIMode(rawValue: raw) ?? .classic // 默认 Classic
+            return MainUIMode(rawValue: raw) ?? .classic
         }
         set {
             defaults.set(newValue.rawValue, forKey: Keys.mainUIMode)
@@ -85,7 +86,7 @@ enum AppSettings {
     }
 
     // MARK: - 默认工作目录
-    // (以下保持不变)
+    
     static var defaultWorkingDirectoryRaw: String {
         get { defaults.string(forKey: Keys.defaultWorkingDirectory) ?? "" }
         set { defaults.set(newValue, forKey: Keys.defaultWorkingDirectory) }
@@ -213,5 +214,17 @@ enum AppSettings {
             return OutputColorScheme(rawValue: raw) ?? .auto
         }
         set { defaults.set(newValue.rawValue, forKey: Keys.outputColorScheme) }
+    }
+    
+    // MARK: - 错误解释
+    
+    static var explainErrors: Bool {
+        get {
+            if defaults.object(forKey: Keys.explainErrors) == nil {
+                return true // 默认开启
+            }
+            return defaults.bool(forKey: Keys.explainErrors)
+        }
+        set { defaults.set(newValue, forKey: Keys.explainErrors) }
     }
 }

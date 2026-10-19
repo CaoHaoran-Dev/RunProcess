@@ -11,6 +11,7 @@ struct AppearancePane: View {
     @State private var appearanceStyle = AppSettings.appearanceStyleRaw
     @State private var outputColorsEnabled = AppSettings.outputColorsEnabled
     @State private var outputColorScheme = AppSettings.outputColorScheme
+    @State private var explainErrors = AppSettings.explainErrors // 👈 新增
     
     @State private var uiMode = AppSettings.mainUIMode
 
@@ -25,7 +26,6 @@ struct AppearancePane: View {
             .pickerStyle(.segmented)
             .onChange(of: uiMode) { AppSettings.mainUIMode = $0 }
             
-            // 👇 增加提示，告诉用户新建窗口后生效
             Text(NSLocalizedString("settings.appearance.uiMode.restartHint", comment: ""))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
@@ -64,6 +64,19 @@ struct AppearancePane: View {
             .pickerStyle(.segmented)
             .onChange(of: outputColorScheme) { AppSettings.outputColorScheme = $0 }
             .disabled(!outputColorsEnabled)
+        } header: {
+            Text(NSLocalizedString("settings.output.colors.header", comment: ""))
+        }
+        
+        // 👇 新增错误解释设置
+        Section {
+            Toggle(NSLocalizedString("settings.output.explainErrors", comment: ""), isOn: $explainErrors)
+                .font(.system(size: 13))
+                .onChange(of: explainErrors) { AppSettings.explainErrors = $0 }
+            
+            Text(NSLocalizedString("settings.output.explainErrors.hint", comment: ""))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
     }
 }

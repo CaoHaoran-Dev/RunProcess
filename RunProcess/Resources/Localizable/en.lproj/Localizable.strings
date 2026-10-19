@@ -20,6 +20,7 @@
 "button.delete" = "Delete";
 "button.copy" = "Copy";
 "button.selectAll" = "Select All";
+"button.copy.output" = "Copy Output";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -62,6 +63,11 @@
 "error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
+
+/* ========== Error Explanations ========== */
+"error.explain.not.found" = "\n\n💡 Explanation: The command '%@' was not found. Check for typos, or make sure the tool is installed and in your PATH.";
+"error.explain.permission" = "\n\n💡 Explanation: Permission denied. You may need to run this command with 'sudo' or check the file permissions.";
+"error.explain.no.file" = "\n\n💡 Explanation: No such file or directory. Please verify the path or filename.";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess Settings";
@@ -106,13 +112,27 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
+/* ========== Settings — Interface Mode (Beta) ========== */
+"settings.appearance.uiMode" = "Main Interface Style";
+"settings.appearance.uiMode.header" = "Interface Mode";
+"settings.appearance.uiMode.restartHint" = "Changes take effect in newly opened windows.";
+
+/* ========== Interface Modes ========== */
+"interface.mode.classic" = "Classic";
+"interface.mode.lite" = "Lite";
+
 /* ========== Settings — Output Colors ========== */
+"settings.output.colors.header" = "Output";
 "settings.output.colors.enabled" = "Show colors in command output";
 "settings.output.colors.hint" = "Parse ANSI escape sequences from tools like git, ls, and grep.";
 "settings.output.colors.scheme" = "Palette";
 "output.colors.scheme.auto" = "Auto";
 "output.colors.scheme.dark" = "Dark";
 "output.colors.scheme.light" = "Light";
+
+/* ========== Settings — Output Errors ========== */
+"settings.output.explainErrors" = "Explain common command errors";
+"settings.output.explainErrors.hint" = "Append a human-readable explanation for common errors like 'command not found'.";
 
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "Session Mode";
@@ -207,6 +227,7 @@
 "help.shortcut.toggle" = "Show / hide window globally";
 "help.shortcut.new" = "New window";
 "help.shortcut.history" = "Search command history";
+"help.shortcut.rerun" = "Re-run last command";
 "help.shortcut.settings" = "Open settings";
 "help.shortcut.hide" = "Hide window";
 "help.shortcut.quit" = "Quit RunProcess";

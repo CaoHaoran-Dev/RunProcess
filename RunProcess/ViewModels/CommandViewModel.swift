@@ -34,10 +34,8 @@ class CommandViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
 
-    /// 持有 RunTextField 的 Coordinator，用于关闭面板后恢复焦点
     private weak var textFieldCoordinator: RunTextField.Coordinator?
 
-    /// 缓存上一次的颜色偏好，用于判断是否需要重算
     private var cachedColorsEnabled = AppSettings.outputColorsEnabled
     private var cachedColorScheme = AppSettings.outputColorScheme
 
@@ -103,7 +101,6 @@ class CommandViewModel: ObservableObject {
 
     // MARK: - 窗口宽度
 
-    /// 输出内容变宽 / 变窄时调用，通知 Session 平滑改变窗口宽度。
     func resizeWindow(to width: CGFloat) {
         session?.setContentWidth(width)
     }
@@ -193,20 +190,16 @@ class CommandViewModel: ObservableObject {
                         completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
 
-        // 1. .app 补全
         var processedCommand = CommandPreprocessor.process(inputText)
-
-        // 2. 自定义路径里的 .app 查找
         processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
-
-        // 3. 别名展开
         processedCommand = expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
             inputText = processedCommand
         }
 
-        if CommandPreprocessor.isInteractive(processedCommand) {
+        // 多行命令跳过交互式检查
+        if !processedCommand.contains("\n") && CommandPreprocessor.isInteractive(processedCommand) {
             isRunning = false
             canCancel = false
             outputText = NSLocalizedString("error.interactive.command", comment: "")
@@ -240,11 +233,51 @@ class CommandViewModel: ObservableObject {
                         ? NSLocalizedString("output.success", comment: "")
                         : text
                 case .failure(let error):
-                    self.outputText = "❌ \(error.localizedDescription)"
+                    // 追加错误解释
+                    let rawError = error.localizedDescription
+                    let explanation = self.explainError(rawError)
+                    self.outputText = "❌ \(rawError)\(explanation)"
                 }
                 completion(self.outputText)
             }
         }
+    }
+
+    // 👈 新增：重新执行上一条命令
+    func executeLastCommand(useSudo: Bool, password: String?, completion: @escaping (String) -> Void) {
+        let entries = history.getAll()
+        guard let lastEntry = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first else {
+            return
+        }
+        inputText = lastEntry.command
+        restoreInputFocus()
+        executeCommand(useSudo: useSudo, password: password, completion: completion)
+    }
+
+    // 解释常见错误
+    private func explainError(_ rawError: String) -> String {
+        guard AppSettings.explainErrors else { return "" }
+        
+        let lower = rawError.lowercased()
+        
+        if lower.contains("command not found") {
+            let parts = rawError.split(separator: " ")
+            if let cmdIndex = parts.firstIndex(where: { $0.lowercased() == "command" }), cmdIndex > 0 {
+                let cmdName = String(parts[cmdIndex - 1])
+                return String(format: NSLocalizedString("error.explain.not.found", comment: ""), cmdName)
+            }
+            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), "unknown")
+        }
+        
+        if lower.contains("permission denied") {
+            return NSLocalizedString("error.explain.permission", comment: "")
+        }
+        
+        if lower.contains("no such file or directory") {
+            return NSLocalizedString("error.explain.no.file", comment: "")
+        }
+        
+        return ""
     }
 
     private func expandAlias(in command: String) -> String {
@@ -276,7 +309,6 @@ class CommandViewModel: ObservableObject {
         outputAttributed = NSAttributedString()
     }
 
-    /// 复制输出到剪贴板，并把焦点还给输入框
     func copyOutputToPasteboard() {
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -327,18 +359,14 @@ enum CommandPreprocessor {
         return trimmed
     }
 
-    /// 只处理 `.app` bundle。命令行工具交给子进程 PATH 机制，
-    /// 由 zsh 自己按 PATH 顺序查找。
     static func resolveCustomPath(_ command: String) -> String {
         let parts = command.split(separator: " ", maxSplits: 1,
                                   omittingEmptySubsequences: false)
         guard let first = parts.first, !first.isEmpty else { return command }
         let name = String(first)
 
-        // 已带路径分隔符，跳过
         if name.contains("/") { return command }
 
-        // 只查 .app
         guard let appPath = PathStore.shared.findApp(named: name) else {
             return command
         }

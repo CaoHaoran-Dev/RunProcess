@@ -45,7 +45,6 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     }
 
     /// 该主题对应的全文，用于搜索
-    /// 从 Localizable.strings 里拼出来，跟 HelpContent 渲染的内容一致
     var searchableText: String {
         let keys: [String]
         switch self {
@@ -57,6 +56,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 "help.shortcut.toggle",
                 "help.shortcut.new",
                 "help.shortcut.history",
+                "help.shortcut.rerun", // 👈 新增
                 "help.shortcut.settings",
                 "help.shortcut.enter",
                 "help.shortcut.newline",
@@ -69,6 +69,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 "help.shortcut.toggle",
                 "help.shortcut.new",
                 "help.shortcut.history",
+                "help.shortcut.rerun", // 👈 新增
                 "help.shortcut.settings",
                 "help.shortcut.hide",
                 "help.shortcut.quit",
@@ -461,7 +462,8 @@ private struct OverviewSection: View {
             HelpH2(NSLocalizedString("help.overview.quick", comment: ""))
             KeyRow(keys: "⌘⌥R", desc: NSLocalizedString("help.shortcut.toggle", comment: ""))
             KeyRow(keys: "⌘N", desc: NSLocalizedString("help.shortcut.new", comment: ""))
-            KeyRow(keys: "⌘R", desc: NSLocalizedString("help.shortcut.history", comment: ""))
+            KeyRow(keys: "⌘H", desc: NSLocalizedString("help.shortcut.history", comment: "")) // 改为 H
+            KeyRow(keys: "⌘R", desc: NSLocalizedString("help.shortcut.rerun", comment: ""))   // 新增 R
             KeyRow(keys: "⌘,", desc: NSLocalizedString("help.shortcut.settings", comment: ""))
             KeyRow(keys: "Enter", desc: NSLocalizedString("help.shortcut.enter", comment: ""))
             KeyRow(keys: "Shift+Enter", desc: NSLocalizedString("help.shortcut.newline", comment: ""))
@@ -477,7 +479,8 @@ private struct ShortcutsSection: View {
             HelpH2(NSLocalizedString("help.shortcuts.global", comment: ""))
             KeyRow(keys: "⌘⌥R", desc: NSLocalizedString("help.shortcut.toggle", comment: ""))
             KeyRow(keys: "⌘N", desc: NSLocalizedString("help.shortcut.new", comment: ""))
-            KeyRow(keys: "⌘R", desc: NSLocalizedString("help.shortcut.history", comment: ""))
+            KeyRow(keys: "⌘H", desc: NSLocalizedString("help.shortcut.history", comment: "")) // 改为 H
+            KeyRow(keys: "⌘R", desc: NSLocalizedString("help.shortcut.rerun", comment: ""))   // 新增 R
             KeyRow(keys: "⌘,", desc: NSLocalizedString("help.shortcut.settings", comment: ""))
             KeyRow(keys: "⌘W", desc: NSLocalizedString("help.shortcut.hide", comment: ""))
             KeyRow(keys: "⌘Q", desc: NSLocalizedString("help.shortcut.quit", comment: ""))

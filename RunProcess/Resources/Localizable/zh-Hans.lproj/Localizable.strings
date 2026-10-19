@@ -20,6 +20,7 @@
 "button.delete" = "删除";
 "button.copy" = "拷贝";
 "button.selectAll" = "全选";
+"button.copy.output" = "复制输出";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
@@ -62,6 +63,11 @@
 "error.sudo.wrong.password" = "密码错误，请检查后重试。";
 "error.sudo.missing.password" = "sudo 命令需要密码。";
 "error.exit.code" = "命令执行失败（退出码：%ld）";
+
+/* ========== Error Explanations ========== */
+"error.explain.not.found" = "\n\n💡 解释：找不到命令 '%@'。请检查拼写，或确保工具已安装并包含在 PATH 中。";
+"error.explain.permission" = "\n\n💡 解释：权限被拒绝。您可能需要使用 'sudo' 执行此命令，或检查文件权限。";
+"error.explain.no.file" = "\n\n💡 解释：没有那个文件或目录。请验证路径或文件名是否正确。";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess 设置";
@@ -106,13 +112,27 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液态玻璃";
 
+/* ========== Settings — Interface Mode (Beta) ========== */
+"settings.appearance.uiMode" = "主界面样式";
+"settings.appearance.uiMode.header" = "界面模式";
+"settings.appearance.uiMode.restartHint" = "新打开的窗口才会生效。";
+
+/* ========== Interface Modes ========== */
+"interface.mode.classic" = "经典";
+"interface.mode.lite" = "极简";
+
 /* ========== Settings — Output Colors ========== */
+"settings.output.colors.header" = "输出";
 "settings.output.colors.enabled" = "命令输出显示颜色";
 "settings.output.colors.hint" = "解析 git、ls、grep 等工具输出的 ANSI 转义序列。";
 "settings.output.colors.scheme" = "色板";
 "output.colors.scheme.auto" = "自动";
 "output.colors.scheme.dark" = "深色";
 "output.colors.scheme.light" = "浅色";
+
+/* ========== Settings — Output Errors ========== */
+"settings.output.explainErrors" = "解释常见命令错误";
+"settings.output.explainErrors.hint" = "为“找不到命令”、“权限被拒绝”等常见错误追加人类可读的解释。";
 
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "会话模式";
@@ -207,6 +227,7 @@
 "help.shortcut.toggle" = "全局显示 / 隐藏窗口";
 "help.shortcut.new" = "新建窗口";
 "help.shortcut.history" = "搜索命令历史";
+"help.shortcut.rerun" = "重新执行上一条命令";
 "help.shortcut.settings" = "打开设置";
 "help.shortcut.hide" = "隐藏窗口";
 "help.shortcut.quit" = "退出 RunProcess";

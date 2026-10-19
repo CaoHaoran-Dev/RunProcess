@@ -61,10 +61,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
+        // 👈 修改：菜单栏的命令历史改为 Cmd + H
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
             action: #selector(openHistory),
-            keyEquivalent: "r"
+            keyEquivalent: "h"
         )
         historyItem.keyEquivalentModifierMask = .command
         historyItem.target = self
@@ -216,13 +217,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-            // 👇 新增：全局拦截 ⌘W，无论是无边框还是有边框，都能关闭当前窗口
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "w" {
                 if let active = self.sessionManager.activeSession() {
                     active.hide()
-                    // 如果想让 Cmd+W 直接销毁 Session 导致进程结束，可以用：
-                    // active.window.close()
                 } else {
                     self.hideAllWindows()
                 }
@@ -241,11 +239,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
 
+            // 👈 修改：Cmd + H 打开历史
             if flags == .command,
-               event.charactersIgnoringModifiers?.lowercased() == "r" {
+               event.charactersIgnoringModifiers?.lowercased() == "h" {
                 self.openHistory()
                 return nil
             }
+            
+            // 👈 注意：Cmd + R 的全局拦截已经移除，交给 SwiftUI 局部去响应重新执行
+            // 如果不移除，NSEvent 会拦截掉它导致 SwiftUI 的键盘快捷键失效
 
             if flags == .command,
                event.charactersIgnoringModifiers == "/" {

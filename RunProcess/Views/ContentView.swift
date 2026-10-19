@@ -48,6 +48,15 @@ struct ContentView: View {
                 ? AnyView(AdaptiveWindowBackground(style: appearanceStyle, material: .underWindowBackground, blendingMode: .behindWindow).ignoresSafeArea())
                 : AnyView(Color.clear)
         )
+        // 👈 隐藏按钮拦截 Cmd + R 用于重新执行
+        .background(
+            Button("") {
+                executeLastCommand()
+            }
+            .keyboardShortcut("r", modifiers: .command)
+            .opacity(0)
+            .frame(width: 0, height: 0)
+        )
         .onExitCommand {
             if viewModel.isRunning {
                 viewModel.cancelExecution()
@@ -163,6 +172,18 @@ struct ContentView: View {
                         .controlSize(.small)
                         .frame(width: 44, height: 44)
                 } else {
+                    if !viewModel.outputText.isEmpty {
+                        // Lite 复制按钮
+                        Button(action: viewModel.copyOutputToPasteboard) {
+                            Image(systemName: "doc.on.doc")
+                                .foregroundColor(.secondary.opacity(0.5))
+                                .font(.system(size: 14))
+                        }
+                        .buttonStyle(.plain)
+                        .help(NSLocalizedString("button.copy.output", comment: ""))
+                        .padding(.trailing, 8)
+                    }
+                    
                     Button(action: executeCommand) {
                         Image(systemName: "return")
                             .foregroundColor(.secondary.opacity(0.3))
@@ -182,20 +203,17 @@ struct ContentView: View {
                 outputRow
                     .padding(.vertical, 12)
                     .padding(.horizontal, 20)
+                    .textSelection(.enabled)
             }
         }
         .frame(maxWidth: .infinity)
-        // 直接在 background 中提供圆角形状，不裁剪前景内容。
-        // 材质和形状绑定，窗口拉伸时天然同步，绝不残留直角。
         .background(liteGlassBackground)
-        // 仅叠加边框
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
         )
     }
 
-    /// 材质与形状同源渲染。
     @ViewBuilder
     private var liteGlassBackground: some View {
         switch appearanceStyle {
@@ -315,6 +333,24 @@ struct ContentView: View {
             sudoPassword = ""
         } else {
             viewModel.executeCommand(useSudo: false, password: nil) { _ in
+                viewModel.closeSuggestions()
+            }
+        }
+    }
+
+    // 👈 重新执行上一条命令
+    func executeLastCommand() {
+        guard !viewModel.isRunning else { return }
+        if useSudo {
+            // 如果启用了 sudo，将历史命令填入输入框，唤起密码框
+            let entries = CommandHistory.shared.getAll()
+            if let last = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first {
+                viewModel.inputText = last.command
+                showSudoPasswordDialog = true
+                sudoPassword = ""
+            }
+        } else {
+            viewModel.executeLastCommand(useSudo: false, password: nil) { _ in
                 viewModel.closeSuggestions()
             }
         }
