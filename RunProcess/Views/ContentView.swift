@@ -21,7 +21,7 @@ struct ContentView: View {
     @AppStorage(AppSettings.Keys.mainUIMode) private var uiModeRaw: String = AppSettings.mainUIMode.rawValue
 
     private var appearanceStyle: AppearanceStyle { AppSettings.resolvedAppearanceStyle }
-    
+
     private var uiMode: MainUIMode {
         #if BETA
         return MainUIMode(rawValue: uiModeRaw) ?? .classic
@@ -29,6 +29,8 @@ struct ContentView: View {
         return .classic
         #endif
     }
+
+    private let cornerRadius: CGFloat = 12
 
     init(viewModel: CommandViewModel) { self.viewModel = viewModel }
 
@@ -40,14 +42,11 @@ struct ContentView: View {
                 liteLayout
             }
         }
-        .frame(height: viewModel.outputText.isEmpty ? (uiMode == .classic ? 140 : 56) : 120 + outputHeight)
+        .frame(height: contentHeight)
         .background(
-            AdaptiveWindowBackground(
-                style: appearanceStyle,
-                material: .underWindowBackground,
-                blendingMode: .behindWindow
-            )
-            .ignoresSafeArea()
+            uiMode == .classic
+                ? AnyView(AdaptiveWindowBackground(style: appearanceStyle, material: .underWindowBackground, blendingMode: .behindWindow).ignoresSafeArea())
+                : AnyView(Color.clear)
         )
         .onExitCommand {
             if viewModel.isRunning {
@@ -69,17 +68,39 @@ struct ContentView: View {
         .sheet(isPresented: $viewModel.showHistoryPanel) {
             HistorySearchView(viewModel: viewModel)
         }
+        .onChange(of: showSudoPasswordDialog) { isShowing in
+            if !isShowing { restoreInputFocus() }
+        }
         .onChange(of: viewModel.showHistoryPanel) { isShowing in
-            if !isShowing {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    isFocused = true
-                    viewModel.restoreInputFocus()
-                }
-            }
+            if !isShowing { restoreInputFocus() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) { _ in
+            restoreInputFocus()
+        }
+        .onChange(of: contentHeight) { newHeight in
+            guard uiMode == .lite else { return }
+            viewModel.session?.setContentHeight(newHeight)
         }
     }
 
-    // MARK: - Classic 布局
+    private func restoreInputFocus() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            isFocused = true
+            viewModel.restoreInputFocus()
+        }
+    }
+
+    private var contentHeight: CGFloat {
+        if uiMode == .classic {
+            return viewModel.outputText.isEmpty ? 140 : 120 + outputHeight
+        } else {
+            return viewModel.outputText.isEmpty
+                ? 56
+                : 56 + outputHeight + 24
+        }
+    }
+
+    // MARK: - Classic
     private var classicLayout: some View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
@@ -88,9 +109,7 @@ struct ContentView: View {
                     .font(.system(size: 18))
                     .frame(width: 24, height: 44)
 
-                // 👇 让输入框撑满中间
-                inputField
-                    .frame(maxWidth: .infinity)
+                inputField.frame(maxWidth: .infinity)
 
                 if viewModel.isRunning && viewModel.canCancel {
                     Button(action: viewModel.cancelExecution) {
@@ -127,7 +146,7 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Lite 布局
+    // MARK: - Lite
     private var liteLayout: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
@@ -136,11 +155,9 @@ struct ContentView: View {
                     .font(.system(size: 16))
                     .frame(width: 44, height: 44)
                     .help("Option + Return 以 root 执行")
-                
-                // 👇 完美撑满
-                inputField
-                    .frame(maxWidth: .infinity)
-                
+
+                inputField.frame(maxWidth: .infinity)
+
                 if viewModel.isRunning {
                     ProgressView()
                         .controlSize(.small)
@@ -159,13 +176,35 @@ struct ContentView: View {
             }
             .frame(height: 56)
             .padding(.horizontal, 8)
-            
+
             if !viewModel.outputText.isEmpty {
                 Divider().opacity(0.5)
                 outputRow
                     .padding(.vertical, 12)
                     .padding(.horizontal, 20)
             }
+        }
+        .frame(maxWidth: .infinity)
+        // 直接在 background 中提供圆角形状，不裁剪前景内容。
+        // 材质和形状绑定，窗口拉伸时天然同步，绝不残留直角。
+        .background(liteGlassBackground)
+        // 仅叠加边框
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+        )
+    }
+
+    /// 材质与形状同源渲染。
+    @ViewBuilder
+    private var liteGlassBackground: some View {
+        switch appearanceStyle {
+        case .none:
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(Color(NSColor.windowBackgroundColor))
+        case .frostedGlass, .liquidGlass:
+            RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                .fill(.ultraThinMaterial)
         }
     }
 
@@ -364,12 +403,8 @@ struct SudoPasswordDialog: View {
         .padding(20)
         .frame(width: 380)
         .background(
-            AdaptiveGlassBackground(
-                style: AppSettings.resolvedAppearanceStyle,
-                material: .hudWindow,
-                blendingMode: .behindWindow,
-                cornerRadius: 12
-            )
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
         )
     }
 }

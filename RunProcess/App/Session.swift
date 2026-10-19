@@ -51,28 +51,22 @@ final class Session {
 
         let window = BorderlessWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
+            styleMask: [.borderless, .fullSizeContentView], // 纯 borderless
             backing: .buffered,
             defer: false
         )
         window.contentViewController = hostingController
         window.title = baseTitle
-        
         window.isReleasedWhenClosed = false
-        
+
         #if BETA
         if AppSettings.mainUIMode == .lite {
+            // 完全无边框，没有任何标题栏，也没有额头
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
-            window.titleVisibility = .hidden
             window.isMovableByWindowBackground = true
-            
-            window.contentView?.wantsLayer = true
-            window.contentView?.layer?.cornerRadius = 12
-            window.contentView?.layer?.masksToBounds = true
-            
             window.setContentSize(NSSize(width: 600, height: 56))
             window.minSize = NSSize(width: 400, height: 56)
-            
+
             if let screen = NSScreen.main {
                 let screenRect = screen.visibleFrame
                 let x = screenRect.midX - 300
@@ -84,7 +78,7 @@ final class Session {
             window.titlebarAppearsTransparent = true
             window.setContentSize(NSSize(width: 600, height: 140))
             window.minSize = NSSize(width: 520, height: 140)
-            
+
             if let screen = NSScreen.main {
                 let screenRect = screen.visibleFrame
                 let x = screenRect.midX - 300
@@ -110,7 +104,6 @@ final class Session {
         viewModel.session = self
 
         if usesSessionMode {
-            // 👇 窗口创建后立刻开始异步加载 zsh，不阻塞界面
             let shell = PersistentShell(initialCWD: initialCWD)
             shell.onCWDChange = { [weak self] cwd in
                 self?.currentWorkingDirectory = cwd
@@ -118,8 +111,6 @@ final class Session {
             }
             shell.onCrash = { [weak self] in self?.handleShellCrash() }
             self.persistentShell = shell
-            
-            // 👇 这里去掉了 try，直接调用
             shell.start()
         }
 
@@ -143,6 +134,9 @@ final class Session {
             guard let self = self else { return }
             self.onBecomeKey?()
             (NSApp.delegate as? AppDelegate)?.reparentAuxiliaryWindows(to: self.window)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                self.viewModel.restoreInputFocus()
+            }
         }
     }
 
@@ -174,14 +168,32 @@ final class Session {
         }
     }
 
+    func setContentHeight(_ height: CGFloat, animated: Bool = true) {
+        guard let contentView = window.contentView else { return }
+        let currentHeight = contentView.frame.height
+        guard abs(currentHeight - height) > 1 else { return }
+
+        var frame = window.frame
+        let delta = height - currentHeight
+        frame.size.height += delta
+        frame.origin.y -= delta
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.18
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                window.animator().setFrame(frame, display: true)
+            }
+        } else {
+            window.setFrame(frame, display: true)
+        }
+    }
+
     private func execute(command: String, useSudo: Bool, password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
         if useSudo {
             guard let password = password else {
-                completion(.failure(NSError(
-                    domain: "RunProcess", code: -1,
-                    userInfo: [NSLocalizedDescriptionKey:
-                        NSLocalizedString("error.sudo.missing.password", comment: "")])))
+                completion(.failure(NSError(domain: "RunProcess", code: -1, userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.sudo.missing.password", comment: "")])))
                 return
             }
             sudoAuth.executeSudo(command, password: password, timeout: 10.0, completion: completion)
@@ -215,8 +227,6 @@ final class Session {
             }
             shell.onCrash = { [weak self] in self?.handleShellCrash() }
             self.persistentShell = shell
-            
-            // 👇 这里去掉了 try，直接调用
             shell.start()
         }
     }
