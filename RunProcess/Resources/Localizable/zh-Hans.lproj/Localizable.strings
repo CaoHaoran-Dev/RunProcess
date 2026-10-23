@@ -142,6 +142,14 @@
 "settings.session.enabled" = "会话模式";
 "settings.session.description" = "持久 shell；cd / export 跨命令生效";
 "settings.session.new.window.hint" = "仅影响新打开的窗口。";
+"settings.session.requiresZsh" = "会话模式需要 zsh。";
+
+/* ========== Settings — Shell (Beta) ========== */
+"settings.shell.header" = "Shell";
+"settings.shell.select" = "Shell";
+"settings.shell.add" = "添加自定义 Shell...";
+"settings.shell.add.prompt" = "添加";
+"settings.shell.nonZshHint" = "会话模式和自定义 PATH 仅支持 zsh，当前 Shell 下已禁用。";
 
 /* ========== Settings — Paths ========== */
 "settings.workingDirectory.title" = "默认工作目录";
@@ -156,6 +164,8 @@
 "settings.paths.add" = "添加路径...";
 "settings.paths.hint" = "这里的文件夹会被追加到 PATH。其中的命令行工具可直接用名字运行；其中的 .app 也可直接用名字启动（如 Safari）。支持 ~ 表示用户主目录。修改后立即生效。";
 "settings.paths.panel.prompt" = "添加";
+"settings.paths.injectEnabled" = "把自定义路径追加到 PATH";
+"settings.paths.requiresZsh" = "自定义 PATH 仅支持 zsh。";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "默认以 root 执行";

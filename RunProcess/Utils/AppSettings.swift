@@ -61,7 +61,12 @@ enum AppSettings {
         static let hideWindowOnLaunch = "startup.hideOnLaunch"
         static let outputColorsEnabled = "output.colorsEnabled"
         static let outputColorScheme = "output.colorScheme"
-        static let explainErrors = "output.explainErrors" // 👈 新增
+        static let explainErrors = "output.explainErrors"
+        #if BETA
+        // 👇 Beta 专属：自定义 shell 与 PATH 注入开关
+        static let shellPath = "shell.path"
+        static let customPathEnabled = "paths.customEnabled"
+        #endif
     }
 
     private static let defaults = UserDefaults.standard
@@ -78,10 +83,51 @@ enum AppSettings {
         }
     }
 
+    // MARK: - Shell（Beta 专属）
+
+    #if BETA
+    /// 当前选择的 shell 绝对路径。默认 /bin/zsh。
+    static var shellPathRaw: String {
+        get {
+            let raw = defaults.string(forKey: Keys.shellPath) ?? ""
+            return raw.isEmpty ? "/bin/zsh" : raw
+        }
+        set { defaults.set(newValue, forKey: Keys.shellPath) }
+    }
+
+    /// 生效的 shell 路径（若文件不存在回退到 /bin/zsh）
+    static var resolvedShellPath: String {
+        let raw = shellPathRaw
+        if FileManager.default.isExecutableFile(atPath: raw) {
+            return raw
+        }
+        return "/bin/zsh"
+    }
+
+    /// 当前选择的是否为 zsh（会话模式与 PATH 注入仅 zsh 可用）
+    static var isZshShell: Bool {
+        (resolvedShellPath as NSString).lastPathComponent == "zsh"
+    }
+    #else
+    // 非 Beta 固定 zsh
+    static var shellPathRaw: String {
+        get { "/bin/zsh" }
+        set { _ = newValue }
+    }
+    static var resolvedShellPath: String { "/bin/zsh" }
+    static var isZshShell: Bool { true }
+    #endif
+
     // MARK: - 会话模式
 
     static var sessionModeEnabled: Bool {
-        get { defaults.bool(forKey: Keys.sessionModeEnabled) }
+        get {
+            #if BETA
+            // 非 zsh 强制关闭
+            guard isZshShell else { return false }
+            #endif
+            return defaults.bool(forKey: Keys.sessionModeEnabled)
+        }
         set { defaults.set(newValue, forKey: Keys.sessionModeEnabled) }
     }
 
@@ -221,10 +267,33 @@ enum AppSettings {
     static var explainErrors: Bool {
         get {
             if defaults.object(forKey: Keys.explainErrors) == nil {
-                return true // 默认开启
+                return true
             }
             return defaults.bool(forKey: Keys.explainErrors)
         }
         set { defaults.set(newValue, forKey: Keys.explainErrors) }
     }
+
+    // MARK: - 自定义 PATH 注入（Beta 专属）
+
+    #if BETA
+    /// 是否把 PathStore 里的自定义路径追加到子进程 PATH。
+    /// 仅 zsh 可用；非 zsh 强制关闭。
+    static var customPathEnabled: Bool {
+        get {
+            guard isZshShell else { return false }
+            if defaults.object(forKey: Keys.customPathEnabled) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.customPathEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.customPathEnabled) }
+    }
+    #else
+    /// 正式版固定开启（保持原有行为）
+    static var customPathEnabled: Bool {
+        get { true }
+        set { _ = newValue }
+    }
+    #endif
 }

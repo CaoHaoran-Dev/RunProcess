@@ -142,6 +142,14 @@
 "settings.session.enabled" = "工作階段模式";
 "settings.session.description" = "長駐 shell；cd / export 跨指令生效";
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
+"settings.session.requiresZsh" = "工作階段模式需要 zsh。";
+
+/* ========== Settings — Shell (Beta) ========== */
+"settings.shell.header" = "Shell";
+"settings.shell.select" = "Shell";
+"settings.shell.add" = "新增自訂 Shell...";
+"settings.shell.add.prompt" = "新增";
+"settings.shell.nonZshHint" = "工作階段模式和自訂 PATH 僅支援 zsh，目前 Shell 下已停用。";
 
 /* ========== Settings — Paths ========== */
 "settings.workingDirectory.title" = "預設工作目錄";
@@ -156,6 +164,8 @@
 "settings.paths.add" = "新增路徑...";
 "settings.paths.hint" = "這裡的資料夾會被追加到 PATH。其中的命令列工具可直接用名稱執行；其中的 .app 也可直接用名稱啟動（如 Safari）。支援 ~ 表示使用者主目錄。修改後立即生效。";
 "settings.paths.panel.prompt" = "新增";
+"settings.paths.injectEnabled" = "把自訂路徑追加到 PATH";
+"settings.paths.requiresZsh" = "自訂 PATH 僅支援 zsh。";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "預設以 root 執行";

@@ -33,17 +33,24 @@ final class Session {
     var onBecomeKey: (() -> Void)?
 
     init(usesSessionMode: Bool) {
-        self.usesSessionMode = usesSessionMode
+        #if BETA
+        // 👇 非 zsh 强制关闭会话模式
+        let effectiveSessionMode = usesSessionMode && AppSettings.isZshShell
+        #else
+        let effectiveSessionMode = usesSessionMode
+        #endif
+
+        self.usesSessionMode = effectiveSessionMode
         self.sudoAuth = SudoAuthManager()
 
         let initialCWD = AppSettings.resolvedWorkingDirectory
         self.currentWorkingDirectory = initialCWD
-        self.baseTitle = usesSessionMode
+        self.baseTitle = effectiveSessionMode
             ? NSLocalizedString("window.title.session", comment: "Session window title")
             : "RunProcess"
 
         let viewModel = CommandViewModel()
-        viewModel.usesSessionMode = usesSessionMode
+        viewModel.usesSessionMode = effectiveSessionMode
         self.viewModel = viewModel
 
         let contentView = ContentView(viewModel: viewModel)
@@ -51,7 +58,7 @@ final class Session {
 
         let window = BorderlessWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
-            styleMask: [.borderless, .fullSizeContentView], // 纯 borderless
+            styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
@@ -61,7 +68,6 @@ final class Session {
 
         #if BETA
         if AppSettings.mainUIMode == .lite {
-            // 完全无边框，没有任何标题栏，也没有额头
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
             window.isMovableByWindowBackground = true
             window.setContentSize(NSSize(width: 600, height: 56))
@@ -103,7 +109,7 @@ final class Session {
         self.window = window
         viewModel.session = self
 
-        if usesSessionMode {
+        if effectiveSessionMode {
             let shell = PersistentShell(initialCWD: initialCWD)
             shell.onCWDChange = { [weak self] cwd in
                 self?.currentWorkingDirectory = cwd
@@ -205,9 +211,120 @@ final class Session {
                 }
             }
         } else {
+            #if BETA
+            // 👇 Beta：按当前选中的 shell 执行
+            executeWithSelectedShell(command, timeout: 10.0, completion: completion)
+            #else
             CommandExecutor.shared.execute(command, timeout: 10.0, completion: completion)
+            #endif
         }
     }
+
+    #if BETA
+    /// Beta 专属：用当前选中的 shell 执行（非会话模式路径）
+    /// 不使用 DispatchGroup.wait()，避免优先级反转。
+    private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
+                                          completion: @escaping (Result<String, Error>) -> Void) {
+        let shellPath = AppSettings.resolvedShellPath
+        let cwd = AppSettings.resolvedWorkingDirectory
+
+        let task = Process()
+        let outPipe = Pipe()
+        let errPipe = Pipe()
+
+        task.executableURL = URL(fileURLWithPath: shellPath)
+        task.currentDirectoryURL = URL(fileURLWithPath: cwd)
+
+        // 仅 zsh 且开关开启时注入自定义 PATH
+        var environment = ProcessInfo.processInfo.environment
+        if AppSettings.isZshShell && AppSettings.customPathEnabled {
+            let extra = PathStore.shared.customPathString()
+            if !extra.isEmpty {
+                let existing = environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+                environment["PATH"] = existing + ":" + extra
+            }
+        }
+        task.environment = environment
+
+        task.arguments = ["-c", command]
+        task.standardOutput = outPipe
+        task.standardError = errPipe
+
+        // 用锁保护两个 buffer，因为 readabilityHandler 与 terminationHandler 可能在不同线程
+        let bufferLock = NSLock()
+        var outputData = Data()
+        var errorData = Data()
+
+        outPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            bufferLock.lock()
+            outputData.append(data)
+            bufferLock.unlock()
+        }
+
+        errPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            bufferLock.lock()
+            errorData.append(data)
+            bufferLock.unlock()
+        }
+
+        let timeoutWork = DispatchWorkItem {
+            if task.isRunning { task.terminate() }
+        }
+        DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
+
+        task.terminationHandler = { proc in
+            timeoutWork.cancel()
+
+            // 进程已终止，pipe 已关闭，这里同步读剩余数据不会阻塞
+            outPipe.fileHandleForReading.readabilityHandler = nil
+            errPipe.fileHandleForReading.readabilityHandler = nil
+
+            let outTail = outPipe.fileHandleForReading.readDataToEndOfFile()
+            let errTail = errPipe.fileHandleForReading.readDataToEndOfFile()
+
+            bufferLock.lock()
+            if !outTail.isEmpty { outputData.append(outTail) }
+            if !errTail.isEmpty { errorData.append(errTail) }
+            let outStr = String(data: outputData, encoding: .utf8) ?? ""
+            let errStr = String(data: errorData, encoding: .utf8) ?? ""
+            bufferLock.unlock()
+
+            var combined = outStr
+            if !errStr.isEmpty {
+                combined += (combined.isEmpty ? "" : "\n") + errStr
+            }
+            combined = combined.trimmingCharacters(in: .newlines)
+
+            let status = proc.terminationStatus
+            DispatchQueue.main.async {
+                if status == 0 {
+                    completion(.success(combined))
+                } else {
+                    let message = combined.isEmpty
+                        ? "exit code: \(status)"
+                        : combined
+                    completion(.failure(NSError(
+                        domain: "RunProcess",
+                        code: Int(status),
+                        userInfo: [NSLocalizedDescriptionKey: message])))
+                }
+            }
+        }
+
+        do {
+            try task.run()
+        } catch {
+            outPipe.fileHandleForReading.readabilityHandler = nil
+            errPipe.fileHandleForReading.readabilityHandler = nil
+            timeoutWork.cancel()
+            completion(.failure(error))
+        }
+    }
+    #endif
 
     private func cancelExecution() {
         CommandExecutor.shared.cancelCurrentTask()

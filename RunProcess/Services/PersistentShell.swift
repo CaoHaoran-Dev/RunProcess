@@ -52,7 +52,6 @@ final class PersistentShell {
 
     // MARK: - Start / Stop
 
-    /// 👇 核心优化：彻底的异步启动，绝不阻塞主线程
     func start(completion: (() -> Void)? = nil) {
         queue.async { [weak self] in
             guard let self = self else { return }
@@ -70,15 +69,35 @@ final class PersistentShell {
     private func startLocked() throws {
         guard !isAlive else { return }
 
+        #if BETA
+        // 会话模式只允许 zsh
+        let shellPath = AppSettings.resolvedShellPath
+        guard (shellPath as NSString).lastPathComponent == "zsh" else {
+            throw NSError(domain: "RunProcess", code: -10,
+                          userInfo: [NSLocalizedDescriptionKey: "Session mode requires zsh"])
+        }
+        #else
+        let shellPath = "/bin/zsh"
+        #endif
+
         let task = Process()
         let stdinPipe = Pipe()
         let stdoutPipe = Pipe()
         let stderrPipe = Pipe()
 
         task.currentDirectoryURL = URL(fileURLWithPath: currentWorkingDirectory)
-        task.launchPath = "/bin/zsh"
+        task.launchPath = shellPath
 
+        #if BETA
+        // 只有开关开启时才注入自定义 PATH
+        var customPath = ""
+        if AppSettings.customPathEnabled {
+            customPath = PathStore.shared.customPathString()
+        }
+        #else
         let customPath = PathStore.shared.customPathString()
+        #endif
+
         let script = Self.bootstrapScript.replacingOccurrences(
             of: "__RP_CUSTOM_PATH__",
             with: customPath
@@ -194,7 +213,6 @@ final class PersistentShell {
         self.isAlive = false
     }
 
-    /// 👇 这里是之前会引发 `try` 警告的源头，把它改成非 throws 的方法
     func restart() {
         teardown()
         start()
@@ -340,7 +358,6 @@ final class PersistentShell {
 
             self.suppressCrashCallback = true
             self.teardownLocked()
-            // 👇 这里原来是 try，也去掉了，因为 startLocked 是同步抛错，但这里在异步闭包里没法 catch 到外层，所以改成 do-catch
             do {
                 try self.startLocked()
             } catch {

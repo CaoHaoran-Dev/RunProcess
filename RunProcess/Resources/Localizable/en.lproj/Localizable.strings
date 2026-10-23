@@ -142,6 +142,14 @@
 "settings.session.enabled" = "Session Mode";
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
+"settings.session.requiresZsh" = "Session mode requires zsh.";
+
+/* ========== Settings — Shell (Beta) ========== */
+"settings.shell.header" = "Shell";
+"settings.shell.select" = "Shell";
+"settings.shell.add" = "Add Custom Shell...";
+"settings.shell.add.prompt" = "Add";
+"settings.shell.nonZshHint" = "Session mode and custom PATH are only available with zsh. They are disabled for this shell.";
 
 /* ========== Settings — Paths ========== */
 "settings.workingDirectory.title" = "Default Working Directory";
@@ -156,6 +164,8 @@
 "settings.paths.add" = "Add Path...";
 "settings.paths.hint" = "Folders here are appended to PATH. Command-line tools found in them can be run by name. .app bundles in them can be launched by name (e.g. Safari). Supports ~ for your home directory. Changes take effect immediately.";
 "settings.paths.panel.prompt" = "Add";
+"settings.paths.injectEnabled" = "Append custom paths to PATH";
+"settings.paths.requiresZsh" = "Custom PATH is only available with zsh.";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "Always run as root";

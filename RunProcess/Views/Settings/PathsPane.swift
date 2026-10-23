@@ -13,6 +13,11 @@ struct PathsPane: View {
     @State private var workingDirectoryIsValid = AppSettings.isWorkingDirectoryValid
     @State private var paths: [String] = PathStore.shared.paths
 
+    #if BETA
+    @State private var customPathEnabled = AppSettings.customPathEnabled
+    @State private var isZsh = AppSettings.isZshShell
+    #endif
+
     var body: some View {
         // Section 1: 默认工作目录
         Section {
@@ -50,6 +55,20 @@ struct PathsPane: View {
 
         // Section 2: 自定义路径列表
         Section {
+            #if BETA
+            // 👇 Beta 专属：PATH 注入开关
+            Toggle(NSLocalizedString("settings.paths.injectEnabled", comment: ""), isOn: $customPathEnabled)
+                .font(.system(size: 13))
+                .disabled(!isZsh)
+                .onChange(of: customPathEnabled) { AppSettings.customPathEnabled = $0 }
+
+            if !isZsh {
+                Text(NSLocalizedString("settings.paths.requiresZsh", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(.orange)
+            }
+            #endif
+
             if paths.isEmpty {
                 Text(NSLocalizedString("settings.paths.empty", comment: ""))
                     .foregroundColor(.secondary)
@@ -78,6 +97,9 @@ struct PathsPane: View {
             Button(NSLocalizedString("settings.paths.add", comment: "")) {
                 choosePath()
             }
+            #if BETA
+            .disabled(!isZsh && customPathEnabled)
+            #endif
 
             Text(NSLocalizedString("settings.paths.hint", comment: ""))
                 .font(.system(size: 11))
@@ -88,6 +110,10 @@ struct PathsPane: View {
         .onAppear {
             PathStore.shared.reload()
             paths = PathStore.shared.paths
+            #if BETA
+            isZsh = AppSettings.isZshShell
+            if !isZsh { customPathEnabled = false }
+            #endif
         }
     }
 
