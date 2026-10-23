@@ -68,6 +68,10 @@
 "error.explain.not.found" = "\n\n💡 解释：找不到命令 '%@'。请检查拼写，或确保工具已安装并包含在 PATH 中。";
 "error.explain.permission" = "\n\n💡 解释：权限被拒绝。您可能需要使用 'sudo' 执行此命令，或检查文件权限。";
 "error.explain.no.file" = "\n\n💡 解释：没有那个文件或目录。请验证路径或文件名是否正确。";
+"error.explain.sudo.required" = "\n\n💡 解释：此命令需要 root 权限。执行前请勾选「以 root 执行」。";
+"error.explain.network" = "\n\n💡 解释：网络错误。请检查网络连接、DNS 设置或远程主机是否可达。";
+"error.explain.disk" = "\n\n💡 解释：磁盘或文件系统错误。请清理空间，或检查卷是否以只读方式挂载。";
+"error.explain.syntax" = "\n\n💡 解释：Shell 语法错误。请检查命令中的引号、括号和特殊字符是否成对。";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess 设置";

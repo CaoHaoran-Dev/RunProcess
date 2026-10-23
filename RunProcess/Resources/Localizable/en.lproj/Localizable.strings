@@ -68,6 +68,10 @@
 "error.explain.not.found" = "\n\n💡 Explanation: The command '%@' was not found. Check for typos, or make sure the tool is installed and in your PATH.";
 "error.explain.permission" = "\n\n💡 Explanation: Permission denied. You may need to run this command with 'sudo' or check the file permissions.";
 "error.explain.no.file" = "\n\n💡 Explanation: No such file or directory. Please verify the path or filename.";
+"error.explain.sudo.required" = "\n\n💡 Explanation: This command requires root privileges. Enable \"Run as root\" before executing.";
+"error.explain.network" = "\n\n💡 Explanation: Network error. Check your internet connection, DNS settings, or the remote host.";
+"error.explain.disk" = "\n\n💡 Explanation: Disk or file system error. Free up space, or check whether the volume is mounted read-only.";
+"error.explain.syntax" = "\n\n💡 Explanation: Shell syntax error. Check quotes, brackets, and special characters in the command.";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess Settings";

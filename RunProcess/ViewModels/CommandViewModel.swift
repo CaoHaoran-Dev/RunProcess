@@ -233,8 +233,23 @@ class CommandViewModel: ObservableObject {
                         ? NSLocalizedString("output.success", comment: "")
                         : text
                 case .failure(let error):
-                    // 追加错误解释
                     let rawError = error.localizedDescription
+
+                    // 👇 新增：交互式命令 / TTY 相关错误统一拦截
+                    let lower = rawError.lowercased()
+                    if lower.contains("not a terminal")
+                        || lower.contains("requires a tty")
+                        || lower.contains("can't be run in this context")
+                        || lower.contains("cannot be run in this context")
+                        || lower.contains("stdin is not a tty")
+                        || lower.contains("inappropriate ioctl")
+                    {
+                        self.outputText = "❌ " + NSLocalizedString("error.interactive.command", comment: "")
+                        completion(self.outputText)
+                        return
+                    }
+
+                    // 追加错误解释
                     let explanation = self.explainError(rawError)
                     self.outputText = "❌ \(rawError)\(explanation)"
                 }
@@ -243,7 +258,7 @@ class CommandViewModel: ObservableObject {
         }
     }
 
-    // 👈 新增：重新执行上一条命令
+    // 👈 重新执行上一条命令
     func executeLastCommand(useSudo: Bool, password: String?, completion: @escaping (String) -> Void) {
         let entries = history.getAll()
         guard let lastEntry = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first else {
@@ -254,29 +269,85 @@ class CommandViewModel: ObservableObject {
         executeCommand(useSudo: useSudo, password: password, completion: completion)
     }
 
-    // 解释常见错误
+    // 👇 修改：错误解释改为更通用的关键词匹配
     private func explainError(_ rawError: String) -> String {
         guard AppSettings.explainErrors else { return "" }
-        
+
         let lower = rawError.lowercased()
-        
-        if lower.contains("command not found") {
-            let parts = rawError.split(separator: " ")
-            if let cmdIndex = parts.firstIndex(where: { $0.lowercased() == "command" }), cmdIndex > 0 {
-                let cmdName = String(parts[cmdIndex - 1])
-                return String(format: NSLocalizedString("error.explain.not.found", comment: ""), cmdName)
+
+        // 1. 找不到命令（覆盖 zsh/bash/sh 的多种措辞）
+        if lower.contains("command not found")
+            || lower.contains("not found in path")
+            || lower.contains("no such file or directory: ")
+        {
+            var cmdName = "unknown"
+            let candidates = rawError.split(whereSeparator: { $0 == " " || $0 == ":" || $0 == "\n" })
+            if let idx = candidates.firstIndex(where: { $0.lowercased() == "command" || $0.lowercased() == "not" }),
+               idx > 0 {
+                cmdName = String(candidates[idx - 1])
+            } else if let first = candidates.first, !first.isEmpty {
+                cmdName = String(first)
             }
-            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), "unknown")
+            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), cmdName)
         }
-        
-        if lower.contains("permission denied") {
+
+        // 2. 权限问题
+        if lower.contains("permission denied")
+            || lower.contains("operation not permitted")
+            || lower.contains("access denied")
+            || lower.contains("not authorized")
+        {
             return NSLocalizedString("error.explain.permission", comment: "")
         }
-        
-        if lower.contains("no such file or directory") {
+
+        // 3. 文件/目录不存在
+        if lower.contains("no such file or directory")
+            || lower.contains("does not exist")
+            || lower.contains("cannot find")
+            || lower.contains("can't find")
+            || lower.contains("unable to find")
+        {
             return NSLocalizedString("error.explain.no.file", comment: "")
         }
-        
+
+        // 4. 需要 root / sudo
+        if lower.contains("must be run as root")
+            || lower.contains("requires root")
+            || lower.contains("try again as root")
+            || lower.contains("you need to be root")
+            || lower.contains("not permitted")
+        {
+            return NSLocalizedString("error.explain.sudo.required", comment: "")
+        }
+
+        // 5. 网络错误
+        if lower.contains("could not resolve host")
+            || lower.contains("connection refused")
+            || lower.contains("connection timed out")
+            || lower.contains("network is unreachable")
+            || lower.contains("no route to host")
+        {
+            return NSLocalizedString("error.explain.network", comment: "")
+        }
+
+        // 6. 磁盘 / 空间问题
+        if lower.contains("no space left")
+            || lower.contains("disk full")
+            || lower.contains("read-only file system")
+        {
+            return NSLocalizedString("error.explain.disk", comment: "")
+        }
+
+        // 7. Shell 语法错误
+        if lower.contains("parse error")
+            || lower.contains("syntax error")
+            || lower.contains("bad substitution")
+            || lower.contains("unmatched")
+            || lower.contains("unexpected token")
+        {
+            return NSLocalizedString("error.explain.syntax", comment: "")
+        }
+
         return ""
     }
 
