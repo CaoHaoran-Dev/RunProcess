@@ -289,3 +289,15 @@
 "about.repository" = "GitHub Repository";
 "about.license" = "MIT License";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+
+/* ========== App Intents ========== */
+"intent.runCommand.title" = "Run Command";
+"intent.runCommand.description" = "Execute a shell command in RunProcess and return its output.";
+"intent.runCommand.shortTitle" = "Run Command";
+"intent.runCommand.parameter.command" = "Command";
+"intent.runCommand.parameter.runAsRoot" = "Run as root";
+"intent.runCommand.parameter.throwOnFailure" = "Throw on failure";
+"error.intent.empty.command" = "Command cannot be empty.";
+"error.intent.sudo.cancelled" = "Authorization cancelled by user.";
+"error.intent.sudo.not.authorized" = "Root execution requires authorization.";
+"error.intent.execution.failed" = "Command execution failed.";

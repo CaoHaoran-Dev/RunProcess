@@ -289,3 +289,15 @@
 "about.repository" = "GitHub 儲存庫";
 "about.license" = "MIT 授權條款";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+
+/* ========== App Intents ========== */
+"intent.runCommand.title" = "執行指令";
+"intent.runCommand.description" = "在 RunProcess 中執行 shell 指令並傳回輸出。";
+"intent.runCommand.shortTitle" = "執行指令";
+"intent.runCommand.parameter.command" = "指令";
+"intent.runCommand.parameter.runAsRoot" = "以 root 執行";
+"intent.runCommand.parameter.throwOnFailure" = "失敗時拋出錯誤";
+"error.intent.empty.command" = "指令不能為空。";
+"error.intent.sudo.cancelled" = "使用者取消了授權。";
+"error.intent.sudo.not.authorized" = "以 root 執行需要授權。";
+"error.intent.execution.failed" = "指令執行失敗。";

@@ -289,3 +289,15 @@
 "about.repository" = "GitHub 仓库";
 "about.license" = "MIT 许可证";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+
+/* ========== App Intents ========== */
+"intent.runCommand.title" = "运行命令";
+"intent.runCommand.description" = "在 RunProcess 中执行 shell 命令并返回输出。";
+"intent.runCommand.shortTitle" = "运行命令";
+"intent.runCommand.parameter.command" = "命令";
+"intent.runCommand.parameter.runAsRoot" = "以 root 执行";
+"intent.runCommand.parameter.throwOnFailure" = "失败时抛出错误";
+"error.intent.empty.command" = "命令不能为空。";
+"error.intent.sudo.cancelled" = "用户取消了授权。";
+"error.intent.sudo.not.authorized" = "以 root 执行需要授权。";
+"error.intent.execution.failed" = "命令执行失败。";
