@@ -208,6 +208,12 @@
 "settings.updates.autoDownload.hint" = "Download new versions in the background. Installation still requires your confirmation.";
 "settings.updates.note" = "RunProcess uses Sparkle to deliver updates. Update packages are cryptographically signed and verified before installation. To check for updates manually, use Check for Updates (⌘U) in the menu bar.";
 
+"settings.updates.channel" = "Update Channel";
+"updates.channel.github" = "GitHub Releases";
+"updates.channel.cloudflare" = "Cloudflare Pages";
+"updates.channel.custom" = "Custom";
+"settings.updates.custom.url.placeholder" = "Enter custom appcast URL...";
+
 /* ========== Session ========== */
 "session.reset.notice" = "Session was reset";
 

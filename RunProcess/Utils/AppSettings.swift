@@ -48,6 +48,23 @@ enum MainUIMode: String, CaseIterable {
 /// 全局设置，封装 UserDefaults
 enum AppSettings {
 
+    // MARK: - Update Channel
+    
+    /// 更新源通道
+    enum UpdateChannel: String, CaseIterable {
+        case github
+        case cloudflare
+        case custom
+
+        var displayNameKey: String {
+            switch self {
+            case .github:     return "updates.channel.github"
+            case .cloudflare: return "updates.channel.cloudflare"
+            case .custom:     return "updates.channel.custom"
+            }
+        }
+    }
+
     // MARK: - Keys
 
     enum Keys {
@@ -62,6 +79,11 @@ enum AppSettings {
         static let outputColorsEnabled = "output.colorsEnabled"
         static let outputColorScheme = "output.colorScheme"
         static let explainErrors = "output.explainErrors"
+        
+        // 更新源
+        static let updateChannel = "updates.channel"
+        static let customUpdateURL = "updates.customURL"
+        
         #if BETA
         // 👇 Beta 专属：自定义 shell 与 PATH 注入开关
         static let shellPath = "shell.path"
@@ -296,4 +318,19 @@ enum AppSettings {
         set { _ = newValue }
     }
     #endif
+    
+    // MARK: - 更新源
+    
+    static var updateChannel: UpdateChannel {
+        get {
+            let raw = defaults.string(forKey: Keys.updateChannel) ?? ""
+            return UpdateChannel(rawValue: raw) ?? .github // 默认 GitHub
+        }
+        set { defaults.set(newValue.rawValue, forKey: Keys.updateChannel) }
+    }
+
+    static var customUpdateURL: String {
+        get { defaults.string(forKey: Keys.customUpdateURL) ?? "" }
+        set { defaults.set(newValue, forKey: Keys.customUpdateURL) }
+    }
 }

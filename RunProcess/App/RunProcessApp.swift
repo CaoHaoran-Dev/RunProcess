@@ -61,7 +61,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 👈 修改：菜单栏的命令历史改为 Cmd + H
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
             action: #selector(openHistory),
@@ -133,6 +132,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // 👈 1. 初始化更新源
+        updateFeedURLPreference()
+
+        // 👈 2. 启动 Sparkle
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,
@@ -239,16 +242,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
 
-            // 👈 修改：Cmd + H 打开历史
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "h" {
                 self.openHistory()
                 return nil
             }
             
-            // 👈 注意：Cmd + R 的全局拦截已经移除，交给 SwiftUI 局部去响应重新执行
-            // 如果不移除，NSEvent 会拦截掉它导致 SwiftUI 的键盘快捷键失效
-
             if flags == .command,
                event.charactersIgnoringModifiers == "/" {
                 self.openHelp()
@@ -519,6 +518,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // 👇 新增：供设置界面动态重载 URL
+    func updateFeedURLPreference() {
+        let defaultFeed: String
+        let mirrorFeed: String
+
+        #if BETA
+        defaultFeed = "https://github.com/CaoHaoran-Dev/RunProcess/releases/download/beta-appcast/appcast-beta.xml"
+        mirrorFeed = "https://downloads.caohaoran.dpdns.org/downloads/runprocess/appcast-beta.xml"
+        #else
+        defaultFeed = "https://github.com/CaoHaoran-Dev/RunProcess/releases/latest/download/appcast.xml"
+        mirrorFeed = "https://downloads.caohaoran.dpdns.org/downloads/runprocess/appcast.xml"
+        #endif
+
+        switch AppSettings.updateChannel {
+        case .github:
+            UserDefaults.standard.set(defaultFeed, forKey: "SUFeedURL")
+        case .cloudflare:
+            UserDefaults.standard.set(mirrorFeed, forKey: "SUFeedURL")
+        case .custom:
+            UserDefaults.standard.set(AppSettings.customUpdateURL, forKey: "SUFeedURL")
+        }
+    }
+
     // MARK: - Quit
 
     @objc func quitApp() {
@@ -529,6 +551,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 // MARK: - SPUUpdaterDelegate
 
 extension AppDelegate: SPUUpdaterDelegate {
+    // 👇 新增：拦截 Sparkle 源
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        return UserDefaults.standard.string(forKey: "SUFeedURL")
+    }
+
     func updater(_ updater: SPUUpdater,
                  didFinishUpdateCycleFor updateCheck: SPUUpdateCheck,
                  error: Error?) {

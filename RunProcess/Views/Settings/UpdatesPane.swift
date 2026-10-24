@@ -13,6 +13,10 @@ struct UpdatesPane: View {
     @State private var automaticallyChecksForUpdates = true
     @State private var automaticallyDownloadsUpdates = false
 
+    // 显式指定类型
+    @State private var updateChannel: AppSettings.UpdateChannel = AppSettings.updateChannel
+    @State private var customURL: String = AppSettings.customUpdateURL
+
     private var updater: SPUUpdater? {
         (NSApp.delegate as? AppDelegate)?.updaterControllerForSettings?.updater
     }
@@ -26,6 +30,26 @@ struct UpdatesPane: View {
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundColor(.secondary)
             }
+        }
+
+        Section {
+            Picker(NSLocalizedString("settings.updates.channel", comment: ""), selection: $updateChannel) {
+                ForEach(AppSettings.UpdateChannel.allCases, id: \.self) { channel in
+                    Text(NSLocalizedString(channel.displayNameKey, comment: "")).tag(channel)
+                }
+            }
+            .onChange(of: updateChannel) { newValue in
+                AppSettings.updateChannel = newValue
+                refreshSource()
+            }
+
+            if updateChannel == .custom {
+                TextField(NSLocalizedString("settings.updates.custom.url.placeholder", comment: ""), text: $customURL)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { refreshSource() }
+            }
+        } header: {
+            Text(NSLocalizedString("settings.updates.channel", comment: ""))
         }
 
         Section {
@@ -45,6 +69,12 @@ struct UpdatesPane: View {
             automaticallyChecksForUpdates = updater?.automaticallyChecksForUpdates ?? true
             automaticallyDownloadsUpdates = updater?.automaticallyDownloadsUpdates ?? false
         }
+    }
+
+    private func refreshSource() {
+        AppSettings.updateChannel = updateChannel
+        AppSettings.customUpdateURL = customURL
+        (NSApp.delegate as? AppDelegate)?.updateFeedURLPreference()
     }
 
     private var currentVersionString: String {

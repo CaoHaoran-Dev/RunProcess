@@ -208,6 +208,12 @@
 "settings.updates.autoDownload.hint" = "在后台下载新版本。安装仍需你确认。";
 "settings.updates.note" = "RunProcess 使用 Sparkle 分发更新。更新包经过加密签名，安装前会验证。手动检查更新请使用菜单栏中的「检查更新」（⌘U）。";
 
+"settings.updates.channel" = "更新源";
+"updates.channel.github" = "GitHub Releases";
+"updates.channel.cloudflare" = "Cloudflare Pages";
+"updates.channel.custom" = "自定义";
+"settings.updates.custom.url.placeholder" = "输入自定义 appcast 链接...";
+
 /* ========== Session ========== */
 "session.reset.notice" = "会话已重置";
 
