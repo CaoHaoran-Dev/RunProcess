@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "AD1515C73084B3E500073710"
-               BuildableName = "RunProcess-Beta.app"
-               BlueprintName = "RunProcess-Beta"
+               BuildableName = "RunProcess Preview.app"
+               BlueprintName = "RunProcess Preview"
                ReferencedContainer = "container:RunProcess.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AD1515C73084B3E500073710"
-            BuildableName = "RunProcess-Beta.app"
-            BlueprintName = "RunProcess-Beta"
+            BuildableName = "RunProcess Preview.app"
+            BlueprintName = "RunProcess Preview"
             ReferencedContainer = "container:RunProcess.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "AD1515C73084B3E500073710"
-            BuildableName = "RunProcess-Beta.app"
-            BlueprintName = "RunProcess-Beta"
+            BuildableName = "RunProcess Preview.app"
+            BlueprintName = "RunProcess Preview"
             ReferencedContainer = "container:RunProcess.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

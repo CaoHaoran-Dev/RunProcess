@@ -24,21 +24,9 @@ struct AboutView: View {
                 .frame(width: 80, height: 80)
 
             VStack(spacing: 4) {
-                // 👇 这里加了 HStack 来放置 Beta 标签
-                HStack(spacing: 8) {
-                    Text("RunProcess")
-                        .font(.title2.weight(.semibold))
-                    
-                    #if BETA
-                    Text("Beta")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange)
-                        .cornerRadius(4)
-                    #endif
-                }
+                // 👇 改成了纯文字的应用名
+                Text("RunProcess Preview")
+                    .font(.title2.weight(.semibold))
                 
                 Text(NSLocalizedString("about.version", comment: "") + " " + version)
                     .font(.system(size: 12))
@@ -54,7 +42,7 @@ struct AboutView: View {
 
             Divider()
 
-            VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
                 Link(destination: URL(string: "https://github.com/CaoHaoran-Dev/RunProcess")!) {
                     HStack(spacing: 6) {
                         Image(systemName: "link").font(.system(size: 11))
@@ -69,6 +57,8 @@ struct AboutView: View {
                 }
             }
             .buttonStyle(.link)
+            // 👇 让链接也居中对齐，看起来更平衡
+            .frame(maxWidth: .infinity, alignment: .center)
 
             Text(NSLocalizedString("about.copyright", comment: ""))
                 .font(.system(size: 10))
@@ -78,7 +68,6 @@ struct AboutView: View {
         .padding(28)
         .frame(width: 320)
         .fixedSize(horizontal: false, vertical: true)
-        // ✅ 毛玻璃 / 液态玻璃 / 无
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
