@@ -309,6 +309,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// 供快捷指令调用：新建窗口并预填命令。
+    /// 不自动执行，由用户在窗口里确认；sudo 状态通过 viewModel 预设。
+    @discardableResult
+    func createSessionWithCommand(_ command: String, runAsRoot: Bool = false) -> Session {
+        let session = sessionManager.newSession()
+        session.viewModel.inputText = command
+        if runAsRoot {
+            session.viewModel.pendingSudoRequest = true
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        session.show()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("FocusTextField"),
+                object: nil
+            )
+        }
+        return session
+    }
+
     @objc func toggleWindow() {
         guard let session = sessionManager.activeSession() else {
             _ = sessionManager.newSession()

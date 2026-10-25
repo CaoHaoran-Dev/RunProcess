@@ -83,6 +83,12 @@ struct ContentView: View {
         .onChange(of: viewModel.showHistoryPanel) { isShowing in
             if !isShowing { restoreInputFocus() }
         }
+        // 👈 快捷指令预设的 sudo 状态：消费后复位
+        .onChange(of: viewModel.pendingSudoRequest) { pending in
+            guard pending else { return }
+            useSudo = true
+            viewModel.pendingSudoRequest = false
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) { _ in
             restoreInputFocus()
         }

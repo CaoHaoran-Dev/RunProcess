@@ -303,7 +303,24 @@
 "intent.runCommand.parameter.command" = "Command";
 "intent.runCommand.parameter.runAsRoot" = "Run as root";
 "intent.runCommand.parameter.throwOnFailure" = "Throw on failure";
+
+"intent.searchHistory.title" = "Search Command History";
+"intent.searchHistory.description" = "Find previously executed commands by fuzzy query.";
+"intent.searchHistory.shortTitle" = "Search History";
+"intent.searchHistory.parameter.query" = "Query";
+"intent.searchHistory.parameter.limit" = "Limit";
+
+"intent.addAlias.title" = "Add Alias";
+"intent.addAlias.description" = "Create a short alias for a frequently used command.";
+"intent.addAlias.shortTitle" = "Add Alias";
+"intent.addAlias.parameter.name" = "Name";
+"intent.addAlias.parameter.expansion" = "Expands To";
+
+"intent.clearHistory.title" = "Clear Command History";
+"intent.clearHistory.description" = "Delete all recorded command history.";
+
 "error.intent.empty.command" = "Command cannot be empty.";
 "error.intent.sudo.cancelled" = "Authorization cancelled by user.";
 "error.intent.sudo.not.authorized" = "Root execution requires authorization.";
 "error.intent.execution.failed" = "Command execution failed.";
+"error.intent.alias.name.invalid" = "Alias name cannot contain spaces.";

@@ -19,6 +19,10 @@ class CommandViewModel: ObservableObject {
     @Published var selectedIndex: Int = 0
     @Published var showHistoryPanel: Bool = false
 
+    /// 快捷指令预设的 sudo 状态。ContentView 监听它并同步到本地 useSudo，
+    /// 消费后立即复位为 false。
+    @Published var pendingSudoRequest: Bool = false
+
     var usesSessionMode: Bool = false
     weak var session: Session?
 
@@ -235,15 +239,8 @@ class CommandViewModel: ObservableObject {
                 case .failure(let error):
                     let rawError = error.localizedDescription
 
-                    // 👇 新增：交互式命令 / TTY 相关错误统一拦截
-                    let lower = rawError.lowercased()
-                    if lower.contains("not a terminal")
-                        || lower.contains("requires a tty")
-                        || lower.contains("can't be run in this context")
-                        || lower.contains("cannot be run in this context")
-                        || lower.contains("stdin is not a tty")
-                        || lower.contains("inappropriate ioctl")
-                    {
+                    // 交互式命令 / TTY 相关错误统一拦截（关键词集中在 ErrorClassifier）
+                    if ErrorClassifier.isTTYError(rawError) {
                         self.outputText = "❌ " + NSLocalizedString("error.interactive.command", comment: "")
                         completion(self.outputText)
                         return
@@ -269,86 +266,31 @@ class CommandViewModel: ObservableObject {
         executeCommand(useSudo: useSudo, password: password, completion: completion)
     }
 
-    // 👇 修改：错误解释改为更通用的关键词匹配
+    // MARK: - 错误解释
+
+    /// 通用错误解释：把原始报错归类，追加人类可读的说明。
+    /// 匹配不到任何已知类别时返回空串，保留原始报错。
     private func explainError(_ rawError: String) -> String {
         guard AppSettings.explainErrors else { return "" }
 
-        let lower = rawError.lowercased()
-
-        // 1. 找不到命令（覆盖 zsh/bash/sh 的多种措辞）
-        if lower.contains("command not found")
-            || lower.contains("not found in path")
-            || lower.contains("no such file or directory: ")
-        {
-            var cmdName = "unknown"
-            let candidates = rawError.split(whereSeparator: { $0 == " " || $0 == ":" || $0 == "\n" })
-            if let idx = candidates.firstIndex(where: { $0.lowercased() == "command" || $0.lowercased() == "not" }),
-               idx > 0 {
-                cmdName = String(candidates[idx - 1])
-            } else if let first = candidates.first, !first.isEmpty {
-                cmdName = String(first)
-            }
-            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), cmdName)
-        }
-
-        // 2. 权限问题
-        if lower.contains("permission denied")
-            || lower.contains("operation not permitted")
-            || lower.contains("access denied")
-            || lower.contains("not authorized")
-        {
+        switch ErrorClassifier.classify(rawError) {
+        case .commandNotFound(let name):
+            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), name)
+        case .permissionDenied:
             return NSLocalizedString("error.explain.permission", comment: "")
-        }
-
-        // 3. 文件/目录不存在
-        if lower.contains("no such file or directory")
-            || lower.contains("does not exist")
-            || lower.contains("cannot find")
-            || lower.contains("can't find")
-            || lower.contains("unable to find")
-        {
+        case .fileNotFound:
             return NSLocalizedString("error.explain.no.file", comment: "")
-        }
-
-        // 4. 需要 root / sudo
-        if lower.contains("must be run as root")
-            || lower.contains("requires root")
-            || lower.contains("try again as root")
-            || lower.contains("you need to be root")
-            || lower.contains("not permitted")
-        {
+        case .sudoRequired:
             return NSLocalizedString("error.explain.sudo.required", comment: "")
-        }
-
-        // 5. 网络错误
-        if lower.contains("could not resolve host")
-            || lower.contains("connection refused")
-            || lower.contains("connection timed out")
-            || lower.contains("network is unreachable")
-            || lower.contains("no route to host")
-        {
+        case .network:
             return NSLocalizedString("error.explain.network", comment: "")
-        }
-
-        // 6. 磁盘 / 空间问题
-        if lower.contains("no space left")
-            || lower.contains("disk full")
-            || lower.contains("read-only file system")
-        {
+        case .disk:
             return NSLocalizedString("error.explain.disk", comment: "")
-        }
-
-        // 7. Shell 语法错误
-        if lower.contains("parse error")
-            || lower.contains("syntax error")
-            || lower.contains("bad substitution")
-            || lower.contains("unmatched")
-            || lower.contains("unexpected token")
-        {
+        case .syntax:
             return NSLocalizedString("error.explain.syntax", comment: "")
+        case .none:
+            return ""
         }
-
-        return ""
     }
 
     private func expandAlias(in command: String) -> String {
@@ -402,6 +344,238 @@ class CommandViewModel: ObservableObject {
         closeSuggestions()
         resetHistoryNavigation()
         restoreInputFocus()
+    }
+}
+
+// MARK: - 纯函数：错误分类
+
+/// 把常见 shell 报错归类。
+///
+/// 判断顺序从"最具体"到"最宽泛"，避免 "No such file or directory"
+/// 这类既可能指命令、又可能指文件的歧义。
+///
+/// 匹配前统一剥离 ANSI 转义序列：zsh 插件（语法高亮、autosuggestions 等）
+/// 可能给报错着色，转义序列会插在关键词中间导致 `contains` 失配。
+enum ErrorClassifier {
+
+    enum Kind {
+        case commandNotFound(String)
+        case permissionDenied
+        case fileNotFound
+        case sudoRequired
+        case network
+        case disk
+        case syntax
+    }
+
+    /// TTY / 交互式错误，单独判断，供执行层拦截。
+    static func isTTYError(_ text: String) -> Bool {
+        let t = ANSIParser.stripANSI(text).lowercased()
+        let needles = [
+            "not a terminal",
+            "requires a tty",
+            "a terminal is required",
+            "no tty present",
+            "stdin is not a tty",
+            "inappropriate ioctl",
+            "can't be run in this context",
+            "cannot be run in this context",
+            "unable to open /dev/tty",
+        ]
+        return needles.contains { t.contains($0) }
+    }
+
+    static func classify(_ text: String) -> Kind? {
+        let t = ANSIParser.stripANSI(text).lowercased()
+
+        // 1. 命令找不到（覆盖普通 shell 与 eval 上下文）
+        //    zsh: command not found: foo
+        //    (eval):1: command not found: foo
+        //    bash: foo: command not found
+        //    fish: Unknown command: foo
+        //    sh: 1: foo: not found
+        if t.contains("command not found")
+            || t.contains("unknown command")
+            || t.contains("not found in path")
+            || (t.contains("not found") && (t.contains("command") || t.contains("(eval)")))
+        {
+            return .commandNotFound(extractCommandName(from: t))
+        }
+
+        // 2. 权限（放在文件不存在之前，因为 "Operation not permitted" 也常伴随路径）
+        if t.contains("permission denied")
+            || t.contains("operation not permitted")
+            || t.contains("access denied")
+            || t.contains("not authorized")
+            || t.contains("must be owner")
+            || t.contains("eacces")
+        {
+            return .permissionDenied
+        }
+
+        // 3. 需要 root
+        if t.contains("must be run as root")
+            || t.contains("requires root")
+            || t.contains("try again as root")
+            || t.contains("you need to be root")
+            || t.contains("superuser")
+            || t.contains("are you root")
+            || t.contains("not permitted")
+        {
+            return .sudoRequired
+        }
+
+        // 4. 文件 / 目录不存在
+        if t.contains("no such file or directory")
+            || t.contains("does not exist")
+            || t.contains("cannot find")
+            || t.contains("can't find")
+            || t.contains("unable to find")
+            || t.contains("no such file")
+        {
+            return .fileNotFound
+        }
+
+        // 5. 网络
+        if t.contains("could not resolve host")
+            || t.contains("name or service not known")
+            || t.contains("temporary failure in name resolution")
+            || t.contains("connection refused")
+            || t.contains("connection timed out")
+            || t.contains("connection reset")
+            || t.contains("network is unreachable")
+            || t.contains("no route to host")
+            || t.contains("could not connect")
+            || t.contains("failed to connect")
+        {
+            return .network
+        }
+
+        // 6. 磁盘 / 文件系统
+        if t.contains("no space left")
+            || t.contains("disk full")
+            || t.contains("read-only file system")
+            || t.contains("quota exceeded")
+            || t.contains("input/output error")
+            || t.contains("structure needs cleaning")
+        {
+            return .disk
+        }
+
+        // 7. Shell 语法
+        if t.contains("parse error")
+            || t.contains("syntax error")
+            || t.contains("bad substitution")
+            || t.contains("unmatched")
+            || t.contains("unexpected token")
+            || t.contains("unexpected end of file")
+            || t.contains("unexpected eof")
+            || t.contains("command substitution")
+            || t.contains("unbound variable")
+        {
+            return .syntax
+        }
+
+        return nil
+    }
+
+    /// 从 "command not found" 类报错里提取命令名。
+    ///
+    /// 正则优先，覆盖各 shell 的常见措辞；token 扫描兜底，处理正则匹配不到的
+    /// 极端格式（如用户自定义的 fish_command_not_found）。
+    /// 提取失败时返回 "unknown"。
+    private static func extractCommandName(from text: String) -> String {
+        // 按行处理，优先看包含关键词的那一行
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
+        let target = lines.first {
+            let l = $0.lowercased()
+            return l.contains("command not found")
+                || l.contains("unknown command")
+                || l.contains("not found in path")
+                || l.contains("not found")
+        } ?? text
+
+        // 正则模式：关键词之后是命令名（zsh / fish / eval）
+        //   zsh: command not found: foo
+        //   (eval):1: command not found: foo
+        //   fish: Unknown command: foo
+        //   sh: 1: foo: not found  —— 这种是"关键词之前"，见下一条
+        let afterPatterns: [String] = [
+            #"(?:command not found|not found|unknown command)\s*:\s*(\S+)"#,
+        ]
+        // 正则模式：关键词之前是命令名（bash / sh）
+        //   bash: foo: command not found
+        //   sh: 1: foo: not found
+        let beforePatterns: [String] = [
+            #"(\S+)\s*:\s*(?:command not found|not found)"#,
+        ]
+
+        for pattern in afterPatterns + beforePatterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+                  let match = regex.firstMatch(in: target, range: NSRange(target.startIndex..., in: target)),
+                  match.numberOfRanges > 1,
+                  let range = Range(match.range(at: 1), in: target) else { continue }
+
+            let candidate = String(target[range])
+                .trimmingCharacters(in: CharacterSet(charactersIn: ":\"'`"))
+            if isLikelyCommandName(candidate) {
+                return candidate
+            }
+        }
+
+        // 兜底：token 扫描，跳过 shell 名、行号、关键词、纯标点
+        let separators: [Character] = [":", " ", "\t", "`", "'", "\""]
+        let tokens = target.split(whereSeparator: { separators.contains($0) })
+            .map(String.init)
+            .filter { !$0.isEmpty }
+
+        let keywordIndex = tokens.firstIndex {
+            let l = $0.lowercased()
+            return l == "command"
+                || l == "unknown"
+                || l == "not"
+                || l == "found"
+                || l == "path"
+        }
+
+        if let idx = keywordIndex {
+            // "command not found: foo" —— 命令名在关键词之后
+            let after = tokens[(idx + 1)...]
+            if let candidate = after.first(where: { isLikelyCommandName($0) }) {
+                return candidate
+            }
+            // "bash: foo: command not found" —— 命令名在关键词之前
+            let before = tokens[..<idx]
+            if let candidate = before.last(where: { isLikelyCommandName($0) }) {
+                return candidate
+            }
+        }
+
+        // 最后兜底：第一个像命令名的 token
+        for token in tokens {
+            if isLikelyCommandName(token) { return token }
+        }
+        return "unknown"
+    }
+
+    private static func isLikelyCommandName(_ token: String) -> Bool {
+        guard !token.isEmpty else { return false }
+        let excluded: Set<String> = [
+            // shell 名
+            "zsh", "bash", "sh", "fish", "dash", "ksh", "csh", "tcsh",
+            // 关键词
+            "command", "unknown", "not", "found", "path",
+            "no", "such", "file", "or", "directory",
+            // zsh 内部上下文前缀
+            "(eval)", "(command)", "(anon)", "eval", "command", "anon",
+        ]
+        if excluded.contains(token.lowercased()) { return false }
+        if Int(token) != nil { return false }
+        // 排除纯标点
+        if token.allSatisfy({ !$0.isLetter && !$0.isNumber && $0 != "_" && $0 != "-" && $0 != "." }) {
+            return false
+        }
+        return true
     }
 }
 

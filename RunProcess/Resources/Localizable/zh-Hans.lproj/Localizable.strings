@@ -303,7 +303,24 @@
 "intent.runCommand.parameter.command" = "命令";
 "intent.runCommand.parameter.runAsRoot" = "以 root 执行";
 "intent.runCommand.parameter.throwOnFailure" = "失败时抛出错误";
+
+"intent.searchHistory.title" = "搜索命令历史";
+"intent.searchHistory.description" = "按模糊查询查找执行过的命令。";
+"intent.searchHistory.shortTitle" = "搜索历史";
+"intent.searchHistory.parameter.query" = "查询";
+"intent.searchHistory.parameter.limit" = "数量上限";
+
+"intent.addAlias.title" = "添加别名";
+"intent.addAlias.description" = "为常用命令创建短名称。";
+"intent.addAlias.shortTitle" = "添加别名";
+"intent.addAlias.parameter.name" = "名称";
+"intent.addAlias.parameter.expansion" = "展开为";
+
+"intent.clearHistory.title" = "清除命令历史";
+"intent.clearHistory.description" = "删除所有已记录的命令历史。";
+
 "error.intent.empty.command" = "命令不能为空。";
 "error.intent.sudo.cancelled" = "用户取消了授权。";
 "error.intent.sudo.not.authorized" = "以 root 执行需要授权。";
 "error.intent.execution.failed" = "命令执行失败。";
+"error.intent.alias.name.invalid" = "别名不能包含空格。";

@@ -223,6 +223,14 @@ final class Session {
     #if BETA
     /// Beta 专属：用当前选中的 shell 执行（非会话模式路径）
     /// 不使用 DispatchGroup.wait()，避免优先级反转。
+    ///
+    /// PATH 处理：
+    /// - 不手动构造并覆盖 `task.environment`。GUI 应用从 Finder/Dock 启动时
+    ///   继承的环境只含系统默认 PATH，拿不到用户 `.zshrc` / `path_helper` /
+    ///   Homebrew 等追加的路径。覆盖它会"吞掉"其他 App 配置的 PATH。
+    /// - 用 `-l -c` 启动登录 shell，让它自己加载用户配置得到完整 PATH。
+    /// - 自定义路径通过脚本内 `export PATH="$PATH:..."` 追加到末尾，
+    ///   不覆盖、不前置，保持系统与用户配置的优先级。
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -235,18 +243,20 @@ final class Session {
         task.executableURL = URL(fileURLWithPath: shellPath)
         task.currentDirectoryURL = URL(fileURLWithPath: cwd)
 
-        // 仅 zsh 且开关开启时注入自定义 PATH
-        var environment = ProcessInfo.processInfo.environment
+        // 仅 zsh 且开关开启时，在脚本里追加自定义 PATH。
+        // 用单引号包裹，并转义内部的 '，避免路径里的特殊字符被 shell 解释。
+        var script = command
         if AppSettings.isZshShell && AppSettings.customPathEnabled {
             let extra = PathStore.shared.customPathString()
             if !extra.isEmpty {
-                let existing = environment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-                environment["PATH"] = existing + ":" + extra
+                let quoted = extra.replacingOccurrences(of: "'", with: "'\\''")
+                script = "export PATH=\"$PATH:'\(quoted)'\"; \(command)"
             }
         }
-        task.environment = environment
 
-        task.arguments = ["-c", command]
+        // 不再设置 task.environment，让它继承父进程环境；
+        // 用 -l 让 shell 加载用户配置（~/.zprofile、~/.zshrc 等）补全 PATH。
+        task.arguments = ["-l", "-c", script]
         task.standardOutput = outPipe
         task.standardError = errPipe
 
