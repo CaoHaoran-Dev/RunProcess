@@ -89,6 +89,7 @@ struct ContentView: View {
             useSudo = true
             viewModel.pendingSudoRequest = false
         }
+        // 👇 修复 Sheet 关闭后无法输入
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) { _ in
             restoreInputFocus()
         }
@@ -99,9 +100,11 @@ struct ContentView: View {
     }
 
     private func restoreInputFocus() {
+        // 先尝试常规 SwiftUI 聚焦
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
             isFocused = true
-            viewModel.restoreInputFocus()
+            // 再调用暴力夺回焦点，应对底层 NSWindow 失效
+            viewModel.forceRestoreInputFocus()
         }
     }
 
@@ -344,11 +347,9 @@ struct ContentView: View {
         }
     }
 
-    // 👈 重新执行上一条命令
     func executeLastCommand() {
         guard !viewModel.isRunning else { return }
         if useSudo {
-            // 如果启用了 sudo，将历史命令填入输入框，唤起密码框
             let entries = CommandHistory.shared.getAll()
             if let last = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first {
                 viewModel.inputText = last.command

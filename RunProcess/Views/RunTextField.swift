@@ -117,6 +117,14 @@ struct RunTextField: NSViewRepresentable {
             attempt()
         }
 
+        // 👇 新增：强制成为第一响应者
+        func forceFocus() {
+            guard let textView = textView, let window = textView.window else { return }
+            if window.firstResponder !== textView {
+                window.makeFirstResponder(textView)
+            }
+        }
+
         func textDidChange(_ notification: Notification) {
             guard let textView = textView else { return }
             parent.text = textView.string

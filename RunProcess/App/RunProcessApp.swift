@@ -132,10 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // 👈 1. 初始化更新源
         updateFeedURLPreference()
 
-        // 👈 2. 启动 Sparkle
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,
@@ -309,8 +307,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 供快捷指令调用：新建窗口并预填命令。
-    /// 不自动执行，由用户在窗口里确认；sudo 状态通过 viewModel 预设。
     @discardableResult
     func createSessionWithCommand(_ command: String, runAsRoot: Bool = false) -> Session {
         let session = sessionManager.newSession()
@@ -413,6 +409,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.makeKeyAndOrderFront(nil)
+        setupWindowCloseObserver(for: window)
     }
 
     // MARK: - Settings
@@ -456,6 +453,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.makeKeyAndOrderFront(nil)
+        setupWindowCloseObserver(for: window)
     }
 
     func reparentAuxiliaryWindows(to parent: NSWindow) {
@@ -472,6 +470,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let help = helpWindow, help.parent !== parent {
             help.parent?.removeChildWindow(help)
             parent.addChildWindow(help, ordered: .above)
+        }
+    }
+
+    // 👇 新增：监听子窗口关闭，强制主窗口夺回焦点
+    private func setupWindowCloseObserver(for window: NSWindow) {
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            guard let activeSession = self.sessionManager.activeSession() else { return }
+            
+            // 延迟一点点，等子窗口彻底从层级中移除
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                activeSession.window.makeKey()
+                activeSession.viewModel.forceRestoreInputFocus()
+            }
         }
     }
 
@@ -523,6 +539,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        setupWindowCloseObserver(for: window)
     }
 
     // MARK: - Updates
@@ -540,7 +557,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // 👇 新增：供设置界面动态重载 URL
     func updateFeedURLPreference() {
         let defaultFeed: String
         let mirrorFeed: String
@@ -573,7 +589,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 // MARK: - SPUUpdaterDelegate
 
 extension AppDelegate: SPUUpdaterDelegate {
-    // 👇 新增：拦截 Sparkle 源
     func feedURLString(for updater: SPUUpdater) -> String? {
         return UserDefaults.standard.string(forKey: "SUFeedURL")
     }

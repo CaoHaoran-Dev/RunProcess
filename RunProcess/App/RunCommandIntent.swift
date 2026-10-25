@@ -17,7 +17,7 @@ internal import AppKit
 struct RunCommandIntent: AppIntent {
     static var title: LocalizedStringResource = "intent.runCommand.title"
     static var description = IntentDescription("intent.runCommand.description")
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = false // 后台静默执行，不弹主窗口
 
     @Parameter(title: "intent.runCommand.parameter.command")
     var command: String
@@ -42,8 +42,12 @@ struct RunCommandIntent: AppIntent {
             throw RunCommandIntentError.emptyCommand
         }
 
+        // 👇 加入别名展开逻辑
+        let processedCommand = AliasStore.shared.expandAlias(in: trimmed)
+
         if runAsRoot {
-            let escapedCommand = trimmed.replacingOccurrences(of: "\"", with: "\\\"")
+            // AppleScript 提权，弹系统密码框
+            let escapedCommand = processedCommand.replacingOccurrences(of: "\"", with: "\\\"")
             let script = """
             do shell script "\(escapedCommand)" with administrator privileges
             """
@@ -78,7 +82,8 @@ struct RunCommandIntent: AppIntent {
             }
         } else {
             let result: Result<String, IntentExecutionError> = await withCheckedContinuation { continuation in
-                CommandExecutor.shared.execute(trimmed, timeout: 10.0) { result in
+                // 👇 改为执行展开后的 processedCommand
+                CommandExecutor.shared.execute(processedCommand, timeout: 10.0) { result in
                     switch result {
                     case .success(let output):
                         continuation.resume(returning: .success(output))
@@ -132,7 +137,7 @@ struct RunCommandIntent: AppIntent {
 struct SearchHistoryIntent: AppIntent {
     static var title: LocalizedStringResource = "intent.searchHistory.title"
     static var description = IntentDescription("intent.searchHistory.description")
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = false // 后台返回搜索结果即可
 
     @Parameter(title: "intent.searchHistory.parameter.query")
     var query: String
@@ -160,7 +165,7 @@ struct SearchHistoryIntent: AppIntent {
 struct AddAliasIntent: AppIntent {
     static var title: LocalizedStringResource = "intent.addAlias.title"
     static var description = IntentDescription("intent.addAlias.description")
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = false // 后台静默写入
 
     @Parameter(title: "intent.addAlias.parameter.name")
     var name: String
@@ -172,7 +177,6 @@ struct AddAliasIntent: AppIntent {
         Summary("添加别名 \(\.$name) → \(\.$expansion)")
     }
 
-    // 改回不返回具体数据，纯粹作为一个动作执行
     @MainActor
     func perform() async throws -> some IntentResult {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
@@ -196,7 +200,7 @@ struct AddAliasIntent: AppIntent {
 struct ClearHistoryIntent: AppIntent {
     static var title: LocalizedStringResource = "intent.clearHistory.title"
     static var description = IntentDescription("intent.clearHistory.description")
-    static var openAppWhenRun: Bool = false
+    static var openAppWhenRun: Bool = false // 后台静默执行
 
     @MainActor
     func perform() async throws -> some IntentResult {

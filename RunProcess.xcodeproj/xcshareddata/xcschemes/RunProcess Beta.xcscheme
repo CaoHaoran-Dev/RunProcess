@@ -73,7 +73,7 @@
    </AnalyzeAction>
    <ArchiveAction
       buildConfiguration = "Release"
-      customArchiveName = "RunProcess-Beta"
+      customArchiveName = "RunProcess Preview"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>

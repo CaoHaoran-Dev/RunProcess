@@ -141,7 +141,7 @@ final class Session {
             self.onBecomeKey?()
             (NSApp.delegate as? AppDelegate)?.reparentAuxiliaryWindows(to: self.window)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                self.viewModel.restoreInputFocus()
+                self.viewModel.forceRestoreInputFocus()
             }
         }
     }
@@ -212,7 +212,6 @@ final class Session {
             }
         } else {
             #if BETA
-            // 👇 Beta：按当前选中的 shell 执行
             executeWithSelectedShell(command, timeout: 10.0, completion: completion)
             #else
             CommandExecutor.shared.execute(command, timeout: 10.0, completion: completion)
@@ -222,15 +221,6 @@ final class Session {
 
     #if BETA
     /// Beta 专属：用当前选中的 shell 执行（非会话模式路径）
-    /// 不使用 DispatchGroup.wait()，避免优先级反转。
-    ///
-    /// PATH 处理：
-    /// - 不手动构造并覆盖 `task.environment`。GUI 应用从 Finder/Dock 启动时
-    ///   继承的环境只含系统默认 PATH，拿不到用户 `.zshrc` / `path_helper` /
-    ///   Homebrew 等追加的路径。覆盖它会"吞掉"其他 App 配置的 PATH。
-    /// - 用 `-l -c` 启动登录 shell，让它自己加载用户配置得到完整 PATH。
-    /// - 自定义路径通过脚本内 `export PATH="$PATH:..."` 追加到末尾，
-    ///   不覆盖、不前置，保持系统与用户配置的优先级。
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -254,13 +244,11 @@ final class Session {
             }
         }
 
-        // 不再设置 task.environment，让它继承父进程环境；
-        // 用 -l 让 shell 加载用户配置（~/.zprofile、~/.zshrc 等）补全 PATH。
+        // 不设置 task.environment，继承父环境；用 -l 让 shell 加载用户配置补全 PATH
         task.arguments = ["-l", "-c", script]
         task.standardOutput = outPipe
         task.standardError = errPipe
 
-        // 用锁保护两个 buffer，因为 readabilityHandler 与 terminationHandler 可能在不同线程
         let bufferLock = NSLock()
         var outputData = Data()
         var errorData = Data()
@@ -288,8 +276,6 @@ final class Session {
 
         task.terminationHandler = { proc in
             timeoutWork.cancel()
-
-            // 进程已终止，pipe 已关闭，这里同步读剩余数据不会阻塞
             outPipe.fileHandleForReading.readabilityHandler = nil
             errPipe.fileHandleForReading.readabilityHandler = nil
 
