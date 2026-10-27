@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
-    # 使用 macOS 26 运行器
+    # 切换到 macOS 26 运行器，环境更纯粹
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     
