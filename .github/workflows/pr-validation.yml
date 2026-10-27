@@ -10,8 +10,21 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-15
+    name: Test on ${{ matrix.os }} (${{ matrix.arch }})
+    # 使用最新的 macOS 26 运行器
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false # 一个架构失败不影响另一个架构继续测试
+      matrix:
+        include:
+          - os: macos-26
+            arch: arm64
+            xcode: latest-stable
+          - os: macos-26-intel
+            arch: x86_64
+            xcode: latest-stable
 
     steps:
       - name: Checkout code
@@ -20,58 +33,36 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.4'
+          xcode-version: ${{ matrix.xcode }}
 
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      - name: Build & Test Release (ARM64)
+      # --- 正式版测试 (Release) ---
+      - name: Build & Test Release
         run: |
           set -o pipefail
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
-            -destination "platform=macOS,arch=arm64" \
+            -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
+            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
-      - name: Build & Test Release (x86_64)
-        run: |
-          set -o pipefail
-          xcodebuild test \
-            -project "RunProcess.xcodeproj" \
-            -scheme "RunProcess" \
-            -destination "platform=macOS,arch=x86_64" \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions
-
-      - name: Build & Test Preview (ARM64)
+      # --- Preview 测试 (带 BETA 宏) ---
+      - name: Build & Test Preview
         run: |
           set -o pipefail
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess Preview" \
-            -destination "platform=macOS,arch=arm64" \
+            -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions
-
-      - name: Build & Test Preview (x86_64)
-        run: |
-          set -o pipefail
-          xcodebuild test \
-            -project "RunProcess.xcodeproj" \
-            -scheme "RunProcess Preview" \
-            -destination "platform=macOS,arch=x86_64" \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
+            ONLY_ACTIVE_ARCH=YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -81,6 +72,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-logs
+          name: test-logs-${{ matrix.arch }}
           path: ~/Library/Logs/DiagnosticReports/
           retention-days: 7
