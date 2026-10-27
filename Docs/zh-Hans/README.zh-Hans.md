@@ -18,7 +18,7 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 - **ANSI 颜色** —— 完整支持 8/16/256 色和 24 位真彩色。`git status`、`ls -G`、`grep --color` 等输出会带颜色显示
 - **Tab 补全** —— 别名、命令历史、系统命令、文件路径
 - **命令历史** —— ↑ / ↓ 按 frecency（频次 × 最近使用）排序浏览
-- **历史搜索** —— 按 ⌘R 全量模糊搜索历史命令
+- **历史搜索** —— 按 ⌘H 全量模糊搜索历史命令
 - **别名** —— 定义 `gs` → `git status` 之类的短名称，补全里排最前
 - **自定义路径** —— 添加 `/Applications`、`~/bin` 等文件夹。里面的命令行工具可直接用名字运行；`.app` 也可直接用名字启动（如 `Safari`）
 - **拖拽文件** —— 从 Finder 拖入，自动转义路径
@@ -58,7 +58,8 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 | `⌘⌥R` | 全局显示/隐藏窗口（可在设置中自定义） |
 | `⌘U` | 检查更新 |
 | `⌘N` | 新建窗口 |
-| `⌘R` | 搜索命令历史 |
+| `⌘H` | 打开命令历史 |
+| `⌘R` | 重新执行上一条命令 |
 | `⌘,` | 打开设置 |
 | `⌘/` | 打开帮助 |
 | `⌘W` | 隐藏窗口 |
@@ -114,7 +115,7 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 每条执行过的命令都会记录。历史支撑两个功能：
 
 - **↑ / ↓ 浏览** —— 按 frecency 排序：频次高、最近用过的排前面
-- **⌘R 搜索** —— 全量模糊匹配（`gst` 能匹配到 `git status`）
+- **⌘H 搜索** —— 全量模糊匹配（`gst` 能匹配到 `git status`）
 
 历史存放在：
 
@@ -150,10 +151,11 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 格式：
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
 改完重启应用生效。
@@ -307,10 +309,11 @@ RunProcess 把用户数据存在：
 格式：
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
 ### history.yml

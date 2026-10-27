@@ -11,35 +11,71 @@ on:
 jobs:
   build-and-test:
     runs-on: macos-15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Select Xcode version
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-      - name: Build & Test (ARM64)
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Build & Test Release (ARM64)
         run: |
+          set -o pipefail
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=arm64" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
+            | xcbeautify --renderer github-actions
 
-      - name: Build & Test (x86_64)
+      - name: Build & Test Release (x86_64)
         run: |
+          set -o pipefail
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=x86_64" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
+            | xcbeautify --renderer github-actions
+
+      - name: Build & Test Preview (ARM64)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "RunProcess.xcodeproj" \
+            -scheme "RunProcess Preview" \
+            -destination "platform=macOS,arch=arm64" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+
+      - name: Build & Test Preview (x86_64)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project "RunProcess.xcodeproj" \
+            -scheme "RunProcess Preview" \
+            -destination "platform=macOS,arch=x86_64" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
 
       - name: Upload test logs on failure
         if: failure()

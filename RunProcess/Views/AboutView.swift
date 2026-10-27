@@ -17,6 +17,12 @@ struct AboutView: View {
         return "\(v) (\(b))"
     }
 
+    private var displayName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "RunProcess"
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage)
@@ -24,10 +30,9 @@ struct AboutView: View {
                 .frame(width: 80, height: 80)
 
             VStack(spacing: 4) {
-                // 👇 改成了纯文字的应用名
-                Text("RunProcess Preview")
+                Text(displayName)
                     .font(.title2.weight(.semibold))
-                
+
                 Text(NSLocalizedString("about.version", comment: "") + " " + version)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
@@ -57,7 +62,6 @@ struct AboutView: View {
                 }
             }
             .buttonStyle(.link)
-            // 👇 让链接也居中对齐，看起来更平衡
             .frame(maxWidth: .infinity, alignment: .center)
 
             Text(NSLocalizedString("about.copyright", comment: ""))
