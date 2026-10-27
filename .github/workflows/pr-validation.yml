@@ -11,12 +11,11 @@ on:
 jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
-    # 切换到 macOS 26 运行器，环境更纯粹
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 20 # 稍微调低了超时时间，因为步骤减少了
     
     strategy:
-      fail-fast: false # 一个架构失败不影响另一个架构继续测试
+      fail-fast: false
       matrix:
         include:
           - os: macos-26
@@ -35,12 +34,6 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode }}
 
-      # 清理可能残留的 SPM 缓存，确保干净构建
-      - name: Clean SPM Cache
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData
-          rm -rf ~/Library/Caches/org.swift.swiftpm
-
       - name: Install xcbeautify
         run: brew install xcbeautify
 
@@ -53,10 +46,6 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            ONLY_ACTIVE_ARCH=YES \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
@@ -69,10 +58,6 @@ jobs:
             -scheme "RunProcess Preview" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
-            ONLY_ACTIVE_ARCH=YES \
-            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
