@@ -11,7 +11,7 @@ on:
 jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
-    # 使用最新的 macOS 26 运行器
+    # 使用 macOS 26 运行器
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     
@@ -21,10 +21,10 @@ jobs:
         include:
           - os: macos-26
             arch: arm64
-            xcode: latest-stable
+            xcode: '26.3'
           - os: macos-26-intel
             arch: x86_64
-            xcode: latest-stable
+            xcode: '26.3'
 
     steps:
       - name: Checkout code
