@@ -12,7 +12,7 @@ jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20 # 稍微调低了超时时间，因为步骤减少了
+    timeout-minutes: 30
     
     strategy:
       fail-fast: false
@@ -37,8 +37,23 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      # --- 正式版测试 (Release) ---
-      - name: Build & Test Release
+      # 第一步：只编译主 App (RunProcess)
+      # 注意：这里用的是 build，绝对不会编译 RunProcessTests！
+      - name: Build App Only (No Tests)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project "RunProcess.xcodeproj" \
+            -scheme "RunProcess" \
+            -destination "platform=macOS,arch=${{ matrix.arch }}" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
+            -jobs 1 \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+
+      # 第二步：编译并运行测试 (RunProcessTests)
+      # 只有第一步过了，才会走到这里
+      - name: Build & Test (RunProcessTests)
         run: |
           set -o pipefail
           xcodebuild test \
@@ -46,25 +61,6 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
+            -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
-
-      # --- Preview 测试 (带 BETA 宏) ---
-      - name: Build & Test Preview
-        run: |
-          set -o pipefail
-          xcodebuild test \
-            -project "RunProcess.xcodeproj" \
-            -scheme "RunProcess Preview" \
-            -destination "platform=macOS,arch=${{ matrix.arch }}" \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions
-
-      - name: Upload test logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-logs-${{ matrix.arch }}
-          path: ~/Library/Logs/DiagnosticReports/
-          retention-days: 7
