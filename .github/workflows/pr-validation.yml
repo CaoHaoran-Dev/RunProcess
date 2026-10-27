@@ -1,5 +1,5 @@
 # .github/workflows/pr-validation.yml
-name: PR Validation
+name: Push/PR Tests
 
 on:
   workflow_dispatch:
@@ -35,6 +35,12 @@ jobs:
         with:
           xcode-version: ${{ matrix.xcode }}
 
+      # 清理可能残留的 SPM 缓存，确保干净构建
+      - name: Clean SPM Cache
+        run: |
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          rm -rf ~/Library/Caches/org.swift.swiftpm
+
       - name: Install xcbeautify
         run: brew install xcbeautify
 
@@ -48,6 +54,7 @@ jobs:
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             ONLY_ACTIVE_ARCH=YES \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -63,6 +70,7 @@ jobs:
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG BETA" \
             ONLY_ACTIVE_ARCH=YES \
+            SWIFT_ENABLE_EXPLICIT_MODULES=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
