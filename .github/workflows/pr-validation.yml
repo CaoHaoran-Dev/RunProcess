@@ -36,6 +36,43 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      - name: Generate CYaml ModuleMap
+        run: |
+          echo "🔧 Resolving packages to checkout Yams..."
+          xcodebuild -resolvePackageDependencies \
+            -project RunProcess.xcodeproj \
+            -scheme RunProcess
+
+          echo "🔍 Locating CYaml headers..."
+          CYAML_INCLUDE=$(find . -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
+          if [ -z "$CYAML_INCLUDE" ]; then
+            echo "❌ CYaml include directory not found in workspace"
+            find . -path "*CYaml*" -type d 2>/dev/null | head -20
+            exit 1
+          fi
+          echo "✅ Found CYaml include: $CYAML_INCLUDE"
+
+          YAML_HEADER=$(find "$CYAML_INCLUDE" -name "*.h" 2>/dev/null | head -1)
+          if [ -z "$YAML_HEADER" ]; then
+            echo "❌ No header found in $CYAML_INCLUDE"
+            ls -la "$CYAML_INCLUDE"
+            exit 1
+          fi
+          HEADER_NAME=$(basename "$YAML_HEADER")
+          echo "✅ Using header: $HEADER_NAME"
+
+          MODULEMAP_DIR="$GITHUB_WORKSPACE/ci-modulemaps/CYaml"
+          mkdir -p "$MODULEMAP_DIR"
+          cat > "$MODULEMAP_DIR/module.modulemap" <<EOF
+          module CYaml {
+              header "$YAML_HEADER"
+              export *
+          }
+          EOF
+
+          echo "✅ Generated modulemap:"
+          cat "$MODULEMAP_DIR/module.modulemap"
+
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -45,7 +82,7 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            OTHER_SWIFT_FLAGS='$(inherited) -Xcc -fmodulemap-allow-subdirectory-search' \
+            SWIFT_INCLUDE_PATHS='$(inherited) $(SRCROOT)/ci-modulemaps/CYaml' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
@@ -59,7 +96,7 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            OTHER_SWIFT_FLAGS='$(inherited) -Xcc -fmodulemap-allow-subdirectory-search' \
+            SWIFT_INCLUDE_PATHS='$(inherited) $(SRCROOT)/ci-modulemaps/CYaml' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
