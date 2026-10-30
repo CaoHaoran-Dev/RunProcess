@@ -12,7 +12,7 @@ jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45  # 增加了超时时间，因为下载 Metal Toolchain 需要几分钟
 
     strategy:
       fail-fast: false
@@ -37,6 +37,13 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      # 👇 关键：补齐本地环境的 Metal Toolchain
+      - name: Install Metal Toolchain
+        run: |
+          echo "📦 Downloading Metal Toolchain (aligning with local environment)..."
+          xcodebuild -downloadComponent MetalToolchain
+
+      # 👇 构建：保持纯净，不要覆盖 TOOLCHAINS
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -50,6 +57,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
+      # 👇 测试：同样的环境
       - name: Build & Test (RunProcessTests)
         run: |
           set -o pipefail
