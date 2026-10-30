@@ -44,10 +44,20 @@ jobs:
             -scheme RunProcess
 
           echo "🔍 Locating CYaml headers..."
-          CYAML_INCLUDE=$(find . -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
+          CYAML_INCLUDE=""
+          # 先搜 workspace 下的 .build/checkouts
+          if [ -d ".build/checkouts/Yams/Sources/CYaml/include" ]; then
+            CYAML_INCLUDE=".build/checkouts/Yams/Sources/CYaml/include"
+          fi
+          # 再搜 DerivedData（上一轮的实际位置）
           if [ -z "$CYAML_INCLUDE" ]; then
-            echo "❌ CYaml include directory not found in workspace"
-            find . -path "*CYaml*" -type d 2>/dev/null | head -20
+            CYAML_INCLUDE=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
+          fi
+
+          if [ -z "$CYAML_INCLUDE" ]; then
+            echo "❌ CYaml include directory not found"
+            echo "Searched workspace and DerivedData"
+            find ~/Library/Developer/Xcode/DerivedData -path "*Yams*" -maxdepth 6 -type d 2>/dev/null | head -20
             exit 1
           fi
           echo "✅ Found CYaml include: $CYAML_INCLUDE"
