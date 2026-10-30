@@ -17,10 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-26
+          - os: macos-15
             arch: arm64
             xcode: '26.3'
-          - os: macos-26-intel
+          - os: macos-15-intel
             arch: x86_64
             xcode: '26.3'
 
@@ -36,53 +36,6 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      - name: Generate CYaml ModuleMap
-        run: |
-          echo "🔧 Resolving packages to checkout Yams..."
-          xcodebuild -resolvePackageDependencies \
-            -project RunProcess.xcodeproj \
-            -scheme RunProcess
-
-          echo "🔍 Locating CYaml headers..."
-          CYAML_INCLUDE=""
-          # 先搜 workspace 下的 .build/checkouts
-          if [ -d ".build/checkouts/Yams/Sources/CYaml/include" ]; then
-            CYAML_INCLUDE=".build/checkouts/Yams/Sources/CYaml/include"
-          fi
-          # 再搜 DerivedData（上一轮的实际位置）
-          if [ -z "$CYAML_INCLUDE" ]; then
-            CYAML_INCLUDE=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
-          fi
-
-          if [ -z "$CYAML_INCLUDE" ]; then
-            echo "❌ CYaml include directory not found"
-            echo "Searched workspace and DerivedData"
-            find ~/Library/Developer/Xcode/DerivedData -path "*Yams*" -maxdepth 6 -type d 2>/dev/null | head -20
-            exit 1
-          fi
-          echo "✅ Found CYaml include: $CYAML_INCLUDE"
-
-          YAML_HEADER=$(find "$CYAML_INCLUDE" -name "*.h" 2>/dev/null | head -1)
-          if [ -z "$YAML_HEADER" ]; then
-            echo "❌ No header found in $CYAML_INCLUDE"
-            ls -la "$CYAML_INCLUDE"
-            exit 1
-          fi
-          HEADER_NAME=$(basename "$YAML_HEADER")
-          echo "✅ Using header: $HEADER_NAME"
-
-          MODULEMAP_DIR="$GITHUB_WORKSPACE/ci-modulemaps/CYaml"
-          mkdir -p "$MODULEMAP_DIR"
-          cat > "$MODULEMAP_DIR/module.modulemap" <<EOF
-          module CYaml {
-              header "$YAML_HEADER"
-              export *
-          }
-          EOF
-
-          echo "✅ Generated modulemap:"
-          cat "$MODULEMAP_DIR/module.modulemap"
-
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -92,7 +45,6 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            SWIFT_INCLUDE_PATHS='$(inherited) $(SRCROOT)/ci-modulemaps/CYaml' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
@@ -106,7 +58,6 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
-            SWIFT_INCLUDE_PATHS='$(inherited) $(SRCROOT)/ci-modulemaps/CYaml' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
