@@ -13,7 +13,11 @@ jobs:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
-    
+
+    env:
+      # 强制使用 Xcode 默认 toolchain，绕过 MetalToolchain 对链接器路径的干扰
+      TOOLCHAINS: com.apple.dt.toolchain.XcodeDefault
+
     strategy:
       fail-fast: false
       matrix:
@@ -37,10 +41,6 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      # ---------------------------------------------------------
-      # 👇 魔法从这里开始：看起来在编译，其实加了 || true 放水
-      # ---------------------------------------------------------
-      
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -52,7 +52,7 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions || echo "⚠️ Known SPM module issue encountered, skipping for now."
+            | xcbeautify --renderer github-actions
 
       - name: Build & Test (RunProcessTests)
         run: |
@@ -65,15 +65,11 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions || echo "⚠️ Known SPM module issue encountered, skipping for now."
-
-      # ---------------------------------------------------------
-      # 👆 魔法结束：不管报不报错，GitHub 都会认为这一步是成功的
-      # ---------------------------------------------------------
+            | xcbeautify --renderer github-actions
 
       - name: ✅ Final Verification
         run: |
           echo "=================================================="
           echo "🎉 Build and Test sequence completed."
-          echo "✅ All checks passed (with known workaround applied)."
+          echo "✅ All checks passed."
           echo "=================================================="
