@@ -46,14 +46,18 @@ jobs:
           set -o pipefail
           echo "🔍 Starting compilation process..."
           
-          # 动态寻找 CYaml 的 modulemap 路径
-          MODULEMAP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include/module.modulemap" | head -1)
-          if [ -z "$MODULEMAP_PATH" ]; then
-            echo "❌ Cannot find CYaml modulemap"
+          # 动态寻找 CYaml 的 include 目录和 modulemap
+          CYAML_INCLUDE_DIR=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
+          MODULEMAP_PATH="$CYAML_INCLUDE_DIR/module.modulemap"
+          
+          if [ -z "$CYAML_INCLUDE_DIR" ] || [ ! -f "$MODULEMAP_PATH" ]; then
+            echo "❌ Cannot find CYaml include or modulemap"
             exit 1
           fi
-          echo "Found modulemap at: $MODULEMAP_PATH"
+          echo "Found CYaml at: $CYAML_INCLUDE_DIR"
+          echo "Using modulemap: $MODULEMAP_PATH"
 
+          # 将 modulemap 路径和头文件包含路径强行喂给 Swift 编译器
           xcodebuild build \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
@@ -61,7 +65,7 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
-            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH" \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH -Xcc -I$CYAML_INCLUDE_DIR" \
             | xcbeautify --renderer github-actions
 
       - name: Build & Test (RunProcessTests)
@@ -69,10 +73,12 @@ jobs:
           set -o pipefail
           echo "🧪 Executing test suites..."
           
-          # 再次获取 modulemap 路径（确保测试环节也能编译通过）
-          MODULEMAP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include/module.modulemap" | head -1)
-          if [ -z "$MODULEMAP_PATH" ]; then
-            echo "❌ Cannot find CYaml modulemap"
+          # 再次获取路径（确保测试环节也能编译通过）
+          CYAML_INCLUDE_DIR=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include" -type d 2>/dev/null | head -1)
+          MODULEMAP_PATH="$CYAML_INCLUDE_DIR/module.modulemap"
+          
+          if [ -z "$CYAML_INCLUDE_DIR" ] || [ ! -f "$MODULEMAP_PATH" ]; then
+            echo "❌ Cannot find CYaml include or modulemap"
             exit 1
           fi
 
@@ -83,7 +89,7 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
-            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH" \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH -Xcc -I$CYAML_INCLUDE_DIR" \
             | xcbeautify --renderer github-actions
 
       - name: ✅ Final Verification
