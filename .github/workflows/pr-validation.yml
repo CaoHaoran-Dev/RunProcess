@@ -1,4 +1,3 @@
-# .github/workflows/pr-validation.yml
 name: Push/PR Tests
 
 on:
@@ -12,7 +11,7 @@ jobs:
   build-and-test:
     name: Test on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45  # 增加了超时时间，因为下载 Metal Toolchain 需要几分钟
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -37,13 +36,6 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      # 👇 关键：补齐本地环境的 Metal Toolchain
-      - name: Install Metal Toolchain
-        run: |
-          echo "📦 Downloading Metal Toolchain (aligning with local environment)..."
-          xcodebuild -downloadComponent MetalToolchain
-
-      # 👇 构建：保持纯净，不要覆盖 TOOLCHAINS
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -53,11 +45,11 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
+            OTHER_SWIFT_FLAGS='$(inherited) -Xcc -fmodulemap-allow-subdirectory-search' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
 
-      # 👇 测试：同样的环境
       - name: Build & Test (RunProcessTests)
         run: |
           set -o pipefail
@@ -67,6 +59,7 @@ jobs:
             -scheme "RunProcess" \
             -destination "platform=macOS,arch=${{ matrix.arch }}" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
+            OTHER_SWIFT_FLAGS='$(inherited) -Xcc -fmodulemap-allow-subdirectory-search' \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions
