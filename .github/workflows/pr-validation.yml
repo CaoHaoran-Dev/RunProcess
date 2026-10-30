@@ -36,39 +36,24 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      - name: Patch Yams C Target (CI Workaround)
+      - name: Resolve Dependencies
         run: |
-          echo "🩹 Patching Yams to inline CYaml..."
+          echo "📦 Resolving Swift Package dependencies..."
           xcodebuild -resolvePackageDependencies -project RunProcess.xcodeproj -scheme RunProcess
-          
-          YAMS_DIR=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/Yams" -type d 2>/dev/null | head -1)
-          CYAML_DIR=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml" -type d 2>/dev/null | head -1)
-          
-          if [ -z "$YAMS_DIR" ] || [ -z "$CYAML_DIR" ]; then
-            echo "❌ Cannot find Yams directories"
-            exit 1
-          fi
-          
-          # 1. 把 CYaml 的 C 源码和头文件暴力复制到 Yams 的源码目录下
-          cp "$CYAML_DIR"/*.c "$YAMS_DIR"/
-          cp "$CYAML_DIR"/*.h "$YAMS_DIR"/
-          
-          # 2. 修改 Yams 的 Package.swift
-          PKG_FILE=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Package.swift" | head -1)
-          if [ -z "$PKG_FILE" ]; then
-             echo "❌ Cannot find Package.swift"
-             exit 1
-          fi
-          
-          # 移除 Yams target 对 CYaml 的依赖声明
-          sed -i '' 's/dependencies: \["CYaml"\]/dependencies: []/' "$PKG_FILE"
-          
-          echo "✅ Patch complete! Yams is now a standalone monolithic target."
 
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
           echo "🔍 Starting compilation process..."
+          
+          # 动态寻找 CYaml 的 modulemap 路径
+          MODULEMAP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include/module.modulemap" | head -1)
+          if [ -z "$MODULEMAP_PATH" ]; then
+            echo "❌ Cannot find CYaml modulemap"
+            exit 1
+          fi
+          echo "Found modulemap at: $MODULEMAP_PATH"
+
           xcodebuild build \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
@@ -76,12 +61,21 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH" \
             | xcbeautify --renderer github-actions
 
       - name: Build & Test (RunProcessTests)
         run: |
           set -o pipefail
           echo "🧪 Executing test suites..."
+          
+          # 再次获取 modulemap 路径（确保测试环节也能编译通过）
+          MODULEMAP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -path "*Yams/Sources/CYaml/include/module.modulemap" | head -1)
+          if [ -z "$MODULEMAP_PATH" ]; then
+            echo "❌ Cannot find CYaml modulemap"
+            exit 1
+          fi
+
           xcodebuild test \
             -project "RunProcess.xcodeproj" \
             -scheme "RunProcess" \
@@ -89,6 +83,7 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS="\$(inherited) -Xcc -fmodule-map-file=$MODULEMAP_PATH" \
             | xcbeautify --renderer github-actions
 
       - name: ✅ Final Verification
