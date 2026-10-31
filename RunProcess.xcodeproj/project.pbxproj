@@ -780,7 +780,7 @@
 			repositoryURL = "https://github.com/jpsim/Yams";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.1.3;
+				minimumVersion = 6.2.2;
 			};
 		};
 		ADDC692A30738D21009B650E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
