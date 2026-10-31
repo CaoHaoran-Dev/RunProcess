@@ -99,6 +99,9 @@ final class PersistentShell {
         task.standardOutput = stdoutPipe
         task.standardError = stderrPipe
 
+        // ✅ 不再设置 task.environment["PATH"]，让 zsh 自己从 shell 配置里加载 PATH。
+        //    否则会覆盖掉用户 .zshrc / .zprofile 里的 PATH。
+
         self.process = task
         self.stdinPipe = stdinPipe
         self.stdoutPipe = stdoutPipe

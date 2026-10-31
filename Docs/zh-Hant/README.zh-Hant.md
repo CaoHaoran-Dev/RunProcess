@@ -200,6 +200,36 @@ paths:
 
 變更將立即生效。
 
+### 自訂路徑
+
+新增資料夾，其中的命令列工具與 `.app` 可直接用名稱執行。
+
+| 輸入 | 執行 |
+|------|------|
+| `myscript`（在 `~/bin`，已加入這裡） | `~/bin/myscript` |
+| `fastfetch`（Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
+| `Safari`（`/Applications` 已加入這裡） | `/Applications/Safari.app` |
+| `Keynote`（同上） | `/Applications/Keynote.app` |
+
+這裡的資料夾會被**追加到 PATH**，所以系統 PATH 和你 `~/.zshrc` 裡設定的 PATH 都會保留。命令列工具由 `zsh` 自己按 PATH 查找。`.app` 會大小寫不敏感比對，並透過 `open -b <bundleId>` 啟動，所以輸入 `keynote` 能開啟 `Keynote.app`。
+
+自訂路徑存放於：
+
+```
+~/Library/Application Support/RunProcess/paths.yml
+```
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+修改後立即生效。
+
 ---
 
 ## Sudo
@@ -223,6 +253,18 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 - **自動下載** – 於設定 → 更新中切換。安裝仍需確認
 
 更新套件在安裝前會經過密碼學簽章與驗證。
+
+---
+
+## 更新
+
+RunProcess 使用 [Sparkle](https://sparkle-project.org) 分發更新。
+
+- **檢查更新** —— 在選單列裡（⌘U）
+- **自動檢查** —— 設定 → 更新 裡的開關。每天在背景自動檢查一次
+- **自動下載** —— 設定 → 更新 裡的開關。安裝仍需確認
+
+更新套件經過加密簽章，安裝前會驗證。
 
 ---
 
