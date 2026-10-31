@@ -19,9 +19,6 @@ struct RunTextField: NSViewRepresentable {
 
     var onCoordinatorReady: ((Coordinator) -> Void)? = nil
 
-    /// 把 Coordinator 注册回 ViewModel
-    var onCoordinatorReady: ((Coordinator) -> Void)? = nil
-
     func makeNSView(context: Context) -> NSScrollView {
         let scrollView = NSScrollView()
         scrollView.hasVerticalScroller = true
