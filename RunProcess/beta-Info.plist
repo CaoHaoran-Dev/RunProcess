@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleAllowMixedLocalizations</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/CaoHaoran-Dev/RunProcess/releases/download/beta-appcast/appcast-beta.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>Cy5dvBOMWyxuqgO2PqXaIRyzdV6lO2IffHip6FRJVBQ=</string>
+</dict>
+</plist>

@@ -12,8 +12,12 @@ struct RunTextField: NSViewRepresentable {
     @Binding var text: String
     let onTab: () -> Void
     let onEnter: () -> Void
+    let onOptionEnter: () -> Void
     let onUp: () -> String?
     let onDown: () -> String?
+    var onCancel: (() -> Void)? = nil
+
+    var onCoordinatorReady: ((Coordinator) -> Void)? = nil
 
     /// 把 Coordinator 注册回 ViewModel
     var onCoordinatorReady: ((Coordinator) -> Void)? = nil
@@ -62,8 +66,8 @@ struct RunTextField: NSViewRepresentable {
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
         textView.string = text
+
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.heightAnchor.constraint(equalToConstant: 44).isActive = true
         scrollView.contentInsets = NSEdgeInsets(top: 8, left: 0, bottom: 8, right: 0)
 
         DispatchQueue.main.async {
@@ -96,13 +100,32 @@ struct RunTextField: NSViewRepresentable {
 
         init(_ parent: RunTextField) { self.parent = parent }
 
-        /// 把 first responder 还给输入框
         func restoreFocus() {
+            guard let textView = textView else { return }
+
+            func attempt(retries: Int = 3) {
+                guard let window = textView.window else { return }
+                guard window.isKeyWindow, window.attachedSheet == nil else {
+                    if retries > 0 {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                            attempt(retries: retries - 1)
+                        }
+                    }
+                    return
+                }
+                if window.firstResponder !== textView {
+                    window.makeFirstResponder(textView)
+                }
+            }
+            attempt()
+        }
+
+        // 👇 新增：强制成为第一响应者
+        func forceFocus() {
             guard let textView = textView, let window = textView.window else { return }
-            guard window.isKeyWindow else { return }
-            guard window.attachedSheet == nil else { return }
-            guard window.firstResponder !== textView else { return }
-            window.makeFirstResponder(textView)
+            if window.firstResponder !== textView {
+                window.makeFirstResponder(textView)
+            }
         }
 
         func textDidChange(_ notification: Notification) {
@@ -112,13 +135,8 @@ struct RunTextField: NSViewRepresentable {
         }
 
         func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-                if let event = NSApp.currentEvent,
-                   event.modifierFlags.contains(.shift) || event.modifierFlags.contains(.command) {
-                    insertNewline(textView)
-                    return false
-                }
-                parent.onEnter()
+            if commandSelector == #selector(NSResponder.cancelOperation(_:)) {
+                parent.onCancel?()
                 return true
             }
 
@@ -164,15 +182,6 @@ struct RunTextField: NSViewRepresentable {
             return false
         }
 
-        private func insertNewline(_ textView: NSTextView) {
-            let ns = textView.string as NSString
-            let range = textView.selectedRange
-            let newText = ns.replacingCharacters(in: range, with: "\n")
-            textView.string = newText
-            textView.selectedRange = NSRange(location: range.location + 1, length: 0)
-            parent.text = newText
-        }
-
         private func insertSpaces(_ textView: NSTextView) {
             let ns = textView.string as NSString
             let range = textView.selectedRange
@@ -185,6 +194,29 @@ struct RunTextField: NSViewRepresentable {
 }
 
 class CustomTextView: NSTextView {
+    override func keyDown(with event: NSEvent) {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let isReturn = event.keyCode == 36 || event.keyCode == 76
+
+        if isReturn {
+            if flags.contains(.option) {
+                (delegate as? RunTextField.Coordinator)?.parent.onOptionEnter()
+                return
+            } else if flags.contains(.shift) {
+                self.insertNewline(nil)
+                return
+            } else if flags.contains(.command) {
+                self.insertNewline(nil)
+                return
+            } else {
+                (delegate as? RunTextField.Coordinator)?.parent.onEnter()
+                return
+            }
+        }
+
+        super.keyDown(with: event)
+    }
+
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         let type = NSPasteboard.PasteboardType("NSFilenamesPboardType")
         guard let paths = sender.draggingPasteboard.propertyList(forType: type) as? [String],

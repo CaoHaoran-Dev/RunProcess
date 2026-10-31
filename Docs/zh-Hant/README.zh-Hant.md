@@ -1,147 +1,146 @@
 # RunProcess
 
-> 給 macOS 做的「偽 Windows 執行框」—— 能跑真指令，有玻璃質感，常駐選單列
+> 一款具備半透明介面與選單列整合的 Spotlight 風格 macOS 指令啟動器。
 
 ---
 
-## 這是什麼
+## 總覽
 
-B 站看多了「我修復了 Linux 執行框」的影片，手癢在 macOS 上也搞了一個。
-
-本質就是 `/bin/zsh` 套了個玻璃面板，輸入什麼執行什麼。
+RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」對話框啟發的快速指令執行介面。它將 `/bin/zsh` 的強大功能與精緻、現代的介面結合，並常駐於選單列中隨時可供存取。
 
 ---
 
-## 功能
+## 功能特色
 
-- **指令執行** —— 輸入指令，執行，即時看輸出/錯誤
-- **ANSI 顏色** —— 完整支援 8/16/256 色與 24 位元真彩色。`git status`、`ls -G`、`grep --color` 等輸出會帶顏色顯示
-- **Tab 補全** —— 別名、指令記錄、系統指令、檔案路徑
-- **指令記錄** —— ↑ / ↓ 依 frecency（頻次 × 最近使用）排序瀏覽
-- **記錄搜尋** —— 按 ⌘R 全文模糊搜尋歷史指令
-- **別名** —— 定義 `gs` → `git status` 之類的短名稱，補全裡排最前
-- **自訂路徑** —— 新增 `/Applications`、`~/bin` 等資料夾。其中的命令列工具可直接用名稱執行；`.app` 也可直接用名稱啟動（如 `Safari`）
-- **拖放檔案** —— 從 Finder 拖入，自動轉義路徑
-- **Root 執行** —— 勾選後彈密碼框，密碼僅在當次執行期間存在於記憶體，不儲存不記錄
-- **預設 Sudo** —— 可把主視窗鎖定為「一律以 root 執行」
-- **全域快速鍵** —— ⌘⌥R 顯示/隱藏視窗（可在設定中自訂）
-- **選單列常駐** —— Dock 不顯示
-- **三種外觀** —— 無、毛玻璃、液態玻璃（macOS 26+）。主視窗、設定、輔助說明、關於、密碼框全部跟隨
-- **浮動視窗** —— 類似 Spotlight，視窗寬度平滑動畫
-- **多行輸入** —— Shift+Enter 換行
-- **多視窗** —— 每個視窗獨立工作階段
-- **工作階段模式（選用）** —— 長駐 shell，`cd` / `export` 跨指令生效
-- **自訂預設工作目錄**
-- **失去焦點時自動隱藏**
-- **應用程式內輔助說明** —— 仿 macOS Help Viewer 的側邊欄式輔助說明視窗
-- **在地化** —— 英文、簡體中文、繁體中文
+- **指令執行** – 執行任何 shell 指令，並即時顯示輸出
+- **ANSI 色彩** – 完整支援 8/16/256 色及 24 位元真彩色。來自 `git status`、`ls -G`、`grep --color` 等工具的輸出將以正確的色彩呈現
+- **Tab 補全** – 自動補全別名、指令歷史、系統指令及檔案路徑
+- **指令歷史** – 使用 ↑ / ↓ 瀏覽先前的指令，依 frecency（頻率 × 最近使用程度）排序
+- **歷史搜尋** – 按下 ⌘H 對整個歷史紀錄進行模糊搜尋
+- **別名** – 定義如 `gs` → `git status` 的短名稱；它們會在補全清單中優先顯示
+- **自訂路徑** – 新增如 `/Applications` 或 `~/bin` 的資料夾。在這些資料夾中找到的命令列工具可直接透過名稱執行；`.app` 套件也可透過名稱啟動（例如 `Safari`）
+- **拖放** – 從 Finder 拖曳檔案，即可自動填入經正確轉義的檔案路徑
+- **Root 權限** – 透過安全密碼對話框使用 `sudo` 執行指令。密碼僅在執行期間存於記憶體，絕不儲存或記錄
+- **預設 Sudo** – 可選擇將主視窗鎖定為「以 root 身分執行」模式
+- **全域快速鍵** – 隨時使用 ⌘⌥R 顯示或隱藏視窗（可在設定中自訂）
+- **選單列整合** – 從選單列存取；隱藏 Dock 圖示
+- **多種外觀模式** – 無、毛玻璃（Frosted Glass）與液態玻璃（Liquid Glass，macOS 26 及以上）。適用於主視窗、設定、輔助說明、關於及對話框
+- **懸浮視窗** – Spotlight 風格的懸浮視窗，具備平滑的寬度動畫
+- **多行輸入** – 支援使用 Shift+Enter 輸入多行指令
+- **多視窗** – 每個視窗皆為獨立的工作階段
+- **工作階段模式（選用）** – 常駐 shell；`cd` 與 `export` 可跨指令持續生效
+- **自訂工作目錄** – 為新視窗設定預設工作目錄
+- **失焦時自動隱藏** – 應用程式失去焦點時，視窗會自動隱藏
+- **內建輔助說明** – 側邊欄式輔助說明視窗，風格仿照 macOS 輔助說明檢視器
+- **在地化** – 英文、簡體中文、繁體中文
 
 ---
 
-## 使用
+## 使用方式
 
-開啟應用程式，選單列點 ⚡，輸入指令，按 Enter。
+開啟應用程式，點擊選單列上的 ⚡，輸入指令，然後按下 Enter。
 
-| 輸入 | 效果 |
-|------|------|
+| 輸入 | 結果 |
+|-------|--------|
 | `ls ~/Downloads` | 列出檔案 |
-| `open .` | Finder 開啟目前目錄 |
-| `git status` | git 狀態（帶顏色） |
-| `/System/Applications/Calculator.app` | 自動加上 `open`，啟動計算機 |
+| `open .` | 在 Finder 中開啟目前目錄 |
+| `git status` | 顯示 Git 狀態（帶色彩） |
+| `/System/Applications/Calculator.app` | 自動加上 `open` 前綴，啟動計算機 |
 
 ---
 
 ## 快速鍵
 
-| 按鍵 | 作用 |
-|------|------|
-| `⌘⌥R` | 全域顯示/隱藏視窗（可在設定中自訂） |
+| 按鍵 | 動作 |
+|-----|--------|
+| `⌘⌥R` | 全域顯示或隱藏視窗（可在設定中自訂） |
 | `⌘U` | 檢查更新 |
 | `⌘N` | 新增視窗 |
-| `⌘R` | 搜尋指令記錄 |
+| `⌘H` | 開啟指令歷史 |
+| `⌘R` | 重新執行上一條指令 |
 | `⌘,` | 開啟設定 |
 | `⌘/` | 開啟輔助說明 |
 | `⌘W` | 隱藏視窗 |
 | `⌘Q` | 結束 |
 | `Enter` | 執行 |
 | `Shift+Enter` | 換行 |
-| `Tab` | 補全浮窗 |
-| `↑` `↓` | 瀏覽歷史指令 |
+| `Tab` | 補全彈出視窗 |
+| `↑` `↓` | 瀏覽指令歷史 |
 
 ---
 
 ## 外觀
 
-在 **設定 → 外觀** 中選擇：
+**設定 → 外觀** 中提供三種外觀模式：
 
-| 模式 | 說明 | 支援系統 |
-|------|------|---------|
-| 無 | 系統視窗純色背景 | macOS 12.4+ |
-| 毛玻璃 | `NSVisualEffectView` 模糊 | macOS 12.4+ |
-| 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26+ |
+| 模式 | 說明 | 支援情況 |
+|------|-------------|--------------|
+| 無 | 純色系統視窗背景 | macOS 12.4 及以上 |
+| 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 12.4 及以上 |
+| 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26 及以上 |
 
-macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不支援的系統上「液態玻璃」選項會被隱藏。
+在 macOS 15 及更早版本中，預設為毛玻璃；在 macOS 26 及以上版本中，預設為液態玻璃。不支援的系統上會隱藏液態玻璃選項。
 
-所選樣式會套用到主視窗、設定、輔助說明、關於、sudo 密碼框。
+所選樣式將套用至主視窗、設定、輔助說明、關於以及 sudo 密碼對話框。
 
 ---
 
 ## 視窗行為
 
-預設情況下，應用程式失去焦點時所有視窗自動隱藏，行為和 Spotlight 一致。可以在 **設定 → 一般** 中關閉。
+根據預設，當應用程式失去焦點時，所有視窗會自動隱藏，與 Spotlight 的行為一致。此功能可在 **設定 → 一般** 中停用。
 
 ---
 
 ## 工作階段模式
 
-在 **設定 → 工作階段** 中開啟。開啟後只影響 **新開啟的視窗**。
+在 **設定 → 工作階段** 中啟用。此功能僅影響新開啟的視窗。
 
-工作階段模式下，每個視窗持有一個長駐 `zsh` 行程，`cd`、`export` 等指令會在該視窗的後續指令中生效，行為更像真實終端機。
+在工作階段模式下，每個視窗會維持一個長時間執行的 `zsh` 行程。`cd` 和 `export` 等指令會在同一視窗的後續指令中持續生效，提供更接近真實終端機的行為。
 
-工作階段模式的視窗標題會顯示為 `RunProcess - 工作階段模式 — <目前目錄>`。
+工作階段模式下的視窗標題會顯示為 `RunProcess - 工作階段 — <目前目錄>`。
 
-| 行為 | 非工作階段模式 | 工作階段模式 |
-|------|-----------|---------|
-| `cd` 後下一條指令 | 仍在預設工作目錄 | 已切換到新目錄 |
-| `export` 後下一條指令 | 環境變數遺失 | 環境變數保留 |
-| 啟動開銷 | 每條指令新開 shell | 一次啟動，後續重用 |
+| 行為 | 非工作階段 | 工作階段 |
+|----------|-------------|---------|
+| 執行 `cd` 後 | 仍停留在預設工作目錄 | 切換至新目錄 |
+| 執行 `export` 後 | 環境變數遺失 | 保留環境變數 |
+| 啟動額外開銷 | 每個指令開啟新 shell | 重複使用單一 shell |
 | 隔離性 | 完全隔離 | 工作階段內共享狀態 |
 
 ---
 
-## 指令記錄
+## 指令歷史
 
-每條執行過的指令都會記錄。記錄支撐兩個功能：
+每一條執行過的指令都會被記錄。歷史紀錄支援兩項功能：
 
-- **↑ / ↓ 瀏覽** —— 依 frecency 排序：頻次高、最近用過的排前面
-- **⌘R 搜尋** —— 全文模糊比對（`gst` 能比對到 `git status`）
+- **↑ / ↓ 瀏覽** – 依 frecency 排序：經常使用且最近使用過的指令會排在頂部
+- **⌘H 搜尋** – 對整個歷史紀錄進行模糊比對（`gst` 可符合 `git status`）
 
-記錄存放在：
+歷史紀錄儲存於：
 
 ```
 ~/Library/Application Support/RunProcess/history.yml
 ```
 
-最多 500 條，超出時先淘汰最久未用的。
+最多保留 500 筆。最舊且最不常使用的紀錄會優先被移除。
 
-在選單列裡點 **清除指令記錄** 可以清空全部。
+可從選單列選擇 **清除指令歷史** 來清除所有歷史紀錄。
 
 ---
 
 ## 別名
 
-別名讓你為常用指令定義短名稱，在補全浮窗裡排最前。
+別名可讓您為經常使用的指令定義短名稱。它們在補全彈出視窗中的優先順序最高。
 
 內建範例：
 
 | 別名 | 展開為 |
-|------|--------|
+|-------|-----------|
 | `gs` | `git status` |
 | `gp` | `git pull --rebase` |
 | `ll` | `ls -lah` |
 | `serve` | `python3 -m http.server 8000` |
 
-自訂別名存放在：
+自訂別名儲存於：
 
 ```
 ~/Library/Application Support/RunProcess/aliases.yml
@@ -150,25 +149,56 @@ macOS 15 及以下預設毛玻璃，macOS 26 及以上預設液態玻璃。不�
 格式：
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
-改完重新啟動應用程式生效。
+編輯後請重新啟動應用程式。
 
 ---
 
 ## 路徑
 
-**設定 → 路徑** 面板有兩個部分。
+**設定 → 路徑** 包含兩個區塊。
 
 ### 預設工作目錄
 
-設定新視窗的工作目錄。不設定時使用使用者主目錄。僅影響新開啟的視窗。
+為新視窗設定工作目錄。若未設定，將使用使用者的主目錄。僅影響新開啟的視窗。
 
-如果設定的路徑不存在（例如目錄被刪除），會自動回退到使用者主目錄，並在設定面板中顯示警告。
+若設定的路徑已不存在，應用程式將退回主目錄，並在設定中顯示警告。
+
+### 自訂路徑
+
+新增包含命令列工具與 `.app` 套件的資料夾，使其可透過名稱執行。
+
+| 輸入 | 執行 |
+|-------|------|
+| `myscript`（位於此處新增的 `~/bin` 中） | `~/bin/myscript` |
+| `fastfetch`（透過 Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
+| `Safari`（於此處新增 `/Applications`） | `/Applications/Safari.app` |
+| `Keynote`（同上） | `/Applications/Keynote.app` |
+
+此處的資料夾會**附加至 PATH 尾端**，因此系統 PATH 與您在 `~/.zshrc` 中設定的任何 PATH 都會被保留。命令列工具由 `zsh` 本身解析。`.app` 套件會以不區分大小寫的方式進行比對，並透過 `open -b <bundleId>` 啟動，因此輸入 `keynote` 即可開啟 `Keynote.app`。
+
+自訂路徑儲存於：
+
+```
+~/Library/Application Support/RunProcess/paths.yml
+```
+
+格式：
+
+```yml
+paths:
+  - /Applications
+  - ~/bin
+  - /opt/homebrew/bin
+```
+
+變更將立即生效。
 
 ### 自訂路徑
 
@@ -204,13 +234,25 @@ paths:
 
 ## Sudo
 
-勾選「以 root 執行」後執行指令，會彈出密碼框。
+在執行指令前啟用「以 root 身分執行」，將會跳出密碼提示。
 
-**每次執行 sudo 指令都需要重新輸入密碼。** 密碼僅在當次執行期間存在於記憶體中，不會被儲存或記錄。
+每次執行 sudo 指令時都需要重新輸入密碼。密碼僅在執行期間存於記憶體，絕不儲存或記錄。
 
 ### 預設 Sudo
 
-在 **設定 → Sudo** 中開啟 **預設以 root 執行**，主視窗的 sudo 開關會鎖定為開且不可改，圖示變成實心鎖。每次執行仍會彈出密碼框。
+在 **設定 → Sudo** 中啟用 **永遠以 root 身分執行**，可將主視窗的 sudo 開關鎖定在開啟狀態。該開關將變為唯讀，並標示實心鎖頭圖示。每次執行指令時仍會提示輸入密碼。
+
+---
+
+## 更新
+
+RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
+
+- **檢查更新** – 可於選單列使用（⌘U）
+- **自動檢查** – 於設定 → 更新中切換。每天在背景下檢查一次
+- **自動下載** – 於設定 → 更新中切換。安裝仍需確認
+
+更新套件在安裝前會經過密碼學簽章與驗證。
 
 ---
 
@@ -228,42 +270,43 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分發更新。
 
 ## 輔助說明
 
-按 **⌘/** 或從選單列選 **RunProcess 輔助說明**。輔助說明視窗左側是主題列表：
+按下 **⌘/** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：
 
 - 總覽
 - 鍵盤快速鍵
 - 指令技巧
 - 工作階段模式
-- 以 root 執行
+- 以 root 身分執行
 - 別名
 - 外觀
 
-側邊欄頂端有搜尋框，可依標題過濾主題。
+側邊欄包含搜尋欄位，可依標題篩選主題。
 
 ---
 
 ## 語言
 
-支援英文、簡體中文、繁體中文。如果想單獨給 RunProcess 換個語言，去 **系統設定 → 一般 → 語言與地區 → 應用程式** 裡選。這個功能需要 macOS 13 及以上。
+RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProcess 使用不同語言，請前往 **系統設定 → 一般 → 語言與地區 → 應用程式** 並選擇 RunProcess。此功能需要 macOS 13 或以上版本。
 
 ---
 
 ## 系統需求
 
-macOS 12.4+，Apple Silicon / Intel 都行
+- macOS 12.4 或以上版本
+- Apple Silicon 或 Intel 處理器
 
 ---
 
 ## 安裝
 
-### 下載（推薦）
+### 下載（建議）
 
-從 [Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases) 下載最新的 `RunProcess.zip`
+從 [Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases) 下載最新的 `RunProcess.zip`。
 
-1. 下載解壓
-2. 把 `RunProcess.app` 拖進 `Applications` 資料夾
+1. 下載並解壓縮檔案。
+2. 將 `RunProcess.app` 移至您的 `Applications` 資料夾。
 
-> 應用程式沒公證，第一次開啟 macOS 會提示不安全，設定裡隱私與安全性點仍要打開，不騙你。
+> 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告。請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**。
 
 ### Homebrew
 
@@ -273,7 +316,7 @@ brew trust CaoHaoran-Dev/apptap
 brew install runprocess
 ```
 
-### 從原始碼編譯
+### 從原始碼建置
 
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
@@ -281,25 +324,24 @@ cd RunProcess
 open RunProcess.xcodeproj
 ```
 
-需要 Xcode 16.0+。
+需要 Xcode 16.0 或以上版本。
 
 ### 線上體驗
 
-前往 GitHub Pages：
+造訪 GitHub Pages 展示：
 [Process WebHub](https://CaoHaoran-Dev.github.io/Process-WebHub/runprocess)
 
-
 ---
 
 ## 設定檔
 
-RunProcess 把使用者資料存在：
+RunProcess 將使用者資料儲存於：
 
 ```
 ~/Library/Application Support/RunProcess/
 ├── aliases.yml      # 指令別名
-├── history.yml      # 指令記錄（最多 500 筆）
-└── paths.yml        # 自訂可執行檔搜尋路徑
+├── history.yml      # 指令歷史（最多 500 筆）
+└── paths.yml        # 自訂執行檔搜尋路徑
 ```
 
 ### aliases.yml
@@ -307,15 +349,16 @@ RunProcess 把使用者資料存在：
 格式：
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
 ### history.yml
 
-自動維護，最多 500 筆。
+自動管理。最多 500 筆。
 
 ### paths.yml
 
@@ -328,75 +371,27 @@ paths:
   - /opt/homebrew/bin
 ```
 
-### 遷移
+### 移轉
 
-舊的 JSON 檔案（`aliases.json`、`history.json`）首次啟動會自動遷移。
-
----
-
-## 設定檔
-
-RunProcess 把使用者資料存在：
-
-```
-~/Library/Application Support/RunProcess/
-├── aliases.yml      # 指令別名
-├── history.yml      # 指令記錄（最多 500 筆）
-└── paths.yml        # 自訂可執行檔搜尋路徑
-```
-
-### aliases.yml
-
-格式：
-
-```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
-```
-
-### history.yml
-
-自動維護，最多 500 筆。
-
-### paths.yml
-
-格式：
-
-```yml
-paths:
-  - /Applications
-  - ~/bin
-  - /opt/homebrew/bin
-```
-
-### 遷移
-
-舊的 JSON 檔案（`aliases.json`、`history.json`）首次啟動會自動遷移。
+較舊的 JSON 檔案（`aliases.json`、`history.json`）將在首次啟動時自動移轉。
 
 ---
 
-## 技術棧
+## 技術堆疊
 
-Swift + SwiftUI，100% AI 生成程式碼
+Swift 與 SwiftUI
 
 ---
 
 ## 文件
 
+- [簡體中文 README](../zh-Hans/README.zh-Hans.md)
 - [English README](../../README.md)
-- [简体中文 README](../zh-Hans/README.zh-Hans.md)
-- [License](LICENSE.zh-Hans.md)
+- [貢獻指南](CONTRIBUTING.zh-Hant.md)
+- [授權條款](LICENSE.md)
 
 ---
 
-## 開發故事
-
-AI 寫程式，人類提需求，一個下午搞定。這就是 2026 年的開發方式。
-
----
-
-## License
+## 授權條款
 
 MIT © 2026 CaoHaoran-Dev

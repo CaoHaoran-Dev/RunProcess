@@ -32,31 +32,121 @@ enum AppearanceStyle: String, CaseIterable {
     }
 }
 
+/// 主界面风格
+enum MainUIMode: String, CaseIterable {
+    case classic
+    case lite
+
+    var displayNameKey: String {
+        switch self {
+        case .classic: return "interface.mode.classic"
+        case .lite:    return "interface.mode.lite"
+        }
+    }
+}
+
 /// 全局设置，封装 UserDefaults
-///
-/// 注意：不要叫 `Settings`，会与 SwiftUI 的 `Settings` 场景类型冲突。
 enum AppSettings {
+
+    // MARK: - Key Prefix
+    //
+    // 正式版与 Beta 版共用同一套 UserDefaults，但 key 按 target 加前缀隔离，
+    // 保证两版的偏好设置互不干扰。
+    //   - 正式版：无前缀
+    //   - Beta  ："beta." 前缀
+
+    private static var keyPrefix: String {
+        AppEnvironment.isBeta ? "beta." : ""
+    }
+
+    // MARK: - Update Channel
+
+    /// 更新源通道
+    enum UpdateChannel: String, CaseIterable {
+        case github
+        case cloudflare
+        case custom
+
+        var displayNameKey: String {
+            switch self {
+            case .github:     return "updates.channel.github"
+            case .cloudflare: return "updates.channel.cloudflare"
+            case .custom:     return "updates.channel.custom"
+            }
+        }
+    }
 
     // MARK: - Keys
 
     enum Keys {
-        static let sessionModeEnabled = "session.enabled"
-        static let defaultWorkingDirectory = "workingDirectory.default"
-        static let appearanceStyle = "appearance.style"
-        static let hideOnDeactivate = "window.hideOnDeactivate"
-        static let defaultSudo = "sudo.default"
-        static let launchAtLogin = "startup.launchAtLogin"
-        static let hideWindowOnLaunch = "startup.hideOnLaunch"
-        static let outputColorsEnabled = "output.colorsEnabled"
-        static let outputColorScheme = "output.colorScheme"
+        static var sessionModeEnabled: String     { keyPrefix + "session.enabled" }
+        static var defaultWorkingDirectory: String { keyPrefix + "workingDirectory.default" }
+        static var appearanceStyle: String         { keyPrefix + "appearance.style" }
+        static var mainUIMode: String              { keyPrefix + "interface.mainUIMode" }
+        static var hideOnDeactivate: String        { keyPrefix + "window.hideOnDeactivate" }
+        static var defaultSudo: String             { keyPrefix + "sudo.default" }
+        static var launchAtLogin: String           { keyPrefix + "startup.launchAtLogin" }
+        static var hideWindowOnLaunch: String      { keyPrefix + "startup.hideOnLaunch" }
+        static var outputColorsEnabled: String     { keyPrefix + "output.colorsEnabled" }
+        static var outputColorScheme: String       { keyPrefix + "output.colorScheme" }
+        static var explainErrors: String           { keyPrefix + "output.explainErrors" }
+
+        // 更新源
+        static var updateChannel: String           { keyPrefix + "updates.channel" }
+        static var customUpdateURL: String         { keyPrefix + "updates.customURL" }
+
+        // Shell 与自定义 PATH 注入
+        static var shellPath: String               { keyPrefix + "shell.path" }
+        static var customPathEnabled: String       { keyPrefix + "paths.customEnabled" }
     }
 
     private static let defaults = UserDefaults.standard
 
+    // MARK: - 界面模式
+
+    static var mainUIMode: MainUIMode {
+        get {
+            let raw = defaults.string(forKey: Keys.mainUIMode) ?? ""
+            return MainUIMode(rawValue: raw) ?? .classic
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: Keys.mainUIMode)
+        }
+    }
+
+    // MARK: - Shell
+
+    /// 当前选择的 shell 绝对路径。默认 /bin/zsh。
+    static var shellPathRaw: String {
+        get {
+            let raw = defaults.string(forKey: Keys.shellPath) ?? ""
+            return raw.isEmpty ? "/bin/zsh" : raw
+        }
+        set { defaults.set(newValue, forKey: Keys.shellPath) }
+    }
+
+    /// 生效的 shell 路径（若文件不存在回退到 /bin/zsh）
+    static var resolvedShellPath: String {
+        let raw = shellPathRaw
+        if FileManager.default.isExecutableFile(atPath: raw) {
+            return raw
+        }
+        return "/bin/zsh"
+    }
+
+    /// 当前选择的是否为 zsh（会话模式与 PATH 注入仅 zsh 可用）
+    static var isZshShell: Bool {
+        (resolvedShellPath as NSString).lastPathComponent == "zsh"
+    }
+
     // MARK: - 会话模式
 
     static var sessionModeEnabled: Bool {
-        get { defaults.bool(forKey: Keys.sessionModeEnabled) }
+        get {
+            // 非 zsh 强制关闭
+            guard isZshShell else { return false }
+            return defaults.bool(forKey: Keys.sessionModeEnabled)
+        }
         set { defaults.set(newValue, forKey: Keys.sessionModeEnabled) }
     }
 
@@ -128,8 +218,6 @@ enum AppSettings {
 
     // MARK: - 失焦关闭
 
-    /// 窗口失去焦点（App 不再 active）时是否自动隐藏
-    /// 默认 true
     static var hideOnDeactivate: Bool {
         get {
             if defaults.object(forKey: Keys.hideOnDeactivate) == nil {
@@ -142,8 +230,6 @@ enum AppSettings {
 
     // MARK: - 默认 Sudo
 
-    /// 默认以 root 执行。开启后主界面 sudo 开关固定为开且不可改。
-    /// 默认 false。
     static var defaultSudo: Bool {
         get { defaults.bool(forKey: Keys.defaultSudo) }
         set { defaults.set(newValue, forKey: Keys.defaultSudo) }
@@ -151,14 +237,11 @@ enum AppSettings {
 
     // MARK: - 启动
 
-    /// 开机自启动偏好缓存。实际状态以 SMAppService 为准。
     static var launchAtLogin: Bool {
         get { defaults.bool(forKey: Keys.launchAtLogin) }
         set { defaults.set(newValue, forKey: Keys.launchAtLogin) }
     }
 
-    /// 启动后隐藏窗口，只保留菜单栏图标。
-    /// 默认 false。
     static var hideWindowOnLaunch: Bool {
         get { defaults.bool(forKey: Keys.hideWindowOnLaunch) }
         set { defaults.set(newValue, forKey: Keys.hideWindowOnLaunch) }
@@ -166,8 +249,6 @@ enum AppSettings {
 
     // MARK: - 输出颜色
 
-    /// 是否解析并显示 ANSI 颜色
-    /// 默认 true
     static var outputColorsEnabled: Bool {
         get {
             if defaults.object(forKey: Keys.outputColorsEnabled) == nil {
@@ -178,7 +259,6 @@ enum AppSettings {
         set { defaults.set(newValue, forKey: Keys.outputColorsEnabled) }
     }
 
-    /// 输出颜色的色板选择
     enum OutputColorScheme: String, CaseIterable {
         case auto
         case dark
@@ -199,5 +279,47 @@ enum AppSettings {
             return OutputColorScheme(rawValue: raw) ?? .auto
         }
         set { defaults.set(newValue.rawValue, forKey: Keys.outputColorScheme) }
+    }
+
+    // MARK: - 错误解释
+
+    static var explainErrors: Bool {
+        get {
+            if defaults.object(forKey: Keys.explainErrors) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.explainErrors)
+        }
+        set { defaults.set(newValue, forKey: Keys.explainErrors) }
+    }
+
+    // MARK: - 自定义 PATH 注入
+
+    /// 是否把 PathStore 里的自定义路径追加到子进程 PATH。
+    /// 仅 zsh 可用；非 zsh 强制关闭。
+    static var customPathEnabled: Bool {
+        get {
+            guard isZshShell else { return false }
+            if defaults.object(forKey: Keys.customPathEnabled) == nil {
+                return true
+            }
+            return defaults.bool(forKey: Keys.customPathEnabled)
+        }
+        set { defaults.set(newValue, forKey: Keys.customPathEnabled) }
+    }
+
+    // MARK: - 更新源
+
+    static var updateChannel: UpdateChannel {
+        get {
+            let raw = defaults.string(forKey: Keys.updateChannel) ?? ""
+            return UpdateChannel(rawValue: raw) ?? .github // 默认 GitHub
+        }
+        set { defaults.set(newValue.rawValue, forKey: Keys.updateChannel) }
+    }
+
+    static var customUpdateURL: String {
+        get { defaults.string(forKey: Keys.customUpdateURL) ?? "" }
+        set { defaults.set(newValue, forKey: Keys.customUpdateURL) }
     }
 }

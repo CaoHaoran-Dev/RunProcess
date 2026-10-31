@@ -20,6 +20,7 @@
 "button.delete" = "Delete";
 "button.copy" = "Copy";
 "button.selectAll" = "Select All";
+"button.copy.output" = "Copy Output";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -62,6 +63,15 @@
 "error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
+
+/* ========== Error Explanations ========== */
+"error.explain.not.found" = "\n\n💡 Explanation: The command '%@' was not found. Check for typos, or make sure the tool is installed and in your PATH.";
+"error.explain.permission" = "\n\n💡 Explanation: Permission denied. You may need to run this command with 'sudo' or check the file permissions.";
+"error.explain.no.file" = "\n\n💡 Explanation: No such file or directory. Please verify the path or filename.";
+"error.explain.sudo.required" = "\n\n💡 Explanation: This command requires root privileges. Enable \"Run as root\" before executing.";
+"error.explain.network" = "\n\n💡 Explanation: Network error. Check your internet connection, DNS settings, or the remote host.";
+"error.explain.disk" = "\n\n💡 Explanation: Disk or file system error. Free up space, or check whether the volume is mounted read-only.";
+"error.explain.syntax" = "\n\n💡 Explanation: Shell syntax error. Check quotes, brackets, and special characters in the command.";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess Settings";
@@ -106,7 +116,17 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
+/* ========== Settings — Interface Mode (Beta) ========== */
+"settings.appearance.uiMode" = "Main Interface Style";
+"settings.appearance.uiMode.header" = "Interface Mode";
+"settings.appearance.uiMode.restartHint" = "Changes take effect in newly opened windows.";
+
+/* ========== Interface Modes ========== */
+"interface.mode.classic" = "Classic";
+"interface.mode.lite" = "Lite";
+
 /* ========== Settings — Output Colors ========== */
+"settings.output.colors.header" = "Output";
 "settings.output.colors.enabled" = "Show colors in command output";
 "settings.output.colors.hint" = "Parse ANSI escape sequences from tools like git, ls, and grep.";
 "settings.output.colors.scheme" = "Palette";
@@ -114,10 +134,22 @@
 "output.colors.scheme.dark" = "Dark";
 "output.colors.scheme.light" = "Light";
 
+/* ========== Settings — Output Errors ========== */
+"settings.output.explainErrors" = "Explain common command errors";
+"settings.output.explainErrors.hint" = "Append a human-readable explanation for common errors like 'command not found'.";
+
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "Session Mode";
 "settings.session.description" = "Persistent shell; cd / export persist across commands";
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
+"settings.session.requiresZsh" = "Session mode requires zsh.";
+
+/* ========== Settings — Shell (Beta) ========== */
+"settings.shell.header" = "Shell";
+"settings.shell.select" = "Shell";
+"settings.shell.add" = "Add Custom Shell...";
+"settings.shell.add.prompt" = "Add";
+"settings.shell.nonZshHint" = "Session mode and custom PATH are only available with zsh. They are disabled for this shell.";
 
 /* ========== Settings — Paths ========== */
 "settings.workingDirectory.title" = "Default Working Directory";
@@ -132,6 +164,8 @@
 "settings.paths.add" = "Add Path...";
 "settings.paths.hint" = "Folders here are appended to PATH. Command-line tools found in them can be run by name. .app bundles in them can be launched by name (e.g. Safari). Supports ~ for your home directory. Changes take effect immediately.";
 "settings.paths.panel.prompt" = "Add";
+"settings.paths.injectEnabled" = "Append custom paths to PATH";
+"settings.paths.requiresZsh" = "Custom PATH is only available with zsh.";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "Always run as root";
@@ -174,6 +208,12 @@
 "settings.updates.autoDownload.hint" = "Download new versions in the background. Installation still requires your confirmation.";
 "settings.updates.note" = "RunProcess uses Sparkle to deliver updates. Update packages are cryptographically signed and verified before installation. To check for updates manually, use Check for Updates (⌘U) in the menu bar.";
 
+"settings.updates.channel" = "Update Channel";
+"updates.channel.github" = "GitHub Releases";
+"updates.channel.cloudflare" = "Cloudflare Pages";
+"updates.channel.custom" = "Custom";
+"settings.updates.custom.url.placeholder" = "Enter custom appcast URL...";
+
 /* ========== Session ========== */
 "session.reset.notice" = "Session was reset";
 
@@ -207,6 +247,7 @@
 "help.shortcut.toggle" = "Show / hide window globally";
 "help.shortcut.new" = "New window";
 "help.shortcut.history" = "Search command history";
+"help.shortcut.rerun" = "Re-run last command";
 "help.shortcut.settings" = "Open settings";
 "help.shortcut.hide" = "Hide window";
 "help.shortcut.quit" = "Quit RunProcess";
@@ -254,3 +295,32 @@
 "about.repository" = "GitHub Repository";
 "about.license" = "MIT License";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+
+/* ========== App Intents ========== */
+"intent.runCommand.title" = "Run Command";
+"intent.runCommand.description" = "Execute a shell command in RunProcess and return its output.";
+"intent.runCommand.shortTitle" = "Run Command";
+"intent.runCommand.parameter.command" = "Command";
+"intent.runCommand.parameter.runAsRoot" = "Run as root";
+"intent.runCommand.parameter.throwOnFailure" = "Throw on failure";
+
+"intent.searchHistory.title" = "Search Command History";
+"intent.searchHistory.description" = "Find previously executed commands by fuzzy query.";
+"intent.searchHistory.shortTitle" = "Search History";
+"intent.searchHistory.parameter.query" = "Query";
+"intent.searchHistory.parameter.limit" = "Limit";
+
+"intent.addAlias.title" = "Add Alias";
+"intent.addAlias.description" = "Create a short alias for a frequently used command.";
+"intent.addAlias.shortTitle" = "Add Alias";
+"intent.addAlias.parameter.name" = "Name";
+"intent.addAlias.parameter.expansion" = "Expands To";
+
+"intent.clearHistory.title" = "Clear Command History";
+"intent.clearHistory.description" = "Delete all recorded command history.";
+
+"error.intent.empty.command" = "Command cannot be empty.";
+"error.intent.sudo.cancelled" = "Authorization cancelled by user.";
+"error.intent.sudo.not.authorized" = "Root execution requires authorization.";
+"error.intent.execution.failed" = "Command execution failed.";
+"error.intent.alias.name.invalid" = "Alias name cannot contain spaces.";

@@ -17,6 +17,12 @@ struct AboutView: View {
         return "\(v) (\(b))"
     }
 
+    private var displayName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "RunProcess"
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Image(nsImage: NSApp.applicationIconImage)
@@ -24,7 +30,9 @@ struct AboutView: View {
                 .frame(width: 80, height: 80)
 
             VStack(spacing: 4) {
-                Text("RunProcess").font(.title2.weight(.semibold))
+                Text(displayName)
+                    .font(.title2.weight(.semibold))
+
                 Text(NSLocalizedString("about.version", comment: "") + " " + version)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
@@ -39,7 +47,7 @@ struct AboutView: View {
 
             Divider()
 
-            VStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 8) {
                 Link(destination: URL(string: "https://github.com/CaoHaoran-Dev/RunProcess")!) {
                     HStack(spacing: 6) {
                         Image(systemName: "link").font(.system(size: 11))
@@ -54,6 +62,7 @@ struct AboutView: View {
                 }
             }
             .buttonStyle(.link)
+            .frame(maxWidth: .infinity, alignment: .center)
 
             Text(NSLocalizedString("about.copyright", comment: ""))
                 .font(.system(size: 10))
@@ -63,7 +72,6 @@ struct AboutView: View {
         .padding(28)
         .frame(width: 320)
         .fixedSize(horizontal: false, vertical: true)
-        // ✅ 毛玻璃 / 液态玻璃 / 无
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,

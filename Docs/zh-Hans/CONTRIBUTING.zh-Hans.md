@@ -107,6 +107,7 @@ open RunProcess.xcodeproj
 用 Swift Package Manager 管理：
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) —— 全局热键
+- [Sparkle](https://sparkle-project.org) —— 更新分发
 - [Yams](https://github.com/jpsim/Yams) —— 别名和历史的 YAML 解析
 
 Xcode 首次构建时会自动拉取。

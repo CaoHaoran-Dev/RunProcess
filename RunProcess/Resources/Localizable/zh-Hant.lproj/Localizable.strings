@@ -20,6 +20,7 @@
 "button.delete" = "刪除";
 "button.copy" = "拷貝";
 "button.selectAll" = "全選";
+"button.copy.output" = "複製輸出";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新增視窗";
@@ -62,6 +63,15 @@
 "error.sudo.wrong.password" = "密碼錯誤，請檢查後重試。";
 "error.sudo.missing.password" = "sudo 指令需要密碼。";
 "error.exit.code" = "指令執行失敗（結束碼：%ld）";
+
+/* ========== Error Explanations ========== */
+"error.explain.not.found" = "\n\n💡 解釋：找不到指令 '%@'。請檢查拼寫，或確保工具已安裝並包含在 PATH 中。";
+"error.explain.permission" = "\n\n💡 解釋：權限被拒絕。您可能需要使用 'sudo' 執行此指令，或檢查檔案權限。";
+"error.explain.no.file" = "\n\n💡 解釋：沒有那個檔案或目錄。請驗證路徑或檔案名稱是否正確。";
+"error.explain.sudo.required" = "\n\n💡 解釋：此指令需要 root 權限。執行前請勾選「以 root 執行」。";
+"error.explain.network" = "\n\n💡 解釋：網路錯誤。請檢查網路連線、DNS 設定或遠端主機是否可達。";
+"error.explain.disk" = "\n\n💡 解釋：磁碟或檔案系統錯誤。請清理空間，或檢查卷是否以唯讀方式掛載。";
+"error.explain.syntax" = "\n\n💡 解釋：Shell 語法錯誤。請檢查指令中的引號、括號和特殊字元是否成對。";
 
 /* ========== Window Titles ========== */
 "window.settings.title" = "RunProcess 設定";
@@ -106,7 +116,17 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液態玻璃";
 
+/* ========== Settings — Interface Mode (Beta) ========== */
+"settings.appearance.uiMode" = "主介面樣式";
+"settings.appearance.uiMode.header" = "介面模式";
+"settings.appearance.uiMode.restartHint" = "新開啟的視窗才會生效。";
+
+/* ========== Interface Modes ========== */
+"interface.mode.classic" = "經典";
+"interface.mode.lite" = "極簡";
+
 /* ========== Settings — Output Colors ========== */
+"settings.output.colors.header" = "輸出";
 "settings.output.colors.enabled" = "指令輸出顯示顏色";
 "settings.output.colors.hint" = "解析 git、ls、grep 等工具輸出的 ANSI 轉義序列。";
 "settings.output.colors.scheme" = "色板";
@@ -114,10 +134,22 @@
 "output.colors.scheme.dark" = "深色";
 "output.colors.scheme.light" = "淺色";
 
+/* ========== Settings — Output Errors ========== */
+"settings.output.explainErrors" = "解釋常見指令錯誤";
+"settings.output.explainErrors.hint" = "為「找不到指令」、「權限被拒絕」等常見錯誤追加人類可讀的解釋。";
+
 /* ========== Settings — Session ========== */
 "settings.session.enabled" = "工作階段模式";
 "settings.session.description" = "長駐 shell；cd / export 跨指令生效";
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
+"settings.session.requiresZsh" = "工作階段模式需要 zsh。";
+
+/* ========== Settings — Shell (Beta) ========== */
+"settings.shell.header" = "Shell";
+"settings.shell.select" = "Shell";
+"settings.shell.add" = "新增自訂 Shell...";
+"settings.shell.add.prompt" = "新增";
+"settings.shell.nonZshHint" = "工作階段模式和自訂 PATH 僅支援 zsh，目前 Shell 下已停用。";
 
 /* ========== Settings — Paths ========== */
 "settings.workingDirectory.title" = "預設工作目錄";
@@ -132,6 +164,8 @@
 "settings.paths.add" = "新增路徑...";
 "settings.paths.hint" = "這裡的資料夾會被追加到 PATH。其中的命令列工具可直接用名稱執行；其中的 .app 也可直接用名稱啟動（如 Safari）。支援 ~ 表示使用者主目錄。修改後立即生效。";
 "settings.paths.panel.prompt" = "新增";
+"settings.paths.injectEnabled" = "把自訂路徑追加到 PATH";
+"settings.paths.requiresZsh" = "自訂 PATH 僅支援 zsh。";
 
 /* ========== Settings — Sudo ========== */
 "settings.sudo.default" = "預設以 root 執行";
@@ -174,6 +208,12 @@
 "settings.updates.autoDownload.hint" = "在背景下載新版本。安裝仍需你確認。";
 "settings.updates.note" = "RunProcess 使用 Sparkle 分發更新。更新套件經過加密簽章，安裝前會驗證。手動檢查更新請使用選單列中的「檢查更新」（⌘U）。";
 
+"settings.updates.channel" = "更新來源";
+"updates.channel.github" = "GitHub Releases";
+"updates.channel.cloudflare" = "Cloudflare Pages";
+"updates.channel.custom" = "自訂";
+"settings.updates.custom.url.placeholder" = "輸入自訂 appcast 連結...";
+
 /* ========== Session ========== */
 "session.reset.notice" = "工作階段已重設";
 
@@ -207,6 +247,7 @@
 "help.shortcut.toggle" = "全域顯示 / 隱藏視窗";
 "help.shortcut.new" = "新增視窗";
 "help.shortcut.history" = "搜尋指令記錄";
+"help.shortcut.rerun" = "重新執行上一條指令";
 "help.shortcut.settings" = "開啟設定";
 "help.shortcut.hide" = "隱藏視窗";
 "help.shortcut.quit" = "結束 RunProcess";
@@ -254,3 +295,32 @@
 "about.repository" = "GitHub 儲存庫";
 "about.license" = "MIT 授權條款";
 "about.copyright" = "MIT © 2026 CaoHaoran-Dev";
+
+/* ========== App Intents ========== */
+"intent.runCommand.title" = "執行指令";
+"intent.runCommand.description" = "在 RunProcess 中執行 shell 指令並傳回輸出。";
+"intent.runCommand.shortTitle" = "執行指令";
+"intent.runCommand.parameter.command" = "指令";
+"intent.runCommand.parameter.runAsRoot" = "以 root 執行";
+"intent.runCommand.parameter.throwOnFailure" = "失敗時拋出錯誤";
+
+"intent.searchHistory.title" = "搜尋指令記錄";
+"intent.searchHistory.description" = "依模糊查詢尋找執行過的指令。";
+"intent.searchHistory.shortTitle" = "搜尋記錄";
+"intent.searchHistory.parameter.query" = "查詢";
+"intent.searchHistory.parameter.limit" = "數量上限";
+
+"intent.addAlias.title" = "新增別名";
+"intent.addAlias.description" = "為常用指令建立短名稱。";
+"intent.addAlias.shortTitle" = "新增別名";
+"intent.addAlias.parameter.name" = "名稱";
+"intent.addAlias.parameter.expansion" = "展開為";
+
+"intent.clearHistory.title" = "清除指令記錄";
+"intent.clearHistory.description" = "刪除所有已記錄的指令記錄。";
+
+"error.intent.empty.command" = "指令不能為空。";
+"error.intent.sudo.cancelled" = "使用者取消了授權。";
+"error.intent.sudo.not.authorized" = "以 root 執行需要授權。";
+"error.intent.execution.failed" = "指令執行失敗。";
+"error.intent.alias.name.invalid" = "別名不能包含空格。";

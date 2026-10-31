@@ -19,6 +19,8 @@ class CommandViewModel: ObservableObject {
     @Published var selectedIndex: Int = 0
     @Published var showHistoryPanel: Bool = false
 
+    @Published var pendingSudoRequest: Bool = false
+
     var usesSessionMode: Bool = false
     weak var session: Session?
 
@@ -34,10 +36,8 @@ class CommandViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
 
-    /// 持有 RunTextField 的 Coordinator，用于关闭面板后恢复焦点
     private weak var textFieldCoordinator: RunTextField.Coordinator?
 
-    /// 缓存上一次的颜色偏好，用于判断是否需要重算
     private var cachedColorsEnabled = AppSettings.outputColorsEnabled
     private var cachedColorScheme = AppSettings.outputColorScheme
 
@@ -97,13 +97,22 @@ class CommandViewModel: ObservableObject {
         }
     }
 
+    func forceRestoreInputFocus() {
+        guard let win = session?.window else { return }
+        if let coordinator = textFieldCoordinator {
+            coordinator.forceFocus()
+        } else if let tv = textField as? NSTextView {
+            win.makeKey()
+            win.makeFirstResponder(tv)
+        }
+    }
+
     var positioningView: NSView? {
         textField
     }
 
     // MARK: - 窗口宽度
 
-    /// 输出内容变宽 / 变窄时调用，通知 Session 平滑改变窗口宽度。
     func resizeWindow(to width: CGFloat) {
         session?.setContentWidth(width)
     }
@@ -193,20 +202,18 @@ class CommandViewModel: ObservableObject {
                         completion: @escaping (String) -> Void) {
         guard !inputText.isEmpty else { return }
 
-        // 1. .app 补全
         var processedCommand = CommandPreprocessor.process(inputText)
-
-        // 2. 自定义路径里的 .app 查找
         processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
-
-        // 3. 别名展开
-        processedCommand = expandAlias(in: processedCommand)
+        
+        // 👇 修改为调用 AliasStore 里的方法
+        processedCommand = AliasStore.shared.expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
             inputText = processedCommand
         }
 
-        if CommandPreprocessor.isInteractive(processedCommand) {
+        // 多行命令跳过交互式检查
+        if !processedCommand.contains("\n") && CommandPreprocessor.isInteractive(processedCommand) {
             isRunning = false
             canCancel = false
             outputText = NSLocalizedString("error.interactive.command", comment: "")
@@ -240,21 +247,55 @@ class CommandViewModel: ObservableObject {
                         ? NSLocalizedString("output.success", comment: "")
                         : text
                 case .failure(let error):
-                    self.outputText = "❌ \(error.localizedDescription)"
+                    let rawError = error.localizedDescription
+
+                    if ErrorClassifier.isTTYError(rawError) {
+                        self.outputText = "❌ " + NSLocalizedString("error.interactive.command", comment: "")
+                        completion(self.outputText)
+                        return
+                    }
+
+                    let explanation = self.explainError(rawError)
+                    self.outputText = "❌ \(rawError)\(explanation)"
                 }
                 completion(self.outputText)
             }
         }
     }
 
-    private func expandAlias(in command: String) -> String {
-        let parts = command.split(separator: " ", maxSplits: 1,
-                                  omittingEmptySubsequences: false)
-        guard let first = parts.first, !first.isEmpty else { return command }
-        let name = String(first)
-        guard let expansion = AliasStore.shared.expansion(for: name) else { return command }
-        if parts.count == 1 { return expansion }
-        return expansion + " " + parts[1]
+    func executeLastCommand(useSudo: Bool, password: String?, completion: @escaping (String) -> Void) {
+        let entries = history.getAll()
+        guard let lastEntry = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first else {
+            return
+        }
+        inputText = lastEntry.command
+        restoreInputFocus()
+        executeCommand(useSudo: useSudo, password: password, completion: completion)
+    }
+
+    // MARK: - 错误解释
+
+    private func explainError(_ rawError: String) -> String {
+        guard AppSettings.explainErrors else { return "" }
+
+        switch ErrorClassifier.classify(rawError) {
+        case .commandNotFound(let name):
+            return String(format: NSLocalizedString("error.explain.not.found", comment: ""), name)
+        case .permissionDenied:
+            return NSLocalizedString("error.explain.permission", comment: "")
+        case .fileNotFound:
+            return NSLocalizedString("error.explain.no.file", comment: "")
+        case .sudoRequired:
+            return NSLocalizedString("error.explain.sudo.required", comment: "")
+        case .network:
+            return NSLocalizedString("error.explain.network", comment: "")
+        case .disk:
+            return NSLocalizedString("error.explain.disk", comment: "")
+        case .syntax:
+            return NSLocalizedString("error.explain.syntax", comment: "")
+        case .none:
+            return ""
+        }
     }
 
     func cancelExecution() {
@@ -276,7 +317,6 @@ class CommandViewModel: ObservableObject {
         outputAttributed = NSAttributedString()
     }
 
-    /// 复制输出到剪贴板，并把焦点还给输入框
     func copyOutputToPasteboard() {
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -302,10 +342,194 @@ class CommandViewModel: ObservableObject {
     }
 }
 
+// MARK: - 纯函数：错误分类
+
+enum ErrorClassifier {
+    enum Kind {
+        case commandNotFound(String)
+        case permissionDenied
+        case fileNotFound
+        case sudoRequired
+        case network
+        case disk
+        case syntax
+    }
+
+    static func isTTYError(_ text: String) -> Bool {
+        let t = ANSIParser.stripANSI(text).lowercased()
+        let needles = [
+            "not a terminal",
+            "requires a tty",
+            "a terminal is required",
+            "no tty present",
+            "stdin is not a tty",
+            "inappropriate ioctl",
+            "can't be run in this context",
+            "cannot be run in this context",
+            "unable to open /dev/tty",
+        ]
+        return needles.contains { t.contains($0) }
+    }
+
+    static func classify(_ text: String) -> Kind? {
+        let t = ANSIParser.stripANSI(text).lowercased()
+
+        if t.contains("command not found")
+            || t.contains("unknown command")
+            || t.contains("not found in path")
+            || (t.contains("not found") && (t.contains("command") || t.contains("(eval)")))
+        {
+            return .commandNotFound(extractCommandName(from: t))
+        }
+
+        if t.contains("permission denied")
+            || t.contains("operation not permitted")
+            || t.contains("access denied")
+            || t.contains("not authorized")
+            || t.contains("must be owner")
+            || t.contains("eacces")
+        {
+            return .permissionDenied
+        }
+
+        if t.contains("must be run as root")
+            || t.contains("requires root")
+            || t.contains("try again as root")
+            || t.contains("you need to be root")
+            || t.contains("superuser")
+            || t.contains("are you root")
+            || t.contains("not permitted")
+        {
+            return .sudoRequired
+        }
+
+        if t.contains("no such file or directory")
+            || t.contains("does not exist")
+            || t.contains("cannot find")
+            || t.contains("can't find")
+            || t.contains("unable to find")
+            || t.contains("no such file")
+        {
+            return .fileNotFound
+        }
+
+        if t.contains("could not resolve host")
+            || t.contains("name or service not known")
+            || t.contains("temporary failure in name resolution")
+            || t.contains("connection refused")
+            || t.contains("connection timed out")
+            || t.contains("connection reset")
+            || t.contains("network is unreachable")
+            || t.contains("no route to host")
+            || t.contains("could not connect")
+            || t.contains("failed to connect")
+        {
+            return .network
+        }
+
+        if t.contains("no space left")
+            || t.contains("disk full")
+            || t.contains("read-only file system")
+            || t.contains("quota exceeded")
+            || t.contains("input/output error")
+            || t.contains("structure needs cleaning")
+        {
+            return .disk
+        }
+
+        if t.contains("parse error")
+            || t.contains("syntax error")
+            || t.contains("bad substitution")
+            || t.contains("unmatched")
+            || t.contains("unexpected token")
+            || t.contains("unexpected end of file")
+            || t.contains("unexpected eof")
+            || t.contains("command substitution")
+            || t.contains("unbound variable")
+        {
+            return .syntax
+        }
+
+        return nil
+    }
+
+    private static func extractCommandName(from text: String) -> String {
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
+        let target = lines.first {
+            let l = $0.lowercased()
+            return l.contains("command not found")
+                || l.contains("unknown command")
+                || l.contains("not found in path")
+                || l.contains("not found")
+        } ?? text
+
+        let afterPatterns: [String] = [
+            #"(?:command not found|not found|unknown command)\s*:\s*(\S+)"#,
+        ]
+        let beforePatterns: [String] = [
+            #"(\S+)\s*:\s*(?:command not found|not found)"#,
+        ]
+
+        for pattern in afterPatterns + beforePatterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+                  let match = regex.firstMatch(in: target, range: NSRange(target.startIndex..., in: target)),
+                  match.numberOfRanges > 1,
+                  let range = Range(match.range(at: 1), in: target) else { continue }
+
+            let candidate = String(target[range])
+                .trimmingCharacters(in: CharacterSet(charactersIn: ":\"'`"))
+            if isLikelyCommandName(candidate) {
+                return candidate
+            }
+        }
+
+        let separators: [Character] = [":", " ", "\t", "`", "'", "\""]
+        let tokens = target.split(whereSeparator: { separators.contains($0) })
+            .map(String.init)
+            .filter { !$0.isEmpty }
+
+        let keywordIndex = tokens.firstIndex {
+            let l = $0.lowercased()
+            return l == "command" || l == "unknown" || l == "not" || l == "found" || l == "path"
+        }
+
+        if let idx = keywordIndex {
+            let after = tokens[(idx + 1)...]
+            if let candidate = after.first(where: { isLikelyCommandName($0) }) {
+                return candidate
+            }
+            let before = tokens[..<idx]
+            if let candidate = before.last(where: { isLikelyCommandName($0) }) {
+                return candidate
+            }
+        }
+
+        for token in tokens {
+            if isLikelyCommandName(token) { return token }
+        }
+        return "unknown"
+    }
+
+    private static func isLikelyCommandName(_ token: String) -> Bool {
+        guard !token.isEmpty else { return false }
+        let excluded: Set<String> = [
+            "zsh", "bash", "sh", "fish", "dash", "ksh", "csh", "tcsh",
+            "command", "unknown", "not", "found", "path",
+            "no", "such", "file", "or", "directory",
+            "(eval)", "(command)", "(anon)", "eval", "command", "anon",
+        ]
+        if excluded.contains(token.lowercased()) { return false }
+        if Int(token) != nil { return false }
+        if token.allSatisfy({ !$0.isLetter && !$0.isNumber && $0 != "_" && $0 != "-" && $0 != "." }) {
+            return false
+        }
+        return true
+    }
+}
+
 // MARK: - 纯函数：命令预处理
 
 enum CommandPreprocessor {
-
     static func process(_ input: String) -> String {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         let lower = trimmed.lowercased()
@@ -327,18 +551,14 @@ enum CommandPreprocessor {
         return trimmed
     }
 
-    /// 只处理 `.app` bundle。命令行工具交给子进程 PATH 机制，
-    /// 由 zsh 自己按 PATH 顺序查找。
     static func resolveCustomPath(_ command: String) -> String {
         let parts = command.split(separator: " ", maxSplits: 1,
                                   omittingEmptySubsequences: false)
         guard let first = parts.first, !first.isEmpty else { return command }
         let name = String(first)
 
-        // 已带路径分隔符，跳过
         if name.contains("/") { return command }
 
-        // 只查 .app
         guard let appPath = PathStore.shared.findApp(named: name) else {
             return command
         }

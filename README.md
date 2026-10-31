@@ -56,7 +56,8 @@ Open the application, click ⚡ in the menu bar, type a command, and press Enter
 | `⌘⌥R` | Show or hide the window globally (customizable in Settings) |
 | `⌘U` | Check for Updates |
 | `⌘N` | New window |
-| `⌘R` | Search command history |
+| `⌘H` | Open command history |
+| `⌘R` | Re-run last command |
 | `⌘,` | Open Settings |
 | `⌘/` | Open Help |
 | `⌘W` | Hide window |
@@ -112,7 +113,7 @@ The window title in session mode displays `RunProcess - Session — <current dir
 Every executed command is recorded. The history powers two features:
 
 - **↑ / ↓ navigation** – ranked by frecency: frequently used and recently used commands rise to the top
-- **⌘R search** – fuzzy matching across the whole history (`gst` matches `git status`)
+- **⌘H search** – fuzzy matching across the whole history (`gst` matches `git status`)
 
 History is stored at:
 
@@ -148,10 +149,11 @@ Custom aliases live in:
 Format:
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
 Restart the app after editing.
@@ -305,53 +307,11 @@ RunProcess stores user data in:
 Format:
 
 ```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
-```
-
-### history.yml
-
-Managed automatically. Maximum 500 entries.
-
-### paths.yml
-
-Format:
-
-```yml
-paths:
-  - /Applications
-  - ~/bin
-  - /opt/homebrew/bin
-```
-
-### Migration
-
-Older JSON files (`aliases.json`, `history.json`) are migrated automatically on first launch.
-
----
-
-## Configuration Files
-
-RunProcess stores user data in:
-
-```
-~/Library/Application Support/RunProcess/
-├── aliases.yml      # command aliases
-├── history.yml      # command history (max 500 entries)
-└── paths.yml        # custom executable search paths
-```
-
-### aliases.yml
-
-Format:
-
-```yml
-[
-  { "name": "gs", "expansion": "git status" },
-  { "name": "serve", "expansion": "python3 -m http.server 8000" }
-]
+aliases:
+  - name: gs
+    expansion: git status
+  - name: serve
+    expansion: python3 -m http.server 8000
 ```
 
 ### history.yml

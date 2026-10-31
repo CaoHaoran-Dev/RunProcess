@@ -52,24 +52,29 @@ final class PersistentShell {
 
     // MARK: - Start / Stop
 
-    func start() throws {
-        var thrown: Error?
-        let sem = DispatchSemaphore(value: 0)
+    func start(completion: (() -> Void)? = nil) {
         queue.async { [weak self] in
-            guard let self = self else { sem.signal(); return }
+            guard let self = self else { return }
             do {
                 try self.startLocked()
             } catch {
-                thrown = error
+                print("⚠️ Shell 启动失败: \(error)")
             }
-            sem.signal()
+            DispatchQueue.main.async {
+                completion?()
+            }
         }
-        sem.wait()
-        if let e = thrown { throw e }
     }
 
     private func startLocked() throws {
         guard !isAlive else { return }
+
+        // 会话模式只允许 zsh
+        let shellPath = AppSettings.resolvedShellPath
+        guard (shellPath as NSString).lastPathComponent == "zsh" else {
+            throw NSError(domain: "RunProcess", code: -10,
+                          userInfo: [NSLocalizedDescriptionKey: "Session mode requires zsh"])
+        }
 
         let task = Process()
         let stdinPipe = Pipe()
@@ -77,11 +82,13 @@ final class PersistentShell {
         let stderrPipe = Pipe()
 
         task.currentDirectoryURL = URL(fileURLWithPath: currentWorkingDirectory)
-        task.launchPath = "/bin/zsh"
+        task.launchPath = shellPath
 
-        // ✅ 只把用户自定义路径替换进脚本，让 zsh 自己加载 .zshrc 的 PATH，
-        //    bootstrap 只追加用户路径，不覆盖。
-        let customPath = PathStore.shared.customPathString()
+        // 只有开关开启时才注入自定义 PATH
+        let customPath = AppSettings.customPathEnabled
+            ? PathStore.shared.customPathString()
+            : ""
+
         let script = Self.bootstrapScript.replacingOccurrences(
             of: "__RP_CUSTOM_PATH__",
             with: customPath
@@ -200,9 +207,9 @@ final class PersistentShell {
         self.isAlive = false
     }
 
-    func restart() throws {
+    func restart() {
         teardown()
-        try start()
+        start()
     }
 
     // MARK: - Execute
@@ -345,7 +352,11 @@ final class PersistentShell {
 
             self.suppressCrashCallback = true
             self.teardownLocked()
-            do { try self.startLocked() } catch { /* ignore */ }
+            do {
+                try self.startLocked()
+            } catch {
+                print("⚠️ 超时后重启 Shell 失败: \(error)")
+            }
 
             DispatchQueue.main.async { completion?(.failure(error)) }
         }
@@ -357,7 +368,6 @@ final class PersistentShell {
     if [ -f ~/.zshrc ]; then
         source ~/.zshrc
     fi
-    # ✅ 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已经设好的 PATH
     if [ -n "__RP_CUSTOM_PATH__" ]; then
         export PATH="$PATH:__RP_CUSTOM_PATH__"
     fi

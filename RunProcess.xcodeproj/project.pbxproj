@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD1515D03084B3E500073710 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AD1515CC3084B3E500073710 /* Sparkle */; };
+		AD1515D13084B3E500073710 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = AD1515C83084B3E500073710 /* Yams */; };
+		AD1515D23084B3E500073710 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = AD1515CA3084B3E500073710 /* KeyboardShortcuts */; };
+		AD1515D43084B3E500073710 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
+		AD1515D53084B3E500073710 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
+		AD1515D63084B3E500073710 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
+		AD1515D73084B3E500073710 /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
@@ -27,22 +34,31 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AD1515DC3084B3E500073710 /* RunProcess Preview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "RunProcess Preview.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RunProcess.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD49D2853036EE5E007BD3A5 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 		AD682D58303E762B00A624CF /* RunProcessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunProcessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
-		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
+		ADE1CFF1303C5B8E0099A9EC /* ci.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = ci.yml; sourceTree = "<group>"; };
 		ADF84791303D6F8A00462C27 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		ADC840A5307382A5008CF7AA /* Exceptions for "RunProcess" folder in "RunProcess" target */ = {
+		AD1516093084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				"beta-Info.plist",
 				Info.plist,
 			);
 			target = AD17FC6A3035CC7A00A52CD6 /* RunProcess */;
+		};
+		AD15160A3084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess Preview" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"beta-Info.plist",
+			);
+			target = AD1515C73084B3E500073710 /* RunProcess Preview */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -50,7 +66,8 @@
 		AD17FC6D3035CC7A00A52CD6 /* RunProcess */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				ADC840A5307382A5008CF7AA /* Exceptions for "RunProcess" folder in "RunProcess" target */,
+				AD1516093084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess" target */,
+				AD15160A3084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess Preview" target */,
 			);
 			path = RunProcess;
 			sourceTree = "<group>";
@@ -68,6 +85,16 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AD1515CF3084B3E500073710 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD1515D03084B3E500073710 /* Sparkle in Frameworks */,
+				AD1515D13084B3E500073710 /* Yams in Frameworks */,
+				AD1515D23084B3E500073710 /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AD17FC683035CC7A00A52CD6 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -91,12 +118,12 @@
 		AD17FC623035CC7A00A52CD6 = {
 			isa = PBXGroup;
 			children = (
+				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
 				AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */,
 				ADF84791303D6F8A00462C27 /* README.md */,
 				ADF8478F303D6F5300462C27 /* Docs */,
 				AD49D2853036EE5E007BD3A5 /* .gitignore */,
 				AD8D43FA3036E17700B0576B /* LICENSE.md */,
-				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
 				AD682D59303E762B00A624CF /* RunProcessTests */,
 				AD17FC6C3035CC7A00A52CD6 /* Products */,
 				ADE1CFF3303C5B8E0099A9EC /* .github */,
@@ -108,6 +135,7 @@
 			children = (
 				AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */,
 				AD682D58303E762B00A624CF /* RunProcessTests.xctest */,
+				AD1515DC3084B3E500073710 /* RunProcess Preview.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -115,7 +143,7 @@
 		ADE1CFF2303C5B8E0099A9EC /* workflows */ = {
 			isa = PBXGroup;
 			children = (
-				ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */,
+				ADE1CFF1303C5B8E0099A9EC /* ci.yml */,
 			);
 			path = workflows;
 			sourceTree = "<group>";
@@ -131,6 +159,33 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AD1515C73084B3E500073710 /* RunProcess Preview */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AD1515D93084B3E500073710 /* Build configuration list for PBXNativeTarget "RunProcess Preview" */;
+			buildPhases = (
+				AD1515CE3084B3E500073710 /* Sources */,
+				AD1515CF3084B3E500073710 /* Frameworks */,
+				AD1515D33084B3E500073710 /* Resources */,
+				AD1515D83084B3E500073710 /* ShellScript */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
+				ADF8478F303D6F5300462C27 /* Docs */,
+			);
+			name = "RunProcess Preview";
+			packageProductDependencies = (
+				AD1515C83084B3E500073710 /* Yams */,
+				AD1515CA3084B3E500073710 /* KeyboardShortcuts */,
+				AD1515CC3084B3E500073710 /* Sparkle */,
+			);
+			productName = RunProcess;
+			productReference = AD1515DC3084B3E500073710 /* RunProcess Preview.app */;
+			productType = "com.apple.product-type.application";
+		};
 		AD17FC6A3035CC7A00A52CD6 /* RunProcess */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AD17FC763035CC7E00A52CD6 /* Build configuration list for PBXNativeTarget "RunProcess" */;
@@ -223,11 +278,23 @@
 			targets = (
 				AD17FC6A3035CC7A00A52CD6 /* RunProcess */,
 				AD682D57303E762B00A624CF /* RunProcessTests */,
+				AD1515C73084B3E500073710 /* RunProcess Preview */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AD1515D33084B3E500073710 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AD1515D43084B3E500073710 /* README.md in Resources */,
+				AD1515D53084B3E500073710 /* .gitignore in Resources */,
+				AD1515D63084B3E500073710 /* CONTRIBUTING.md in Resources */,
+				AD1515D73084B3E500073710 /* LICENSE.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AD17FC693035CC7A00A52CD6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -249,6 +316,25 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		AD1515D83084B3E500073710 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/zsh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"${SRCROOT}\"\n\n# 获取当前的 tag 总数\nTAG_COUNT=$(git tag | wc -l | tr -d ' ')\n\n# 容错：空值或非数字按 0 处理\nif [ -z \"$TAG_COUNT\" ] || ! [[ \"$TAG_COUNT\" =~ ^[0-9]+$ ]]; then\n    TAG_COUNT=0\nfi\n\n# Beta 构建号 = 8 + tag 数\nBUILD_NUMBER=$((8 + TAG_COUNT))\n\n# 检查生成路径：优先用 Xcode 提供的构建目录变量，找不到再兜底\nif [ -f \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" ]; then\n    PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\nelif [ -f \"${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist\" ]; then\n    PLIST_PATH=\"${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist\"\nelse\n    echo \"❌ 找不到 Info.plist，请检查 Build Settings 里的配置\"\n    exit 1\nfi\n\n# 写入 CFBundleVersion\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \"$PLIST_PATH\"\n\necho \"✅ RunProcess-Beta CFBundleVersion = $BUILD_NUMBER (tags=$TAG_COUNT + 8)\"\n";
+		};
 		AD6398DF30736E1000D9E56E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
@@ -266,11 +352,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/zsh;
-			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"${SRCROOT}\"\n\nBUILD_NUMBER=$(git tag | wc -l | tr -d ' ')\n\nif [ -z \"$BUILD_NUMBER\" ] || [ \"$BUILD_NUMBER\" -lt 1 ]; then\n    BUILD_NUMBER=1\nfi\n\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \\\n  \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n\necho \"✅ CFBundleVersion = $BUILD_NUMBER\"\n";
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\ncd \"${SRCROOT}\"\n\n# 获取当前的 tag 总数\nTAG_COUNT=$(git tag | wc -l | tr -d ' ')\n\n# 容错：空值或非数字按 0 处理\nif [ -z \"$TAG_COUNT\" ] || ! [[ \"$TAG_COUNT\" =~ ^[0-9]+$ ]]; then\n    TAG_COUNT=0\nfi\n\n# 构建号 = 8 + tag 数\nBUILD_NUMBER=$((8 + TAG_COUNT))\n\n# 检查生成路径：优先用 Xcode 提供的构建目录变量，找不到再兜底\nif [ -f \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" ]; then\n    PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\nelif [ -f \"${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist\" ]; then\n    PLIST_PATH=\"${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}/Info.plist\"\nelse\n    echo \"❌ 找不到 Info.plist，请检查 Build Settings 里的配置\"\n    exit 1\nfi\n\n# 写入 CFBundleVersion\n/usr/libexec/PlistBuddy -c \"Set :CFBundleVersion $BUILD_NUMBER\" \"$PLIST_PATH\"\n\necho \"✅ RunProcess-Beta CFBundleVersion = $BUILD_NUMBER (tags=$TAG_COUNT + 8)\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AD1515CE3084B3E500073710 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AD17FC673035CC7A00A52CD6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -296,6 +389,82 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		AD1515DA3084B3E500073710 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = MVKBMZMN48;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "RunProcess/beta-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "RunProcess Preview";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = "3.5.0-RC.1";
+				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess.beta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "BETA $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AD1515DB3084B3E500073710 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = MVKBMZMN48;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "RunProcess/beta-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "RunProcess Preview";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MARKETING_VERSION = "3.5.0-RC.1";
+				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess.beta;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = BETA;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		AD17FC743035CC7E00A52CD6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -359,6 +528,7 @@
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -419,6 +589,7 @@
 				SDKROOT = macosx;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -446,7 +617,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -483,7 +654,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.4;
-				MARKETING_VERSION = 3.4.0;
+				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -541,6 +712,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AD1515D93084B3E500073710 /* Build configuration list for PBXNativeTarget "RunProcess Preview" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AD1515DA3084B3E500073710 /* Debug */,
+				AD1515DB3084B3E500073710 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AD17FC663035CC7A00A52CD6 /* Build configuration list for PBXProject "RunProcess" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -571,6 +751,30 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		AD1515C93084B3E500073710 /* XCRemoteSwiftPackageReference "Yams" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jpsim/Yams";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.2.2;
+			};
+		};
+		AD1515CB3084B3E500073710 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.1.0;
+			};
+		};
+		AD1515CD3084B3E500073710 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
 		ADDC692730738CCB009B650E /* XCRemoteSwiftPackageReference "Yams" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jpsim/Yams";
@@ -598,6 +802,21 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		AD1515C83084B3E500073710 /* Yams */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD1515C93084B3E500073710 /* XCRemoteSwiftPackageReference "Yams" */;
+			productName = Yams;
+		};
+		AD1515CA3084B3E500073710 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD1515CB3084B3E500073710 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+		AD1515CC3084B3E500073710 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD1515CD3084B3E500073710 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		ADDC692830738CCB009B650E /* Yams */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = ADDC692730738CCB009B650E /* XCRemoteSwiftPackageReference "Yams" */;

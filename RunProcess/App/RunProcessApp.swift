@@ -30,19 +30,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var helpWindow: NSWindow?
     private var keyMonitor: Any?
 
-    /// Sparkle 更新控制器
     private var updaterController: SPUStandardUpdaterController?
 
-    /// 供设置页访问
     var updaterControllerForSettings: SPUStandardUpdaterController? {
         updaterController
     }
 
-    /// 启动后是否真正被激活过。用于忽略启动瞬间的 didResignActive。
     private var hasBeenActive = false
 
     // MARK: - Menu
-
     private lazy var statusMenu: NSMenu = {
         let menu = NSMenu()
 
@@ -68,7 +64,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
             action: #selector(openHistory),
-            keyEquivalent: "r"
+            keyEquivalent: "h"
         )
         historyItem.keyEquivalentModifierMask = .command
         historyItem.target = self
@@ -93,7 +89,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 检查更新，菜单里显示 ⌘U 提示
         let checkUpdateItem = NSMenuItem(
             title: NSLocalizedString("menu.check.updates", comment: "Check for updates menu item"),
             action: #selector(checkForUpdates),
@@ -137,8 +132,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // ✅ 初始化 Sparkle
-        // 菜单栏应用（.accessory）需要 userDriverDelegate 处理 gentle reminders
+        updateFeedURLPreference()
+
         updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
             updaterDelegate: self,
@@ -224,6 +219,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
             if flags == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "w" {
+                if let active = self.sessionManager.activeSession() {
+                    active.hide()
+                } else {
+                    self.hideAllWindows()
+                }
+                return nil
+            }
+
+            if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "n" {
                 self.newWindow()
                 return nil
@@ -236,14 +241,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             if flags == .command,
-               event.charactersIgnoringModifiers?.lowercased() == "r" {
+               event.charactersIgnoringModifiers?.lowercased() == "h" {
                 self.openHistory()
+                return nil
+            }
+            
+            if flags == .command,
+               event.charactersIgnoringModifiers == "/" {
+                self.openHelp()
                 return nil
             }
 
             if flags == .command,
-               event.charactersIgnoringModifiers == "/" {
-                self.openHelp()
+               event.charactersIgnoringModifiers?.lowercased() == "u" {
+                self.checkForUpdates()
                 return nil
             }
 
@@ -304,6 +315,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    @discardableResult
+    func createSessionWithCommand(_ command: String, runAsRoot: Bool = false) -> Session {
+        let session = sessionManager.newSession()
+        session.viewModel.inputText = command
+        if runAsRoot {
+            session.viewModel.pendingSudoRequest = true
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        session.show()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            NotificationCenter.default.post(
+                name: NSNotification.Name("FocusTextField"),
+                object: nil
+            )
+        }
+        return session
+    }
+
     @objc func toggleWindow() {
         guard let session = sessionManager.activeSession() else {
             _ = sessionManager.newSession()
@@ -325,7 +356,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// 隐藏所有窗口（App 失活时调用）
     func hideAllWindows() {
         for session in sessionManager.allSessions {
             session.hide()
@@ -387,6 +417,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.makeKeyAndOrderFront(nil)
+        setupWindowCloseObserver(for: window)
     }
 
     // MARK: - Settings
@@ -430,6 +461,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         window.makeKeyAndOrderFront(nil)
+        setupWindowCloseObserver(for: window)
     }
 
     func reparentAuxiliaryWindows(to parent: NSWindow) {
@@ -446,6 +478,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let help = helpWindow, help.parent !== parent {
             help.parent?.removeChildWindow(help)
             parent.addChildWindow(help, ordered: .above)
+        }
+    }
+
+    // 👇 新增：监听子窗口关闭，强制主窗口夺回焦点
+    private func setupWindowCloseObserver(for window: NSWindow) {
+        NotificationCenter.default.addObserver(
+            forName: NSWindow.willCloseNotification,
+            object: window,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            guard let activeSession = self.sessionManager.activeSession() else { return }
+            
+            // 延迟一点点，等子窗口彻底从层级中移除
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                activeSession.window.makeKey()
+                activeSession.viewModel.forceRestoreInputFocus()
+            }
         }
     }
 
@@ -497,6 +547,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        setupWindowCloseObserver(for: window)
     }
 
     // MARK: - Updates
@@ -507,17 +558,37 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 参考 Sparkle 官方文档：需要临时切换到 .regular，让更新窗口能正常显示。
     /// https://sparkle-project.org/documentation/gentle-reminders/
     @objc func checkForUpdates() {
-        // ✅ 临时切换到 regular，让 Sparkle 窗口能正常弹出
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        // 延迟一拍，等 activation 完成
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             guard let self = self, let controller = self.updaterController else {
                 print("⚠️ updaterController 未初始化")
                 return
             }
             controller.checkForUpdates(nil)
+        }
+    }
+
+    func updateFeedURLPreference() {
+        let defaultFeed: String
+        let mirrorFeed: String
+
+        #if BETA
+        defaultFeed = "https://github.com/CaoHaoran-Dev/RunProcess/releases/download/beta-appcast/appcast-beta.xml"
+        mirrorFeed = "https://downloads.caohaoran.dpdns.org/downloads/runprocess/appcast-beta.xml"
+        #else
+        defaultFeed = "https://github.com/CaoHaoran-Dev/RunProcess/releases/latest/download/appcast.xml"
+        mirrorFeed = "https://downloads.caohaoran.dpdns.org/downloads/runprocess/appcast.xml"
+        #endif
+
+        switch AppSettings.updateChannel {
+        case .github:
+            UserDefaults.standard.set(defaultFeed, forKey: "SUFeedURL")
+        case .cloudflare:
+            UserDefaults.standard.set(mirrorFeed, forKey: "SUFeedURL")
+        case .custom:
+            UserDefaults.standard.set(AppSettings.customUpdateURL, forKey: "SUFeedURL")
         }
     }
 
@@ -531,14 +602,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 // MARK: - SPUUpdaterDelegate
 
 extension AppDelegate: SPUUpdaterDelegate {
-    /// 更新检查周期结束（无论成功、无更新、还是出错）后回调。
-    /// 切回 .accessory，让 App 回到菜单栏模式。
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        return UserDefaults.standard.string(forKey: "SUFeedURL")
+    }
+
     func updater(_ updater: SPUUpdater,
                  didFinishUpdateCycleFor updateCheck: SPUUpdateCheck,
                  error: Error?) {
-        // 延迟 1 秒切回，给 Sparkle 窗口关闭留出时间
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            // 只在当前是 regular 时才切回，避免误改
             if NSApp.activationPolicy() == .regular {
                 NSApp.setActivationPolicy(.accessory)
             }
@@ -549,18 +620,10 @@ extension AppDelegate: SPUUpdaterDelegate {
 // MARK: - SPUStandardUserDriverDelegate
 
 extension AppDelegate: SPUStandardUserDriverDelegate {
-    /// 声明支持 gentle scheduled update reminders。
     var supportsGentleScheduledUpdateReminders: Bool {
         return true
     }
 
-    /// 决定 Sparkle 是否应该处理 scheduled update 的弹窗。
-    ///
-    /// 返回 `immediateFocus`：如果 Sparkle 认为这次检查是「即时焦点」
-    /// （比如用户主动点击检查更新），就由 Sparkle 弹窗到前台。
-    /// 否则（后台自动检查）由 App 决定如何处理。
-    ///
-    /// 参考：https://sparkle-project.org/documentation/gentle-reminders/
     func standardUserDriverShouldHandleShowingScheduledUpdate(
         _ update: SUAppcastItem,
         andInImmediateFocus immediateFocus: Bool

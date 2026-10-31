@@ -34,7 +34,7 @@ final class AliasStore {
     private init() {
         let appSupport = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("RunProcess")
+        let dir = appSupport.appendingPathComponent(AppEnvironment.appSupportFolderName)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         fileURL = dir.appendingPathComponent("aliases.yml")
 
@@ -54,12 +54,10 @@ final class AliasStore {
     // MARK: - 加载
 
     private func load() {
-        // 优先读 yml
         if FileManager.default.fileExists(atPath: fileURL.path) {
             loadYAML()
             return
         }
-        // 回退：读旧的 json，迁移到 yml
         let legacyURL = fileURL
             .deletingPathExtension()
             .appendingPathExtension("json")
@@ -102,10 +100,8 @@ final class AliasStore {
                 encoder.options.indent = 2
                 var yaml = try encoder.encode(file)
 
-                // Yams 默认 list 项之间不空行，加个空行更易读
                 yaml = yaml.replacingOccurrences(of: "\n- ", with: "\n\n- ")
 
-                // 文件头注释
                 let header = """
                 # RunProcess aliases
                 #
@@ -135,7 +131,6 @@ final class AliasStore {
         save()
     }
 
-    /// 整体替换所有别名（用于排序等批量操作）
     func replaceAll(_ aliases: [CommandAlias]) {
         self.aliases = aliases
         save()
@@ -153,5 +148,15 @@ final class AliasStore {
 
     func expansion(for name: String) -> String? {
         aliases.first { $0.name == name }?.expansion
+    }
+
+    // 👇 新增：自动展开命令里的别名
+    func expandAlias(in command: String) -> String {
+        let parts = command.split(separator: " ", maxSplits: 1, omittingEmptySubsequences: false)
+        guard let first = parts.first, !first.isEmpty else { return command }
+        let name = String(first)
+        guard let expansion = expansion(for: name) else { return command }
+        if parts.count == 1 { return expansion }
+        return expansion + " " + parts[1]
     }
 }
