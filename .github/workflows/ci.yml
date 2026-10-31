@@ -2,8 +2,10 @@ name: RunProcess CI
 
 on:
   push:
-    branches: [ "main", "master" ]
-
+    branches: [ "main", "master", "dev" ]
+  pull_request:
+    branches: [ "main", "master", "dev" ]
+    
 jobs:
   build:
     # 使用支持 Xcode 26 的 macOS 26 Runner
