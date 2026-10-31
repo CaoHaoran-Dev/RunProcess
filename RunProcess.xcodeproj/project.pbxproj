@@ -40,7 +40,7 @@
 		AD682D58303E762B00A624CF /* RunProcessTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunProcessTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CONTRIBUTING.md; sourceTree = "<group>"; };
 		AD8D43FA3036E17700B0576B /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
-		ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "pr-validation.yml"; sourceTree = "<group>"; };
+		ADE1CFF1303C5B8E0099A9EC /* ci.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = ci.yml; sourceTree = "<group>"; };
 		ADF84791303D6F8A00462C27 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -143,7 +143,7 @@
 		ADE1CFF2303C5B8E0099A9EC /* workflows */ = {
 			isa = PBXGroup;
 			children = (
-				ADE1CFF1303C5B8E0099A9EC /* pr-validation.yml */,
+				ADE1CFF1303C5B8E0099A9EC /* ci.yml */,
 			);
 			path = workflows;
 			sourceTree = "<group>";
