@@ -34,25 +34,33 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
-      # ✅ 可选：缓存 SwiftPM 包，减少 Yams 等依赖解析的不稳定性
-      - name: Cache Swift Packages
-        uses: actions/cache@v4
-        with:
-          path: ~/Library/Caches/org.swift.swiftpm
-          key: ${{ runner.os }}-${{ matrix.arch }}-swiftpm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.arch }}-swiftpm-
-
+      # 1. 先解析依赖，把源码拉下来
       - name: Resolve Dependencies
         run: |
           echo "📦 Resolving Swift Package dependencies..."
-          # 最多重试 3 次，应对 CI 上 SwiftPM 偶发超时
-          for i in 1 2 3; do
-            xcodebuild -resolvePackageDependencies -project RunProcess.xcodeproj -scheme RunProcess && break
-            echo "Resolve attempt $i failed, retrying..."
-            sleep 5
-          done
+          xcodebuild -resolvePackageDependencies -project RunProcess.xcodeproj -scheme RunProcess
 
+      # 2. 🔥 关键补丁：动态寻找 CYaml 的 modulemap 并注入环境变量
+      - name: Patch CYaml Modulemap Path
+        run: |
+          echo "🔍 Searching for CYaml modulemap..."
+          # 在 DerivedData 或全局 SPM 缓存中寻找 Yams 的 CYaml 模块映射文件
+          MODULEMAP_PATH=$(find ~/Library/Developer/Xcode/DerivedData ~/Library/Caches/org.swift.swiftpm -name "module.modulemap" -path "*Yams*CYaml*" 2>/dev/null | head -n 1)
+          
+          if [ -z "$MODULEMAP_PATH" ]; then
+            echo "❌ Could not find CYaml modulemap!"
+            exit 1
+          fi
+          
+          echo "✅ Found CYaml modulemap at: $MODULEMAP_PATH"
+          # 提取目录路径，方便后面传给 -Xcc -I
+          CYAML_INCLUDE_DIR=$(dirname "$MODULEMAP_PATH")
+          
+          # 将路径存入 GitHub Actions 的环境变量，供后续步骤使用
+          echo "CYAML_MODULEMAP=$MODULEMAP_PATH" >> $GITHUB_ENV
+          echo "CYAML_INCLUDE_DIR=$CYAML_INCLUDE_DIR" >> $GITHUB_ENV
+
+      # 3. 编译（带上补丁参数）
       - name: Build App Only (No Tests)
         run: |
           set -o pipefail
@@ -64,8 +72,10 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS="-Xcc -fmodule-map-file=${CYAML_MODULEMAP} -Xcc -I${CYAML_INCLUDE_DIR}" \
             | xcbeautify --renderer github-actions
 
+      # 4. 测试（同样带上补丁参数）
       - name: Build & Test (RunProcessTests)
         run: |
           set -o pipefail
@@ -77,6 +87,7 @@ jobs:
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG" \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
+            OTHER_SWIFT_FLAGS="-Xcc -fmodule-map-file=${CYAML_MODULEMAP} -Xcc -I${CYAML_INCLUDE_DIR}" \
             | xcbeautify --renderer github-actions
 
       - name: ✅ Final Verification
