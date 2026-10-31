@@ -19,7 +19,7 @@ jobs:
         include:
           - os: macos-26
             arch: arm64
-          - os: macos-26-intel
+          - os: macos-15-intel
             arch: x86_64
 
     steps:
@@ -34,10 +34,24 @@ jobs:
       - name: Install xcbeautify
         run: brew install xcbeautify
 
+      # ✅ 可选：缓存 SwiftPM 包，减少 Yams 等依赖解析的不稳定性
+      - name: Cache Swift Packages
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-${{ matrix.arch }}-swiftpm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.arch }}-swiftpm-
+
       - name: Resolve Dependencies
         run: |
           echo "📦 Resolving Swift Package dependencies..."
-          xcodebuild -resolvePackageDependencies -project RunProcess.xcodeproj -scheme RunProcess
+          # 最多重试 3 次，应对 CI 上 SwiftPM 偶发超时
+          for i in 1 2 3; do
+            xcodebuild -resolvePackageDependencies -project RunProcess.xcodeproj -scheme RunProcess && break
+            echo "Resolve attempt $i failed, retrying..."
+            sleep 5
+          done
 
       - name: Build App Only (No Tests)
         run: |
