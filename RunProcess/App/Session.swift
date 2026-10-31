@@ -33,12 +33,8 @@ final class Session {
     var onBecomeKey: (() -> Void)?
 
     init(usesSessionMode: Bool) {
-        #if BETA
-        // 👇 非 zsh 强制关闭会话模式
+        // 非 zsh 强制关闭会话模式
         let effectiveSessionMode = usesSessionMode && AppSettings.isZshShell
-        #else
-        let effectiveSessionMode = usesSessionMode
-        #endif
 
         self.usesSessionMode = effectiveSessionMode
         self.sudoAuth = SudoAuthManager()
@@ -66,7 +62,6 @@ final class Session {
         window.title = baseTitle
         window.isReleasedWhenClosed = false
 
-        #if BETA
         if AppSettings.mainUIMode == .lite {
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
             window.isMovableByWindowBackground = true
@@ -92,13 +87,6 @@ final class Session {
                 window.setFrameOrigin(NSPoint(x: x, y: y))
             }
         }
-        #else
-        window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
-        window.titlebarAppearsTransparent = true
-        window.setContentSize(NSSize(width: 600, height: 140))
-        window.minSize = NSSize(width: 520, height: 140)
-        window.center()
-        #endif
 
         window.isMovableByWindowBackground = true
         window.isOpaque = false
@@ -211,16 +199,11 @@ final class Session {
                 }
             }
         } else {
-            #if BETA
             executeWithSelectedShell(command, timeout: 10.0, completion: completion)
-            #else
-            CommandExecutor.shared.execute(command, timeout: 10.0, completion: completion)
-            #endif
         }
     }
 
-    #if BETA
-    /// Beta 专属：用当前选中的 shell 执行（非会话模式路径）
+    /// 用当前选中的 shell 执行（非会话模式路径）
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -320,7 +303,6 @@ final class Session {
             completion(.failure(error))
         }
     }
-    #endif
 
     private func cancelExecution() {
         CommandExecutor.shared.cancelCurrentTask()

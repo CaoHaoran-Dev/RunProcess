@@ -5,12 +5,14 @@
 //  Created by Haoran on 2026/10/23.
 //
 
-#if BETA
-
 import Foundation
 
+extension Notification.Name {
+    /// 用户切换 / 添加 shell 后广播，供设置面板同步 `isZsh` 状态
+    static let runProcessShellDidChange = Notification.Name("RunProcess.shellDidChange")
+}
+
 /// 可选 shell 列表。内置常见 shell，同时支持用户自定义添加。
-/// Beta 专属功能。
 final class ShellStore {
     static let shared = ShellStore()
 
@@ -48,11 +50,11 @@ final class ShellStore {
 
     private var customPath: String? {
         get {
-            let raw = UserDefaults.standard.string(forKey: "shell.customPath") ?? ""
+            let raw = UserDefaults.standard.string(forKey: AppSettings.Keys.shellPath + ".custom") ?? ""
             return raw.isEmpty ? nil : raw
         }
         set {
-            UserDefaults.standard.set(newValue ?? "", forKey: "shell.customPath")
+            UserDefaults.standard.set(newValue ?? "", forKey: AppSettings.Keys.shellPath + ".custom")
         }
     }
 
@@ -118,5 +120,3 @@ final class ShellStore {
         return path
     }
 }
-
-#endif

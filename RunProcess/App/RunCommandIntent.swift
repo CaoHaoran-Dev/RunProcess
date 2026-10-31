@@ -5,8 +5,6 @@
 //  Created by Haoran on 2026/10/24.
 //
 
-#if BETA
-
 import AppIntents
 import Foundation
 internal import AppKit
@@ -281,5 +279,3 @@ struct RunProcessShortcuts: AppShortcutsProvider {
         )
     }
 }
-
-#endif

@@ -107,6 +107,7 @@ The app launches as a menu bar accessory. Look for the ⚡ icon.
 Managed via Swift Package Manager:
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) – global hotkey
+- [Sparkle](https://sparkle-project.org) – update delivery
 - [Yams](https://github.com/jpsim/Yams) – YAML parsing for aliases and history
 
 Xcode resolves them automatically on first build.

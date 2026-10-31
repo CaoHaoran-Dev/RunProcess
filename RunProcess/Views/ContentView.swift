@@ -23,11 +23,7 @@ struct ContentView: View {
     private var appearanceStyle: AppearanceStyle { AppSettings.resolvedAppearanceStyle }
 
     private var uiMode: MainUIMode {
-        #if BETA
-        return MainUIMode(rawValue: uiModeRaw) ?? .classic
-        #else
-        return .classic
-        #endif
+        MainUIMode(rawValue: uiModeRaw) ?? .classic
     }
 
     private let cornerRadius: CGFloat = 12

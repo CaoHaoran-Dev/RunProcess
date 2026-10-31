@@ -69,16 +69,12 @@ final class PersistentShell {
     private func startLocked() throws {
         guard !isAlive else { return }
 
-        #if BETA
         // 会话模式只允许 zsh
         let shellPath = AppSettings.resolvedShellPath
         guard (shellPath as NSString).lastPathComponent == "zsh" else {
             throw NSError(domain: "RunProcess", code: -10,
                           userInfo: [NSLocalizedDescriptionKey: "Session mode requires zsh"])
         }
-        #else
-        let shellPath = "/bin/zsh"
-        #endif
 
         let task = Process()
         let stdinPipe = Pipe()
@@ -88,15 +84,10 @@ final class PersistentShell {
         task.currentDirectoryURL = URL(fileURLWithPath: currentWorkingDirectory)
         task.launchPath = shellPath
 
-        #if BETA
         // 只有开关开启时才注入自定义 PATH
-        var customPath = ""
-        if AppSettings.customPathEnabled {
-            customPath = PathStore.shared.customPathString()
-        }
-        #else
-        let customPath = PathStore.shared.customPathString()
-        #endif
+        let customPath = AppSettings.customPathEnabled
+            ? PathStore.shared.customPathString()
+            : ""
 
         let script = Self.bootstrapScript.replacingOccurrences(
             of: "__RP_CUSTOM_PATH__",

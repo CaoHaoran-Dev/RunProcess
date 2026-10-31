@@ -11,12 +11,11 @@ struct AppearancePane: View {
     @State private var appearanceStyle = AppSettings.appearanceStyleRaw
     @State private var outputColorsEnabled = AppSettings.outputColorsEnabled
     @State private var outputColorScheme = AppSettings.outputColorScheme
-    @State private var explainErrors = AppSettings.explainErrors // 👈 新增
-    
+    @State private var explainErrors = AppSettings.explainErrors
+
     @State private var uiMode = AppSettings.mainUIMode
 
     var body: some View {
-        #if BETA
         Section {
             Picker(NSLocalizedString("settings.appearance.uiMode", comment: ""), selection: $uiMode) {
                 ForEach(MainUIMode.allCases, id: \.self) { mode in
@@ -25,14 +24,13 @@ struct AppearancePane: View {
             }
             .pickerStyle(.segmented)
             .onChange(of: uiMode) { AppSettings.mainUIMode = $0 }
-            
+
             Text(NSLocalizedString("settings.appearance.uiMode.restartHint", comment: ""))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
         } header: {
             Text(NSLocalizedString("settings.appearance.uiMode.header", comment: ""))
         }
-        #endif
 
         Section {
             Picker("", selection: $appearanceStyle) {
@@ -67,13 +65,12 @@ struct AppearancePane: View {
         } header: {
             Text(NSLocalizedString("settings.output.colors.header", comment: ""))
         }
-        
-        // 👇 新增错误解释设置
+
         Section {
             Toggle(NSLocalizedString("settings.output.explainErrors", comment: ""), isOn: $explainErrors)
                 .font(.system(size: 13))
                 .onChange(of: explainErrors) { AppSettings.explainErrors = $0 }
-            
+
             Text(NSLocalizedString("settings.output.explainErrors.hint", comment: ""))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)

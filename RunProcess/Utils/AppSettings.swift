@@ -48,8 +48,19 @@ enum MainUIMode: String, CaseIterable {
 /// 全局设置，封装 UserDefaults
 enum AppSettings {
 
+    // MARK: - Key Prefix
+    //
+    // 正式版与 Beta 版共用同一套 UserDefaults，但 key 按 target 加前缀隔离，
+    // 保证两版的偏好设置互不干扰。
+    //   - 正式版：无前缀
+    //   - Beta  ："beta." 前缀
+
+    private static var keyPrefix: String {
+        AppEnvironment.isBeta ? "beta." : ""
+    }
+
     // MARK: - Update Channel
-    
+
     /// 更新源通道
     enum UpdateChannel: String, CaseIterable {
         case github
@@ -68,27 +79,25 @@ enum AppSettings {
     // MARK: - Keys
 
     enum Keys {
-        static let sessionModeEnabled = "session.enabled"
-        static let defaultWorkingDirectory = "workingDirectory.default"
-        static let appearanceStyle = "appearance.style"
-        static let mainUIMode = "interface.mainUIMode"
-        static let hideOnDeactivate = "window.hideOnDeactivate"
-        static let defaultSudo = "sudo.default"
-        static let launchAtLogin = "startup.launchAtLogin"
-        static let hideWindowOnLaunch = "startup.hideOnLaunch"
-        static let outputColorsEnabled = "output.colorsEnabled"
-        static let outputColorScheme = "output.colorScheme"
-        static let explainErrors = "output.explainErrors"
-        
+        static var sessionModeEnabled: String     { keyPrefix + "session.enabled" }
+        static var defaultWorkingDirectory: String { keyPrefix + "workingDirectory.default" }
+        static var appearanceStyle: String         { keyPrefix + "appearance.style" }
+        static var mainUIMode: String              { keyPrefix + "interface.mainUIMode" }
+        static var hideOnDeactivate: String        { keyPrefix + "window.hideOnDeactivate" }
+        static var defaultSudo: String             { keyPrefix + "sudo.default" }
+        static var launchAtLogin: String           { keyPrefix + "startup.launchAtLogin" }
+        static var hideWindowOnLaunch: String      { keyPrefix + "startup.hideOnLaunch" }
+        static var outputColorsEnabled: String     { keyPrefix + "output.colorsEnabled" }
+        static var outputColorScheme: String       { keyPrefix + "output.colorScheme" }
+        static var explainErrors: String           { keyPrefix + "output.explainErrors" }
+
         // 更新源
-        static let updateChannel = "updates.channel"
-        static let customUpdateURL = "updates.customURL"
-        
-        #if BETA
-        // 👇 Beta 专属：自定义 shell 与 PATH 注入开关
-        static let shellPath = "shell.path"
-        static let customPathEnabled = "paths.customEnabled"
-        #endif
+        static var updateChannel: String           { keyPrefix + "updates.channel" }
+        static var customUpdateURL: String         { keyPrefix + "updates.customURL" }
+
+        // Shell 与自定义 PATH 注入
+        static var shellPath: String               { keyPrefix + "shell.path" }
+        static var customPathEnabled: String       { keyPrefix + "paths.customEnabled" }
     }
 
     private static let defaults = UserDefaults.standard
@@ -105,9 +114,8 @@ enum AppSettings {
         }
     }
 
-    // MARK: - Shell（Beta 专属）
+    // MARK: - Shell
 
-    #if BETA
     /// 当前选择的 shell 绝对路径。默认 /bin/zsh。
     static var shellPathRaw: String {
         get {
@@ -130,36 +138,25 @@ enum AppSettings {
     static var isZshShell: Bool {
         (resolvedShellPath as NSString).lastPathComponent == "zsh"
     }
-    #else
-    // 非 Beta 固定 zsh
-    static var shellPathRaw: String {
-        get { "/bin/zsh" }
-        set { _ = newValue }
-    }
-    static var resolvedShellPath: String { "/bin/zsh" }
-    static var isZshShell: Bool { true }
-    #endif
 
     // MARK: - 会话模式
 
     static var sessionModeEnabled: Bool {
         get {
-            #if BETA
             // 非 zsh 强制关闭
             guard isZshShell else { return false }
-            #endif
             return defaults.bool(forKey: Keys.sessionModeEnabled)
         }
         set { defaults.set(newValue, forKey: Keys.sessionModeEnabled) }
     }
 
     // MARK: - 默认工作目录
-    
+
     static var defaultWorkingDirectoryRaw: String {
         get { defaults.string(forKey: Keys.defaultWorkingDirectory) ?? "" }
         set { defaults.set(newValue, forKey: Keys.defaultWorkingDirectory) }
     }
-    
+
     static var resolvedWorkingDirectory: String {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let raw = defaultWorkingDirectoryRaw
@@ -283,9 +280,9 @@ enum AppSettings {
         }
         set { defaults.set(newValue.rawValue, forKey: Keys.outputColorScheme) }
     }
-    
+
     // MARK: - 错误解释
-    
+
     static var explainErrors: Bool {
         get {
             if defaults.object(forKey: Keys.explainErrors) == nil {
@@ -296,9 +293,8 @@ enum AppSettings {
         set { defaults.set(newValue, forKey: Keys.explainErrors) }
     }
 
-    // MARK: - 自定义 PATH 注入（Beta 专属）
+    // MARK: - 自定义 PATH 注入
 
-    #if BETA
     /// 是否把 PathStore 里的自定义路径追加到子进程 PATH。
     /// 仅 zsh 可用；非 zsh 强制关闭。
     static var customPathEnabled: Bool {
@@ -311,16 +307,9 @@ enum AppSettings {
         }
         set { defaults.set(newValue, forKey: Keys.customPathEnabled) }
     }
-    #else
-    /// 正式版固定开启（保持原有行为）
-    static var customPathEnabled: Bool {
-        get { true }
-        set { _ = newValue }
-    }
-    #endif
-    
+
     // MARK: - 更新源
-    
+
     static var updateChannel: UpdateChannel {
         get {
             let raw = defaults.string(forKey: Keys.updateChannel) ?? ""
