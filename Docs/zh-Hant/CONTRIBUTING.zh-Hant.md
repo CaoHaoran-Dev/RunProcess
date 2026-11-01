@@ -50,10 +50,11 @@ RunProcess 是**輕量指令啟動器**，不是終端機模擬器。以下特�
 3. **實際發生了什麼** —— 真實表現，包括錯誤訊息
 4. **環境**：
    - macOS 版本（如 macOS 14.5）
-   - RunProcess 版本（關於視窗裡看，如 `3.2.0 (1)`）
+   - RunProcess 版本（關於視窗裡看，如 `3.5.0 (1)`）
    - 晶片：Apple Silicon 還是 Intel
    - 工作階段模式開沒開
    - 外觀樣式
+   - 設定中選擇的 Shell
 
 **如果應用程式崩潰**，附上崩潰記錄：
 
@@ -114,10 +115,21 @@ Xcode 首次建置時會自動拉取。
 
 ### 測試
 
+本專案有兩個測試 Target，請使用對應的 Scheme 執行：
+
+**正式版 (`RunProcessTests`)：**
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64"
+```
+
+**預覽/Beta 版 (`RunProcessPreviewTests`)：**
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme "RunProcess Preview" \
   -destination "platform=macOS,arch=arm64"
 ```
 
@@ -174,7 +186,7 @@ CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 ### 提交前
 
 - [ ] 專案能無警告建置
-- [ ] 本機測試通過
+- [ ] 本機測試通過（包含正式版與 Preview 版 Scheme）
 - [ ] 新增的使用者可見字串已在三種語言裡在地化
 - [ ] 手動測過（冷啟動、視窗行為等）
 - [ ] 如果改了儲存格式，舊資料能無損遷移
@@ -240,8 +252,11 @@ RunProcess 把使用者資料存在：
 ```
 ~/Library/Application Support/RunProcess/
 ├── aliases.yml      # 指令別名
-└── history.yml      # 指令記錄（最多 500 筆）
+├── history.yml      # 指令記錄（最多 500 筆）
+└── paths.yml        # 自訂執行檔搜尋路徑
 ```
+
+*(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta/`)*
 
 格式是 YAML。舊的 JSON 檔案（`aliases.json`、`history.json`）首次啟動會自動遷移。
 

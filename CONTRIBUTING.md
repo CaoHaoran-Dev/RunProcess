@@ -50,10 +50,11 @@ A good bug report includes:
 3. **What happened** – the actual behavior, including error messages
 4. **Environment**:
    - macOS version (e.g. macOS 14.5)
-   - RunProcess version (from About window, e.g. `3.2.0 (1)`)
+   - RunProcess version (from About window, e.g. `3.5.0 (1)`)
    - Chip: Apple Silicon or Intel
    - Session mode on or off
    - Appearance style
+   - Shell selected in Settings
 
 **If the app crashes**, attach the crash log from:
 
@@ -114,10 +115,21 @@ Xcode resolves them automatically on first build.
 
 ### Tests
 
+The project has two test targets. Use the corresponding scheme to run them:
+
+**Release (`RunProcessTests`):**
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64"
+```
+
+**Preview/Beta (`RunProcessPreviewTests`):**
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme "RunProcess Preview" \
   -destination "platform=macOS,arch=arm64"
 ```
 
@@ -174,7 +186,7 @@ Comments are in Chinese in most of the codebase. That's fine. Write comments in 
 ### Before Submitting
 
 - [ ] The project builds without warnings
-- [ ] Tests pass locally
+- [ ] Tests pass locally for both Release and Preview schemes
 - [ ] New user-facing strings are localized in all three languages
 - [ ] You've tested the change manually (cold start, window behavior, etc.)
 - [ ] If you changed storage format, old data migrates without loss
@@ -240,8 +252,11 @@ RunProcess stores user data in:
 ```
 ~/Library/Application Support/RunProcess/
 ├── aliases.yml      # command aliases
-└── history.yml      # command history (max 500 entries)
+├── history.yml      # command history (max 500 entries)
+└── paths.yml        # custom executable search paths
 ```
+
+*(Note: The Preview/Beta version stores data in `RunProcess-Beta/`)*
 
 Format is YAML. Older JSON files (`aliases.json`, `history.json`) are migrated automatically on first launch.
 
@@ -291,4 +306,3 @@ No harassment, discrimination, or personal attacks. Violations result in a ban.
 By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE.md).
 
 MIT © 2026 CaoHaoran-Dev
-

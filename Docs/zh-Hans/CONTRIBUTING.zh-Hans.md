@@ -50,10 +50,11 @@ RunProcess 是**轻量命令启动器**，不是终端模拟器。以下特性�
 3. **实际发生了什么** —— 真实表现，包括错误信息
 4. **环境**：
    - macOS 版本（如 macOS 14.5）
-   - RunProcess 版本（关于窗口里看，如 `3.2.0 (1)`）
+   - RunProcess 版本（关于窗口里看，如 `3.5.0 (1)`）
    - 芯片：Apple Silicon 还是 Intel
    - 会话模式开没开
    - 外观样式
+   - 设置中选择的 Shell
 
 **如果应用崩溃**，附上崩溃日志：
 
@@ -114,10 +115,21 @@ Xcode 首次构建时会自动拉取。
 
 ### 测试
 
+本项目有两个测试 Target，请使用对应的 Scheme 运行：
+
+**正式版 (`RunProcessTests`)：**
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64"
+```
+
+**预览/Beta 版 (`RunProcessPreviewTests`)：**
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme "RunProcess Preview" \
   -destination "platform=macOS,arch=arm64"
 ```
 
@@ -174,7 +186,7 @@ CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 ### 提交前
 
 - [ ] 项目能无警告构建
-- [ ] 本地测试通过
+- [ ] 本地测试通过（包含正式版与 Preview 版 Scheme）
 - [ ] 新增的用户可见字符串已在三种语言里本地化
 - [ ] 手动测过（冷启动、窗口行为等）
 - [ ] 如果改了存储格式，旧数据能无损迁移
@@ -240,8 +252,11 @@ RunProcess 把用户数据存在：
 ```
 ~/Library/Application Support/RunProcess/
 ├── aliases.yml      # 命令别名
-└── history.yml      # 命令历史（最多 500 条）
+├── history.yml      # 命令历史（最多 500 条）
+└── paths.yml        # 自定义可执行文件搜索路径
 ```
+
+*(注：Preview/Beta 版的数据目录为 `RunProcess-Beta/`)*
 
 格式是 YAML。旧的 JSON 文件（`aliases.json`、`history.json`）首次启动会自动迁移。
 

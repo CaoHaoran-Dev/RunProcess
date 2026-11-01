@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "CC5FD855-970E-488D-ADC4-88D949CDF0B0",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:RunProcess.xcodeproj",
+        "identifier" : "AD71287430970B7800238EE5",
+        "name" : "RunProcessPreviewTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -7,16 +7,14 @@ on:
     branches: [ "main", "master", "dev" ]
     
 jobs:
-  build:
-    # 使用支持 Xcode 26 的 macOS 26 Runner
+  # 单独抽出来的 Resolve 步骤，作为并行的前置依赖
+  resolve:
     runs-on: macos-26
-
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
     - name: Select Xcode 26
-      # 根据 runner-images 文档，Xcode 26.5 是默认版本，路径如下
       run: sudo xcode-select -s "/Applications/Xcode_26.5.app"
 
     - name: Resolve Swift Packages
@@ -25,12 +23,53 @@ jobs:
           -project "RunProcess.xcodeproj" \
           -scheme "RunProcess"
 
-    - name: Build Project
+  # 依赖 resolve 成功后，才会并行分叉出 arm64 和 x86_64
+  build-and-test:
+    needs: resolve
+    runs-on: macos-26
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Select Xcode 26
+      run: sudo xcode-select -s "/Applications/Xcode_26.5.app"
+
+    # ================= ARM 或是 x86 都会先走这里 =================
+    - name: Build & Test (Release)
       run: |
         set -o pipefail
+        
+        echo "==> Building Release for ${{ matrix.arch }}..."
         xcodebuild build \
           -project "RunProcess.xcodeproj" \
           -scheme "RunProcess" \
-          -destination "platform=macOS,arch=arm64" \
+          -destination "platform=macOS,arch=${{ matrix.arch }}" \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+        echo "==> Testing Release for ${{ matrix.arch }}..."
+        xcodebuild test \
+          -project "RunProcess.xcodeproj" \
+          -scheme "RunProcess" \
+          -destination "platform=macOS,arch=${{ matrix.arch }}" \
+          CODE_SIGNING_ALLOWED=NO \
+          | xcbeautify --renderer github-actions
+
+    # ================= 跑完 Release 后再跑 Preview =================
+    - name: Test (Preview/Beta)
+      run: |
+        set -o pipefail
+        
+        echo "==> Testing Preview for ${{ matrix.arch }}..."
+        xcodebuild test \
+          -project "RunProcess.xcodeproj" \
+          -scheme "RunProcess Preview" \
+          -destination "platform=macOS,arch=${{ matrix.arch }}" \
           CODE_SIGNING_ALLOWED=NO \
           | xcbeautify --renderer github-actions

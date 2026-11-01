@@ -8,7 +8,7 @@
 
 B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也搞了一个。
 
-本质就是 `/bin/zsh` 套了个玻璃皮肤，输入什么执行什么。
+本质就是个外壳套了个玻璃皮肤，输入什么执行什么。
 
 ---
 
@@ -27,12 +27,16 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 - **全局热键** —— ⌘⌥R 显示/隐藏窗口（可在设置中自定义）
 - **菜单栏常驻** —— Dock 不显示
 - **三种外观** —— 无、毛玻璃、液态玻璃（macOS 26+）。主界面、设置、帮助、关于、密码框全部跟随
+- **两种界面模式** —— 经典（Classic）和极简（Lite），随时切换
 - **浮动窗口** —— 类似 Spotlight，窗口宽度平滑动画
 - **多行输入** —— Shift+Enter 换行
 - **多窗口** —— 每个窗口独立会话
 - **会话模式（可选）** —— 持久 shell，`cd` / `export` 跨命令生效
+- **自定义 Shell** —— 支持在设置中更换 Shell（会话模式和自定义 PATH 注入需 zsh）
 - **自定义默认工作目录**
+- **错误解释** —— 自动识别 `command not found` 等常见错误并追加人类可读的解释
 - **失去焦点时自动隐藏**
+- **快捷指令 (App Intents)** —— 支持通过 Siri 或 macOS 快捷指令运行命令、搜索历史、添加别名
 - **应用内帮助** —— 仿 macOS Help Viewer 的侧边栏式帮助窗口
 - **本地化** —— 英文、简体中文、繁体中文
 
@@ -58,7 +62,7 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 | `⌘⌥R` | 全局显示/隐藏窗口（可在设置中自定义） |
 | `⌘U` | 检查更新 |
 | `⌘N` | 新建窗口 |
-| `⌘H` | 打开命令历史 |
+| `⌘H` | 打开命令历史搜索 |
 | `⌘R` | 重新执行上一条命令 |
 | `⌘,` | 打开设置 |
 | `⌘/` | 打开帮助 |
@@ -71,8 +75,16 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 
 ---
 
-## 外观
+## 外观与界面
 
+### 界面模式
+在 **设置 → 外观 → 界面模式** 中，你可以选择主界面的样式：
+- **经典** —— 标准的窗口样式，包含输入框、sudo 开关和输出区域。
+- **极简** —— 类似 Spotlight 的单行输入框，只有在有输出时才会平滑展开。
+
+*注意：修改界面模式后，仅对**新打开的窗口**生效。*
+
+### 外观样式
 在 **设置 → 外观** 中选择：
 
 | 模式 | 说明 | 支持系统 |
@@ -82,8 +94,6 @@ B 站看多了"我修复了 Linux 运行框"的视频，手痒在 macOS 上也�
 | 液态玻璃 | 原生 Liquid Glass 材质 | macOS 26+ |
 
 macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不支持的系统上"液态玻璃"选项会被隐藏。
-
-所选样式会应用到主窗口、设置、帮助、关于、sudo 密码框。
 
 ---
 
@@ -118,10 +128,8 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 - **⌘H 搜索** —— 全量模糊匹配（`gst` 能匹配到 `git status`）
 
 历史存放在：
-
-```
-~/Library/Application Support/RunProcess/history.yml
-```
+`~/Library/Application Support/RunProcess/history.yml`
+*(注：Preview/Beta 版的路径为 `RunProcess-Beta`)*
 
 最多 500 条，超出时先淘汰最久未用的。
 
@@ -143,10 +151,7 @@ macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不�
 | `serve` | `python3 -m http.server 8000` |
 
 自定义别名存放在：
-
-```
-~/Library/Application Support/RunProcess/aliases.yml
-```
+`~/Library/Application Support/RunProcess/aliases.yml`
 
 格式：
 
@@ -181,15 +186,11 @@ aliases:
 | `myscript`（在 `~/bin`，已添加到这里） | `~/bin/myscript` |
 | `fastfetch`（Homebrew 安装） | `/opt/homebrew/bin/fastfetch` |
 | `Safari`（`/Applications` 已添加到这里） | `/Applications/Safari.app` |
-| `Keynote`（同上） | `/Applications/Keynote.app` |
 
-这里的文件夹会被**追加到 PATH**，所以系统 PATH 和你 `~/.zshrc` 里设置的 PATH 都会保留。命令行工具由 `zsh` 自己按 PATH 查找。`.app` 会大小写不敏感匹配，并通过 `open -b <bundleId>` 启动，所以输入 `keynote` 能打开 `Keynote.app`。
+这里的文件夹会被**追加到 PATH**，所以系统 PATH 和你配置文件里设置的 PATH 都会保留。命令行工具由 Shell 自己按 PATH 查找。`.app` 会大小写不敏感匹配，并通过 `open -b <bundleId>` 启动。
 
 自定义路径存放于：
-
-```
-~/Library/Application Support/RunProcess/paths.yml
-```
+`~/Library/Application Support/RunProcess/paths.yml`
 
 格式：
 
@@ -200,7 +201,13 @@ paths:
   - /opt/homebrew/bin
 ```
 
-修改后立即生效。
+修改后立即生效。*(注：自定义 PATH 注入需使用 `zsh`)*。
+
+---
+
+## Shell
+
+在 **设置 → 通用 → Shell** 中，可以切换执行命令所使用的 Shell。RunProcess 支持自定义 Shell（如 `bash`、`fish`），但**会话模式**和**自定义 PATH 注入**功能仅支持 `zsh`。
 
 ---
 
@@ -213,6 +220,16 @@ paths:
 ### 默认 Sudo
 
 在 **设置 → Sudo** 中开启 **默认以 root 执行**，主界面的 sudo 开关会锁定为开且不可改，图标变成实心锁。每次执行仍会弹出密码框。
+
+---
+
+## 快捷指令 (App Intents)
+
+RunProcess 接入了 macOS 快捷指令和 Siri，你可以使用以下动作：
+- **运行命令** —— 在后台执行命令并返回输出。
+- **搜索命令历史** —— 查找以前执行过的命令。
+- **添加别名** —— 通过快捷指令自动创建别名。
+- **清除命令历史** —— 清空所有记录。
 
 ---
 
@@ -230,15 +247,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
 
 ## 帮助
 
-按 **⌘/** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：
-
-- 概述
-- 键盘快捷键
-- 命令技巧
-- 会话模式
-- 以 root 执行
-- 别名
-- 外观
+按 **⌘/** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：概述、键盘快捷键、命令技巧、会话模式、以 root 执行、别名、外观。
 
 侧边栏顶部有搜索框，可按标题过滤主题。
 
@@ -290,45 +299,18 @@ open RunProcess.xcodeproj
 访问 GitHub Pages：
 [Process WebHub](https://CaoHaoran-Dev.github.io/Process-WebHub/runprocess)
 
-
 ---
 
 ## 配置文件
 
 RunProcess 把用户数据存在：
+`~/Library/Application Support/RunProcess/`
+*(注：Preview/Beta 版的数据目录为 `RunProcess-Beta`)*
 
 ```
-~/Library/Application Support/RunProcess/
 ├── aliases.yml      # 命令别名
 ├── history.yml      # 命令历史（最多 500 条）
 └── paths.yml        # 自定义可执行文件搜索路径
-```
-
-### aliases.yml
-
-格式：
-
-```yml
-aliases:
-  - name: gs
-    expansion: git status
-  - name: serve
-    expansion: python3 -m http.server 8000
-```
-
-### history.yml
-
-自动维护，最多 500 条。
-
-### paths.yml
-
-格式：
-
-```yml
-paths:
-  - /Applications
-  - ~/bin
-  - /opt/homebrew/bin
 ```
 
 ### 迁移
