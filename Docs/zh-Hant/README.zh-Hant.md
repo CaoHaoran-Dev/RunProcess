@@ -6,7 +6,7 @@
 
 ## 總覽
 
-RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」對話框啟發的快速指令執行介面。它將 `/bin/zsh` 的強大功能與精緻、現代的介面結合，並常駐於選單列中隨時可供存取。
+RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」對話框啟發的快速指令執行介面。它將 Shell（預設為 `/bin/zsh`）的強大功能與精緻、現代的介面結合，並常駐於選單列中隨時可供存取。
 
 ---
 
@@ -25,13 +25,17 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 - **全域快速鍵** – 隨時使用 ⌘⌥R 顯示或隱藏視窗（可在設定中自訂）
 - **選單列整合** – 從選單列存取；隱藏 Dock 圖示
 - **多種外觀模式** – 無、毛玻璃（Frosted Glass）與液態玻璃（Liquid Glass，macOS 26 及以上）。適用於主視窗、設定、輔助說明、關於及對話框
+- **兩種介面模式** – 經典（Classic）與極簡（Lite），可隨時切換
 - **懸浮視窗** – Spotlight 風格的懸浮視窗，具備平滑的寬度動畫
 - **多行輸入** – 支援使用 Shift+Enter 輸入多行指令
 - **多視窗** – 每個視窗皆為獨立的工作階段
 - **工作階段模式（選用）** – 常駐 shell；`cd` 與 `export` 可跨指令持續生效
+- **自訂 Shell** – 支援在設定中更換 Shell（工作階段模式與自訂 PATH 注入需 zsh）
 - **自訂工作目錄** – 為新視窗設定預設工作目錄
+- **錯誤解釋** – 自動識別 `command not found` 等常見錯誤並追加人類可讀的解釋
 - **失焦時自動隱藏** – 應用程式失去焦點時，視窗會自動隱藏
 - **內建輔助說明** – 側邊欄式輔助說明視窗，風格仿照 macOS 輔助說明檢視器
+- **快捷指令 (App Intents)** – 支援透過 Siri 或 macOS 快捷指令執行指令、搜尋歷史、新增別名
 - **在地化** – 英文、簡體中文、繁體中文
 
 ---
@@ -56,7 +60,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 | `⌘⌥R` | 全域顯示或隱藏視窗（可在設定中自訂） |
 | `⌘U` | 檢查更新 |
 | `⌘N` | 新增視窗 |
-| `⌘H` | 開啟指令歷史 |
+| `⌘H` | 開啟指令歷史搜尋 |
 | `⌘R` | 重新執行上一條指令 |
 | `⌘,` | 開啟設定 |
 | `⌘/` | 開啟輔助說明 |
@@ -69,9 +73,17 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 ---
 
-## 外觀
+## 外觀與介面
 
-**設定 → 外觀** 中提供三種外觀模式：
+### 介面模式
+在 **設定 → 外觀 → 介面模式** 中，您可以選擇主介面的樣式：
+- **經典** – 標準的視窗樣式，包含輸入框、sudo 開關和輸出區域。
+- **極簡** – 類似 Spotlight 的單行輸入框，只有在有輸出時才會平滑展開。
+
+*注意：修改介面模式後，僅對**新開啟的視窗**生效。*
+
+### 外觀模式
+在 **設定 → 外觀** 中選擇：
 
 | 模式 | 說明 | 支援情況 |
 |------|-------------|--------------|
@@ -80,8 +92,6 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 | 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26 及以上 |
 
 在 macOS 15 及更早版本中，預設為毛玻璃；在 macOS 26 及以上版本中，預設為液態玻璃。不支援的系統上會隱藏液態玻璃選項。
-
-所選樣式將套用至主視窗、設定、輔助說明、關於以及 sudo 密碼對話框。
 
 ---
 
@@ -95,7 +105,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 在 **設定 → 工作階段** 中啟用。此功能僅影響新開啟的視窗。
 
-在工作階段模式下，每個視窗會維持一個長時間執行的 `zsh` 行程。`cd` 和 `export` 等指令會在同一視窗的後續指令中持續生效，提供更接近真實終端機的行為。
+在工作階段模式下，每個視窗會維持一個長時間執行的 shell 行程（需使用 `zsh`）。`cd` 和 `export` 等指令會在同一視窗的後續指令中持續生效，提供更接近真實終端機的行為。
 
 工作階段模式下的視窗標題會顯示為 `RunProcess - 工作階段 — <目前目錄>`。
 
@@ -116,10 +126,8 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 - **⌘H 搜尋** – 對整個歷史紀錄進行模糊比對（`gst` 可符合 `git status`）
 
 歷史紀錄儲存於：
-
-```
-~/Library/Application Support/RunProcess/history.yml
-```
+`~/Library/Application Support/RunProcess/history.yml`
+*(注：Preview/Beta 版的路徑為 `RunProcess-Beta`)*
 
 最多保留 500 筆。最舊且最不常使用的紀錄會優先被移除。
 
@@ -141,10 +149,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 | `serve` | `python3 -m http.server 8000` |
 
 自訂別名儲存於：
-
-```
-~/Library/Application Support/RunProcess/aliases.yml
-```
+`~/Library/Application Support/RunProcess/aliases.yml`
 
 格式：
 
@@ -179,15 +184,11 @@ aliases:
 | `myscript`（位於此處新增的 `~/bin` 中） | `~/bin/myscript` |
 | `fastfetch`（透過 Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
 | `Safari`（於此處新增 `/Applications`） | `/Applications/Safari.app` |
-| `Keynote`（同上） | `/Applications/Keynote.app` |
 
-此處的資料夾會**附加至 PATH 尾端**，因此系統 PATH 與您在 `~/.zshrc` 中設定的任何 PATH 都會被保留。命令列工具由 `zsh` 本身解析。`.app` 套件會以不區分大小寫的方式進行比對，並透過 `open -b <bundleId>` 啟動，因此輸入 `keynote` 即可開啟 `Keynote.app`。
+此處的資料夾會被**附加至 PATH 尾端**，因此系統 PATH 與您在 Shell 設定檔中設定的任何 PATH 都會被保留。命令列工具由 Shell 本身解析。`.app` 套件會以不區分大小寫的方式進行比對，並透過 `open -b <bundleId>` 啟動。
 
 自訂路徑儲存於：
-
-```
-~/Library/Application Support/RunProcess/paths.yml
-```
+`~/Library/Application Support/RunProcess/paths.yml`
 
 格式：
 
@@ -198,37 +199,13 @@ paths:
   - /opt/homebrew/bin
 ```
 
-變更將立即生效。
+變更將立即生效。*(注：自訂 PATH 注入需使用 `zsh`)*。
 
-### 自訂路徑
+---
 
-新增資料夾，其中的命令列工具與 `.app` 可直接用名稱執行。
+## Shell
 
-| 輸入 | 執行 |
-|------|------|
-| `myscript`（在 `~/bin`，已加入這裡） | `~/bin/myscript` |
-| `fastfetch`（Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
-| `Safari`（`/Applications` 已加入這裡） | `/Applications/Safari.app` |
-| `Keynote`（同上） | `/Applications/Keynote.app` |
-
-這裡的資料夾會被**追加到 PATH**，所以系統 PATH 和你 `~/.zshrc` 裡設定的 PATH 都會保留。命令列工具由 `zsh` 自己按 PATH 查找。`.app` 會大小寫不敏感比對，並透過 `open -b <bundleId>` 啟動，所以輸入 `keynote` 能開啟 `Keynote.app`。
-
-自訂路徑存放於：
-
-```
-~/Library/Application Support/RunProcess/paths.yml
-```
-
-格式：
-
-```yml
-paths:
-  - /Applications
-  - ~/bin
-  - /opt/homebrew/bin
-```
-
-修改後立即生效。
+在 **設定 → 一般 → Shell** 中，可以切換執行指令所使用的 Shell。RunProcess 支援自訂 Shell（如 `bash`、`fish`），但**工作階段模式**和**自訂 PATH 注入**功能僅支援 `zsh`。
 
 ---
 
@@ -244,6 +221,16 @@ paths:
 
 ---
 
+## 快捷指令 (App Intents)
+
+RunProcess 接入了 macOS 快捷指令和 Siri，你可以使用以下動作：
+- **執行指令** – 在背景下執行指令並傳回輸出。
+- **搜尋指令歷史** – 尋找以前執行過的指令。
+- **新增別名** – 透過快捷指令自動建立別名。
+- **清除指令歷史** – 清空所有紀錄。
+
+---
+
 ## 更新
 
 RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
@@ -256,29 +243,9 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 
 ---
 
-## 更新
-
-RunProcess 使用 [Sparkle](https://sparkle-project.org) 分發更新。
-
-- **檢查更新** —— 在選單列裡（⌘U）
-- **自動檢查** —— 設定 → 更新 裡的開關。每天在背景自動檢查一次
-- **自動下載** —— 設定 → 更新 裡的開關。安裝仍需確認
-
-更新套件經過加密簽章，安裝前會驗證。
-
----
-
 ## 輔助說明
 
-按下 **⌘/** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：
-
-- 總覽
-- 鍵盤快速鍵
-- 指令技巧
-- 工作階段模式
-- 以 root 身分執行
-- 別名
-- 外觀
+按下 **⌘/** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀。
 
 側邊欄包含搜尋欄位，可依標題篩選主題。
 
@@ -336,39 +303,13 @@ open RunProcess.xcodeproj
 ## 設定檔
 
 RunProcess 將使用者資料儲存於：
+`~/Library/Application Support/RunProcess/`
+*(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta`)*
 
 ```
-~/Library/Application Support/RunProcess/
 ├── aliases.yml      # 指令別名
 ├── history.yml      # 指令歷史（最多 500 筆）
 └── paths.yml        # 自訂執行檔搜尋路徑
-```
-
-### aliases.yml
-
-格式：
-
-```yml
-aliases:
-  - name: gs
-    expansion: git status
-  - name: serve
-    expansion: python3 -m http.server 8000
-```
-
-### history.yml
-
-自動管理。最多 500 筆。
-
-### paths.yml
-
-格式：
-
-```yml
-paths:
-  - /Applications
-  - ~/bin
-  - /opt/homebrew/bin
 ```
 
 ### 移轉
@@ -385,8 +326,8 @@ Swift 與 SwiftUI
 
 ## 文件
 
-- [簡體中文 README](../zh-Hans/README.zh-Hans.md)
 - [English README](../../README.md)
+- [簡體中文 README](../zh-Hans/README.zh-Hans.md)
 - [貢獻指南](CONTRIBUTING.zh-Hant.md)
 - [授權條款](LICENSE.md)
 
