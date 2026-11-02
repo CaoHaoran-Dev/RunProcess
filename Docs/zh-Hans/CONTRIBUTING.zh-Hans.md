@@ -1,5 +1,7 @@
 # 为 RunProcess 做贡献
 
+> [English](../../CONTRIBUTING.md) · [简体中文](CONTRIBUTING.zh-Hans.md) · [繁體中文](../zh-Hant/CONTRIBUTING.zh-Hant.md)
+
 感谢你愿意改进 RunProcess。本文档说明如何报 bug、提需求、提交代码。
 
 ---
@@ -18,7 +20,7 @@
 
 - 先搜 [已有的 issue](https://github.com/CaoHaoran-Dev/RunProcess/issues)，避免重复
 - 大改动先开 issue 讨论方向
-- 读一遍 [README](README.md) 了解项目定位
+- 读一遍 [README](../../README.md) 了解项目定位
 
 ### 不做的事
 
@@ -287,7 +289,7 @@ RunProcess 把用户数据存在：
 
 ## 行为准则
 
-保持礼貌。对代码有异议，不要针对人。默认善意。觉得不对，直接邮件维护者。
+保持礼貌。对代码有异议，不要针对人。默认善意。觉得不对，通过仓库 profile 上的联系方式私下联系维护者。
 
 禁止骚扰、歧视、人身攻击。违规者封禁。
 
@@ -297,7 +299,7 @@ RunProcess 把用户数据存在：
 
 - **一般问题**：开 [Discussion](https://github.com/CaoHaoran-Dev/RunProcess/discussions)
 - **Bug**：开 [Issue](https://github.com/CaoHaoran-Dev/RunProcess/issues)
-- **安全问题**：私信维护者，不要开公开 issue
+- **安全问题**：请通过 [GitHub Security Advisories](https://github.com/CaoHaoran-Dev/RunProcess/security/advisories/new) 私密报告，详见 [SECURITY.zh-Hans.md](SECURITY.zh-Hans.md)。不要开公开 issue。
 
 ---
 

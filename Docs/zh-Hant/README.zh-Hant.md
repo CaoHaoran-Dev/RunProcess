@@ -2,6 +2,8 @@
 
 > 一款具備半透明介面與選單列整合的 Spotlight 風格 macOS 指令啟動器。
 
+> [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · [繁體中文](README.zh-Hant.md)
+
 ---
 
 ## 總覽
@@ -15,19 +17,19 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 - **指令執行** – 執行任何 shell 指令，並即時顯示輸出
 - **ANSI 色彩** – 完整支援 8/16/256 色及 24 位元真彩色。來自 `git status`、`ls -G`、`grep --color` 等工具的輸出將以正確的色彩呈現
 - **Tab 補全** – 自動補全別名、指令歷史、系統指令及檔案路徑
-- **指令歷史** – 使用 ↑ / ↓ 瀏覽先前的指令，依 frecency（頻率 × 最近使用程度）排序
-- **歷史搜尋** – 按下 ⌘H 對整個歷史紀錄進行模糊搜尋
+- **指令歷史** – 使用 `↑` / `↓` 瀏覽先前的指令，依 frecency（頻率 × 最近使用程度）排序
+- **歷史搜尋** – 按下 `⌘H` 對整個歷史紀錄進行模糊搜尋
 - **別名** – 定義如 `gs` → `git status` 的短名稱；它們會在補全清單中優先顯示
 - **自訂路徑** – 新增如 `/Applications` 或 `~/bin` 的資料夾。在這些資料夾中找到的命令列工具可直接透過名稱執行；`.app` 套件也可透過名稱啟動（例如 `Safari`）
 - **拖放** – 從 Finder 拖曳檔案，即可自動填入經正確轉義的檔案路徑
 - **Root 權限** – 透過安全密碼對話框使用 `sudo` 執行指令。密碼僅在執行期間存於記憶體，絕不儲存或記錄
 - **預設 Sudo** – 可選擇將主視窗鎖定為「以 root 身分執行」模式
-- **全域快速鍵** – 隨時使用 ⌘⌥R 顯示或隱藏視窗（可在設定中自訂）
+- **全域快速鍵** – 隨時使用 `⌘⌥R` 顯示或隱藏視窗（可在設定中自訂）
 - **選單列整合** – 從選單列存取；隱藏 Dock 圖示
 - **多種外觀模式** – 無、毛玻璃（Frosted Glass）與液態玻璃（Liquid Glass，macOS 26 及以上）。適用於主視窗、設定、輔助說明、關於及對話框
 - **兩種介面模式** – 經典（Classic）與極簡（Lite），可隨時切換
 - **懸浮視窗** – Spotlight 風格的懸浮視窗，具備平滑的寬度動畫
-- **多行輸入** – 支援使用 Shift+Enter 輸入多行指令
+- **多行輸入** – 支援使用 `Shift+Enter` 輸入多行指令
 - **多視窗** – 每個視窗皆為獨立的工作階段
 - **工作階段模式（選用）** – 常駐 shell；`cd` 與 `export` 可跨指令持續生效
 - **自訂 Shell** – 支援在設定中更換 Shell（工作階段模式與自訂 PATH 注入需 zsh）
@@ -42,10 +44,10 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 ## 使用方式
 
-開啟應用程式，點擊選單列上的 ⚡，輸入指令，然後按下 Enter。
+開啟應用程式，點擊選單列上的 ⚡，輸入指令，然後按下 `Enter`。
 
 | 輸入 | 結果 |
-|-------|--------|
+| :--- | :--- |
 | `ls ~/Downloads` | 列出檔案 |
 | `open .` | 在 Finder 中開啟目前目錄 |
 | `git status` | 顯示 Git 狀態（帶色彩） |
@@ -56,7 +58,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 ## 快速鍵
 
 | 按鍵 | 動作 |
-|-----|--------|
+| :--- | :--- |
 | `⌘⌥R` | 全域顯示或隱藏視窗（可在設定中自訂） |
 | `⌘U` | 檢查更新 |
 | `⌘N` | 新增視窗 |
@@ -67,26 +69,29 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 | `⌘W` | 隱藏視窗 |
 | `⌘Q` | 結束 |
 | `Enter` | 執行 |
-| `Shift+Enter` | 換行 |
+| `Shift + Enter` | 換行 |
 | `Tab` | 補全彈出視窗 |
-| `↑` `↓` | 瀏覽指令歷史 |
+| `↑` / `↓` | 瀏覽指令歷史 |
 
 ---
 
 ## 外觀與介面
 
 ### 介面模式
+
 在 **設定 → 外觀 → 介面模式** 中，您可以選擇主介面的樣式：
+
 - **經典** – 標準的視窗樣式，包含輸入框、sudo 開關和輸出區域。
 - **極簡** – 類似 Spotlight 的單行輸入框，只有在有輸出時才會平滑展開。
 
 *注意：修改介面模式後，僅對**新開啟的視窗**生效。*
 
 ### 外觀模式
+
 在 **設定 → 外觀** 中選擇：
 
 | 模式 | 說明 | 支援情況 |
-|------|-------------|--------------|
+| :--- | :--- | :--- |
 | 無 | 純色系統視窗背景 | macOS 12.4 及以上 |
 | 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 12.4 及以上 |
 | 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26 及以上 |
@@ -110,7 +115,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 工作階段模式下的視窗標題會顯示為 `RunProcess - 工作階段 — <目前目錄>`。
 
 | 行為 | 非工作階段 | 工作階段 |
-|----------|-------------|---------|
+| :--- | :--- | :--- |
 | 執行 `cd` 後 | 仍停留在預設工作目錄 | 切換至新目錄 |
 | 執行 `export` 後 | 環境變數遺失 | 保留環境變數 |
 | 啟動額外開銷 | 每個指令開啟新 shell | 重複使用單一 shell |
@@ -122,11 +127,12 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 每一條執行過的指令都會被記錄。歷史紀錄支援兩項功能：
 
-- **↑ / ↓ 瀏覽** – 依 frecency 排序：經常使用且最近使用過的指令會排在頂部
-- **⌘H 搜尋** – 對整個歷史紀錄進行模糊比對（`gst` 可符合 `git status`）
+- **`↑` / `↓` 瀏覽** – 依 frecency 排序：經常使用且最近使用過的指令會排在頂部
+- **`⌘H` 搜尋** – 對整個歷史紀錄進行模糊比對（`gst` 可符合 `git status`）
 
 歷史紀錄儲存於：
 `~/Library/Application Support/RunProcess/history.yml`
+
 *(注：Preview/Beta 版的路徑為 `RunProcess-Beta`)*
 
 最多保留 500 筆。最舊且最不常使用的紀錄會優先被移除。
@@ -142,7 +148,7 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 內建範例：
 
 | 別名 | 展開為 |
-|-------|-----------|
+| :--- | :--- |
 | `gs` | `git status` |
 | `gp` | `git pull --rebase` |
 | `ll` | `ls -lah` |
@@ -180,7 +186,7 @@ aliases:
 新增包含命令列工具與 `.app` 套件的資料夾，使其可透過名稱執行。
 
 | 輸入 | 執行 |
-|-------|------|
+| :--- | :--- |
 | `myscript`（位於此處新增的 `~/bin` 中） | `~/bin/myscript` |
 | `fastfetch`（透過 Homebrew 安裝） | `/opt/homebrew/bin/fastfetch` |
 | `Safari`（於此處新增 `/Applications`） | `/Applications/Safari.app` |
@@ -224,6 +230,7 @@ paths:
 ## 快捷指令 (App Intents)
 
 RunProcess 接入了 macOS 快捷指令和 Siri，你可以使用以下動作：
+
 - **執行指令** – 在背景下執行指令並傳回輸出。
 - **搜尋指令歷史** – 尋找以前執行過的指令。
 - **新增別名** – 透過快捷指令自動建立別名。
@@ -235,7 +242,7 @@ RunProcess 接入了 macOS 快捷指令和 Siri，你可以使用以下動作：
 
 RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 
-- **檢查更新** – 可於選單列使用（⌘U）
+- **檢查更新** – 可於選單列使用（`⌘U`）
 - **自動檢查** – 於設定 → 更新中切換。每天在背景下檢查一次
 - **自動下載** – 於設定 → 更新中切換。安裝仍需確認
 
@@ -245,7 +252,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 
 ## 輔助說明
 
-按下 **⌘/** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀。
+按下 **`⌘/`** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀。
 
 側邊欄包含搜尋欄位，可依標題篩選主題。
 
@@ -268,12 +275,20 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 ### 下載（建議）
 
-從 [Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases) 下載最新的 `RunProcess.zip`。
+請依需求選擇要安裝的版本：
+
+- **正式版**：[下載 RunProcess.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess.zip)
+- **預覽版**：[下載 RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+
+您也可以前往 [GitHub Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases) 下載歷史版本。
 
 1. 下載並解壓縮檔案。
 2. 將 `RunProcess.app` 移至您的 `Applications` 資料夾。
 
-> 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告。請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**。
+> 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告（請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**）。此外，預覽版會將使用者資料存放在 `~/Library/Application Support/RunProcess-Beta/` 目錄下，與正式版互不影響。
+
+### Homebrew
+...
 
 ### Homebrew
 
@@ -304,6 +319,7 @@ open RunProcess.xcodeproj
 
 RunProcess 將使用者資料儲存於：
 `~/Library/Application Support/RunProcess/`
+
 *(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta`)*
 
 ```
@@ -324,15 +340,16 @@ Swift 與 SwiftUI
 
 ---
 
-## 文件
+## 貢獻
 
-- [English README](../../README.md)
-- [簡體中文 README](../zh-Hans/README.zh-Hans.md)
-- [貢獻指南](CONTRIBUTING.zh-Hant.md)
-- [授權條款](LICENSE.md)
+歡迎提交 PR 或回報 bug！開發環境、程式碼風格與 PR 指南請先閱讀 [貢獻指南](CONTRIBUTING.zh-Hant.md)。
+
+- **安全性問題**：請不要開公開 issue，請透過 [GitHub Security Advisories](https://github.com/CaoHaoran-Dev/RunProcess/security/advisories/new) 私密回報，詳見 [SECURITY.zh-Hant.md](SECURITY.zh-Hant.md)。
 
 ---
 
 ## 授權條款
 
-MIT © 2026 CaoHaoran-Dev
+本專案基於 [MIT License](../../LICENSE.md) 開源。
+
+MIT © 2026 [CaoHaoran-Dev](https://github.com/CaoHaoran-Dev)
