@@ -1,5 +1,7 @@
 # 為 RunProcess 貢獻
 
+> [English](../../CONTRIBUTING.md) · [简体中文](../zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](CONTRIBUTING.zh-Hant.md)
+
 感謝你願意改進 RunProcess。本文件說明如何回報 bug、提出需求、提交程式碼。
 
 ---
@@ -287,7 +289,7 @@ RunProcess 把使用者資料存在：
 
 ## 行為準則
 
-保持禮貌。對程式碼有異議，不要針對人。預設善意。覺得不對，直接寄信給維護者。
+保持禮貌。對程式碼有異議，不要針對人。預設善意。覺得不對，透過儲存庫 profile 上的聯絡方式私下聯絡維護者。
 
 禁止騷擾、歧視、人身攻擊。違規者封鎖。
 
@@ -297,7 +299,7 @@ RunProcess 把使用者資料存在：
 
 - **一般問題**：開 [Discussion](https://github.com/CaoHaoran-Dev/RunProcess/discussions)
 - **Bug**：開 [Issue](https://github.com/CaoHaoran-Dev/RunProcess/issues)
-- **安全問題**：私訊維護者，不要開公開 issue
+- **安全問題**：請透過 [GitHub Security Advisories](https://github.com/CaoHaoran-Dev/RunProcess/security/advisories/new) 私密回報，詳見 [SECURITY.zh-Hant.md](SECURITY.zh-Hant.md)。不要開公開 issue。
 
 ---
 

@@ -1,5 +1,7 @@
 # Contributing to RunProcess
 
+> [English](CONTRIBUTING.md) · [简体中文](Docs/zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](Docs/zh-Hant/CONTRIBUTING.zh-Hant.md)
+
 Thanks for your interest in improving RunProcess. This document describes how to report bugs, suggest features, and submit code.
 
 ---
@@ -287,7 +289,7 @@ Maintainer-only, but documented here for transparency:
 
 ## Code of Conduct
 
-Be civil. Disagree about code, not people. Assume good faith. If something feels off, email the maintainer directly.
+Be civil. Disagree about code, not people. Assume good faith. If something feels off, contact the maintainer privately via the contact details on the repository profile.
 
 No harassment, discrimination, or personal attacks. Violations result in a ban.
 
@@ -297,7 +299,7 @@ No harassment, discrimination, or personal attacks. Violations result in a ban.
 
 - **General questions**: open a [Discussion](https://github.com/CaoHaoran-Dev/RunProcess/discussions)
 - **Bug reports**: open an [Issue](https://github.com/CaoHaoran-Dev/RunProcess/issues)
-- **Security issues**: email the maintainer privately instead of opening a public issue
+- **Security issues**: report privately via [GitHub Security Advisories](https://github.com/CaoHaoran-Dev/RunProcess/security/advisories/new). See [SECURITY.md](SECURITY.md) for details. Do not open a public issue for vulnerabilities.
 
 ---
 

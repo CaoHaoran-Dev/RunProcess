@@ -2,6 +2,8 @@
 
 > A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
 
+> [English](README.md) · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
+
 ---
 
 ## Overview
@@ -12,40 +14,40 @@ RunProcess is a lightweight macOS application that provides a quick command exec
 
 ## Features
 
-- **Command Execution** – Execute any shell command with real-time output display
-- **ANSI Colors** – Full support for 8/16/256 colors and 24-bit truecolor. Output from `git status`, `ls -G`, `grep --color`, etc. is rendered with proper colors
-- **Tab Completion** – Auto-complete aliases, command history, system commands, and file paths
-- **Command History** – Navigate previous commands with ↑ / ↓, ranked by frecency (frequency × recency)
-- **History Search** – Press ⌘H to fuzzy-search the entire history
-- **Aliases** – Define short names like `gs` → `git status`; they appear first in completion
-- **Custom Paths** – Add folders like `/Applications` or `~/bin`. Command-line tools found there can be run by name; `.app` bundles can be launched by name (e.g. `Safari`)
-- **Drag & Drop** – Drag files from Finder to automatically populate file paths with proper escaping
-- **Root Privileges** – Execute commands with `sudo` via a secure password dialog. The password is used only in memory during execution and is never stored or logged
-- **Default Sudo** – Optionally lock the main window into "run as root" mode
-- **Global Hotkey** – Show or hide the window from anywhere with ⌘⌥R (customizable in Settings)
-- **Menu Bar Integration** – Access from the menu bar; the Dock icon is hidden
-- **Multiple Appearance Modes** – None, Frosted Glass, and Liquid Glass (macOS 26 and later). Applies to the main window, Settings, Help, About, and dialogs
-- **Interface Modes** – Choose between Classic and Lite UI styles
-- **Floating Window** – Spotlight-style floating window with smooth width animation
-- **Multi-line Input** – Support for multi-line commands with Shift+Enter
-- **Multiple Windows** – Each window is an independent session
-- **Session Mode (Optional)** – Persistent shell; `cd` and `export` persist across commands
-- **Custom Shell** – Select your preferred shell in settings (Session mode and custom PATH require zsh)
-- **Custom Working Directory** – Configure the default working directory for new windows
-- **Error Explanations** – Appends human-readable explanations for common command failures
-- **Automatic Hide on Deactivate** – Windows hide automatically when the application loses focus
-- **In-app Help** – Sidebar-based help window, styled like macOS Help Viewer
-- **App Intents** – Supports macOS Shortcuts, Siri, and Spotlight for running commands, searching history, and adding aliases
-- **Localization** – English, Simplified Chinese, Traditional Chinese
+- **Command Execution** — Execute any shell command with real-time output display
+- **ANSI Colors** — Full support for 8/16/256 colors and 24-bit truecolor. Output from `git status`, `ls -G`, `grep --color`, etc. is rendered with proper colors
+- **Tab Completion** — Auto-complete aliases, command history, system commands, and file paths
+- **Command History** — Navigate previous commands with `↑` / `↓`, ranked by frecency (frequency × recency)
+- **History Search** — Press `⌘H` to fuzzy-search the entire history
+- **Aliases** — Define short names like `gs` → `git status`; they appear first in completion
+- **Custom Paths** — Add folders like `/Applications` or `~/bin`. Command-line tools found there can be run by name; `.app` bundles can be launched by name (e.g. `Safari`)
+- **Drag & Drop** — Drag files from Finder to automatically populate file paths with proper escaping
+- **Root Privileges** — Execute commands with `sudo` via a secure password dialog. The password is used only in memory during execution and is never stored or logged
+- **Default Sudo** — Optionally lock the main window into "run as root" mode
+- **Global Hotkey** — Show or hide the window from anywhere with `⌘⌥R` (customizable in Settings)
+- **Menu Bar Integration** — Access from the menu bar; the Dock icon is hidden
+- **Multiple Appearance Modes** — None, Frosted Glass, and Liquid Glass (macOS 26 and later). Applies to the main window, Settings, Help, About, and dialogs
+- **Interface Modes** — Choose between Classic and Lite UI styles
+- **Floating Window** — Spotlight-style floating window with smooth width animation
+- **Multi-line Input** — Support for multi-line commands with `Shift+Enter`
+- **Multiple Windows** — Each window is an independent session
+- **Session Mode (Optional)** — Persistent shell; `cd` and `export` persist across commands
+- **Custom Shell** — Select your preferred shell in settings (Session mode and custom PATH require `zsh`)
+- **Custom Working Directory** — Configure the default working directory for new windows
+- **Error Explanations** — Appends human-readable explanations for common command failures
+- **Automatic Hide on Deactivate** — Windows hide automatically when the application loses focus
+- **In-app Help** — Sidebar-based help window, styled like macOS Help Viewer
+- **App Intents** — Supports macOS Shortcuts, Siri, and Spotlight for running commands, searching history, and adding aliases
+- **Localization** — English, Simplified Chinese, Traditional Chinese
 
 ---
 
 ## Usage
 
-Open the application, click ⚡ in the menu bar, type a command, and press Enter.
+Open the application, click the ⚡ icon in the menu bar, type a command, and press `Enter`.
 
 | Input | Result |
-|-------|--------|
+| :--- | :--- |
 | `ls ~/Downloads` | List files |
 | `open .` | Open the current directory in Finder |
 | `git status` | Show Git status (with colors) |
@@ -56,7 +58,7 @@ Open the application, click ⚡ in the menu bar, type a command, and press Enter
 ## Keyboard Shortcuts
 
 | Key | Action |
-|-----|--------|
+| :--- | :--- |
 | `⌘⌥R` | Show or hide the window globally (customizable in Settings) |
 | `⌘U` | Check for Updates |
 | `⌘N` | New window |
@@ -67,26 +69,29 @@ Open the application, click ⚡ in the menu bar, type a command, and press Enter
 | `⌘W` | Hide window |
 | `⌘Q` | Quit |
 | `Enter` | Execute |
-| `Shift+Enter` | Newline |
+| `Shift + Enter` | Newline |
 | `Tab` | Completion popup |
-| `↑` `↓` | Command history navigation |
+| `↑` / `↓` | Command history navigation |
 
 ---
 
 ## Appearance & Interface
 
 ### Interface Modes
+
 In **Settings → Appearance → Interface Mode**, you can choose how the main window looks:
-- **Classic** – The standard window showing the input field, sudo toggle, and output area.
-- **Lite** – A minimal, Spotlight-style single-line input that expands smoothly only when there is output.
+
+- **Classic** — The standard window showing the input field, sudo toggle, and output area.
+- **Lite** — A minimal, Spotlight-style single-line input that expands smoothly only when there is output.
 
 *Note: Changes to the Interface Mode take effect in newly opened windows.*
 
 ### Appearance Styles
+
 Three appearance modes are available in **Settings → Appearance**:
 
 | Mode | Description | Availability |
-|------|-------------|--------------|
+| :--- | :--- | :--- |
 | None | Solid system window background | macOS 12.4 and later |
 | Frosted Glass | `NSVisualEffectView` blur | macOS 12.4 and later |
 | Liquid Glass | Native Liquid Glass material | macOS 26 and later |
@@ -110,7 +115,7 @@ In session mode, each window maintains a long-running shell process (requires `z
 The window title in session mode displays `RunProcess - Session — <current directory>`.
 
 | Behavior | Non-session | Session |
-|----------|-------------|---------|
+| :--- | :--- | :--- |
 | After `cd` | Still in the default working directory | Switched to the new directory |
 | After `export` | Environment variable is lost | Environment variable is retained |
 | Startup overhead | A new shell per command | One shell, reused |
@@ -122,11 +127,12 @@ The window title in session mode displays `RunProcess - Session — <current dir
 
 Every executed command is recorded. The history powers two features:
 
-- **↑ / ↓ navigation** – ranked by frecency: frequently used and recently used commands rise to the top
-- **⌘H search** – fuzzy matching across the whole history (`gst` matches `git status`)
+- **`↑` / `↓` navigation** — ranked by frecency: frequently used and recently used commands rise to the top
+- **`⌘H` search** — fuzzy matching across the whole history (`gst` matches `git status`)
 
 History is stored at:
 `~/Library/Application Support/RunProcess/history.yml`
+
 *(For the Beta/Preview version, the folder is `RunProcess-Beta`)*
 
 Maximum 500 entries. The oldest least-recently-used entries are pruned first.
@@ -142,7 +148,7 @@ Aliases let you define short names for frequently used commands. They rank above
 Built-in examples:
 
 | Alias | Expands to |
-|-------|-----------|
+| :--- | :--- |
 | `gs` | `git status` |
 | `gp` | `git pull --rebase` |
 | `ll` | `ls -lah` |
@@ -170,15 +176,17 @@ Restart the app after editing.
 **Settings → Paths** has two sections.
 
 ### Default Working Directory
+
 Configure the working directory for new windows. If not set, the user's home directory is used. Only affects newly opened windows.
 
 If the configured path no longer exists, the application falls back to the home directory and displays a warning in Settings.
 
 ### Custom Paths
+
 Add folders whose command-line tools and `.app` bundles can be run by name.
 
 | Input | Runs |
-|-------|------|
+| :--- | :--- |
 | `myscript` (in `~/bin`, which is added here) | `~/bin/myscript` |
 | `fastfetch` (installed via Homebrew) | `/opt/homebrew/bin/fastfetch` |
 | `Safari` (`/Applications` added here) | `/Applications/Safari.app` |
@@ -214,6 +222,7 @@ Enable "Run as root" before executing a command to receive a password prompt.
 Every sudo command requires entering the password again. The password is used only in memory during execution and is never stored or logged.
 
 ### Default Sudo
+
 In **Settings → Sudo**, enable **Always run as root** to lock the main window's sudo toggle to the on position. The toggle becomes read-only, marked with a solid lock icon. Every command still prompts for the password.
 
 ---
@@ -221,10 +230,11 @@ In **Settings → Sudo**, enable **Always run as root** to lock the main window'
 ## App Intents (Shortcuts)
 
 RunProcess integrates with macOS Shortcuts and Siri. You can use actions like:
-- **Run Command** – Execute a command in the background and return the output.
-- **Search Command History** – Find previously executed commands.
-- **Add Alias** – Create a new alias programmatically.
-- **Clear Command History** – Wipe the history.
+
+- **Run Command** — Execute a command in the background and return the output.
+- **Search Command History** — Find previously executed commands.
+- **Add Alias** — Create a new alias programmatically.
+- **Clear Command History** — Wipe the history.
 
 ---
 
@@ -232,9 +242,9 @@ RunProcess integrates with macOS Shortcuts and Siri. You can use actions like:
 
 RunProcess uses [Sparkle](https://sparkle-project.org) to deliver updates.
 
-- **Check for Updates** – Available in the menu bar (⌘U)
-- **Automatic checks** – Toggle in Settings → Updates. Checks once a day in the background
-- **Automatic downloads** – Toggle in Settings → Updates. Installation still requires confirmation
+- **Check for Updates** — Available in the menu bar (`⌘U`)
+- **Automatic checks** — Toggle in Settings → Updates. Checks once a day in the background
+- **Automatic downloads** — Toggle in Settings → Updates. Installation still requires confirmation
 
 Update packages are cryptographically signed and verified before installation.
 
@@ -242,7 +252,7 @@ Update packages are cryptographically signed and verified before installation.
 
 ## Help
 
-Press **⌘/** or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, and Appearance.
+Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, and Appearance.
 
 ---
 
@@ -263,12 +273,17 @@ RunProcess supports English, Simplified Chinese, and Traditional Chinese. To use
 
 ### Download (Recommended)
 
-Download the latest `RunProcess.zip` from [Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases).
+Choose the version you want to install:
+
+- **Stable Release**: [Download RunProcess.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess.zip)
+- **Preview**: [Download RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+
+You can also browse older versions on [GitHub Releases](https://github.com/CaoHaoran-Dev/RunProcess/releases).
 
 1. Download and unzip the file.
 2. Move `RunProcess.app` to your `Applications` folder.
 
-> The application is not notarized, so macOS may display a security warning on first launch. Go to **System Settings → Privacy & Security** and click **Open Anyway**.
+> **Note:** The application is not notarized, so macOS may display a security warning on first launch (go to **System Settings → Privacy & Security** and click **Open Anyway**). The Preview version stores user data in `~/Library/Application Support/RunProcess-Beta/`.
 
 ### Homebrew
 
@@ -299,6 +314,7 @@ Visit the GitHub Pages demo:
 
 RunProcess stores user data in:
 `~/Library/Application Support/RunProcess/`
+
 *(For the Beta/Preview version, the folder is `RunProcess-Beta`)*
 
 ```
@@ -308,6 +324,7 @@ RunProcess stores user data in:
 ```
 
 ### Migration
+
 Older JSON files (`aliases.json`, `history.json`) are migrated automatically on first launch.
 
 ---
@@ -318,15 +335,12 @@ Swift and SwiftUI
 
 ---
 
-## Documentation
+## Contributing
 
-- [简体中文 README](Docs/zh-Hans/README.zh-Hans.md)
-- [繁体中文 README](Docs/zh-Hant/README.zh-Hant.md)
-- [Contributing](CONTRIBUTING.md)
-- [License](LICENSE.md)
+Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) for development setup, code style, and pull request guidelines.
 
----
+- **Security Issues**: Do not open a public issue. Please report vulnerabilities privately via [GitHub Security Advisories](https://github.com/CaoHaoran-Dev/RunProcess/security/advisories/new). See [SECURITY.md](SECURITY.md) for details.
 
-## License
+This project is licensed under the [MIT License](LICENSE.md).
 
-MIT © 2026 CaoHaoran-Dev
+MIT © 2026 [CaoHaoran-Dev](https://github.com/CaoHaoran-Dev)
