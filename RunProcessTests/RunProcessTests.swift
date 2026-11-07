@@ -6,7 +6,6 @@
 //
 
 import XCTest
-import AppKit
 
 // 根据编译条件，动态决定测试哪个 Target
 #if BETA
@@ -298,15 +297,6 @@ final class SuggestionTests: XCTestCase {
         XCTAssertGreaterThan(history.priority, command.priority)
         XCTAssertGreaterThan(command.priority, path.priority)
     }
-    
-    #if BETA
-    func testWorkflowHasHighestPriority() {
-        let workflow = Suggestion(text: "deploy", type: .workflow)
-        let alias = Suggestion(text: "deploy", type: .alias)
-        
-        XCTAssertGreaterThan(workflow.priority, alias.priority)
-    }
-    #endif
 
     func testHistoryCountClampedInPriority() {
         let low = Suggestion(text: "x", type: .history, historyCount: -5)
@@ -321,10 +311,6 @@ final class SuggestionTests: XCTestCase {
         XCTAssertEqual(Suggestion.SuggestionType.history.iconName, "clock.arrow.circlepath")
         XCTAssertEqual(Suggestion.SuggestionType.command.iconName, "terminal")
         XCTAssertEqual(Suggestion.SuggestionType.path.iconName, "folder")
-        
-        #if BETA
-        XCTAssertEqual(Suggestion.SuggestionType.workflow.iconName, "doc.text.fill")
-        #endif
     }
 }
 
@@ -460,11 +446,11 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testPreviewAppSupportFolderName() {
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
+        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta")
     }
 
     func testPreviewCustomPathEnabledDefaultsTrue() {
-        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.customPathEnabled)
+        UserDefaults.standard.removeObject(forKey: "paths.customEnabled")
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #else
@@ -473,32 +459,17 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testReleaseAppSupportFolderName() {
-        #if RUNPROCESS_TEST
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
-        #else
         XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess")
-        #endif
     }
 
     func testReleaseCustomPathAlwaysEnabled() {
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #endif
-
+    
     // 两个版本共用的断言
     func testShellDefaultsToZsh() {
         XCTAssertEqual(AppSettings.resolvedShellPath, "/bin/zsh")
         XCTAssertTrue(AppSettings.isZshShell)
     }
-
-    #if RUNPROCESS_TEST
-    func testTestEnvironmentFolderName() {
-        XCTAssertTrue(AppEnvironment.isTest)
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
-    }
-
-    func testTestKeyPrefixIsIsolated() {
-        XCTAssertTrue(AppSettings.Keys.sessionModeEnabled.hasPrefix("test."))
-    }
-    #endif
 }

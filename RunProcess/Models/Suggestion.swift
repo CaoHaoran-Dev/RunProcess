@@ -16,9 +16,6 @@ struct Suggestion: Identifiable, Equatable, Sendable {
     let priority: Int
 
     enum SuggestionType: String, Sendable {
-        #if BETA
-        case workflow = "doc.text.fill"
-        #endif
         case alias = "wand.and.stars"
         case history = "clock.arrow.circlepath"
         case command = "terminal"
@@ -33,13 +30,10 @@ struct Suggestion: Identifiable, Equatable, Sendable {
         self.subtitle = subtitle
         self.historyCount = nil
         switch type {
-        #if BETA
-        case .workflow: self.priority = 600
-        #endif
-        case .alias:    self.priority = 500
-        case .history:  self.priority = 300
-        case .command:  self.priority = 200
-        case .path:     self.priority = 100
+        case .alias:   self.priority = 500
+        case .history: self.priority = 300
+        case .command: self.priority = 200
+        case .path:    self.priority = 100
         }
     }
 
@@ -50,13 +44,10 @@ struct Suggestion: Identifiable, Equatable, Sendable {
         let safe = min(max(historyCount, 0), 100)
         self.historyCount = safe
         switch type {
-        #if BETA
-        case .workflow: self.priority = 600
-        #endif
-        case .alias:    self.priority = 500
-        case .history:  self.priority = 300 + safe
-        case .command:  self.priority = 200
-        case .path:     self.priority = 100
+        case .alias:   self.priority = 500
+        case .history: self.priority = 300 + safe
+        case .command: self.priority = 200
+        case .path:    self.priority = 100
         }
     }
 

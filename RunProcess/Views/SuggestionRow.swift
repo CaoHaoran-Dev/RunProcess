@@ -51,9 +51,6 @@ struct SuggestionRow: View {
 
     private var iconColor: Color {
         switch suggestion.type {
-        #if BETA
-        case .workflow: return .blue
-        #endif
         case .alias: return .orange
         case .history: return .secondary
         case .command: return .secondary
