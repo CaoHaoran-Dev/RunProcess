@@ -1,6 +1,6 @@
 # 安全性原則
 
-> [English](../../SECURITY.md) · [简体中文](../zh-Hans/SECURITY.zh-Hans.md) · [繁體中文](SECURITY.zh-Hant.md)
+> [English](../../SECURITY.md) · [简体中文](../zh-Hans/SECURITY.zh-Hans.md) · [繁體中文]
 
 ## 支援的版本
 
