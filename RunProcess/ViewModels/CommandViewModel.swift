@@ -21,6 +21,11 @@ class CommandViewModel: ObservableObject {
 
     @Published var pendingSudoRequest: Bool = false
 
+    #if BETA
+    /// 当前窗口绑定的远程主机 ID。nil 代表本地。
+    @Published var activeRemoteHostId: String? = nil
+    #endif
+
     var usesSessionMode: Bool = false
     weak var session: Session?
 
@@ -215,7 +220,6 @@ class CommandViewModel: ObservableObject {
             inputText = processedCommand
         }
 
-        // 多行命令跳过交互式检查
         if !processedCommand.contains("\n") && CommandPreprocessor.isInteractive(processedCommand) {
             isRunning = false
             canCancel = false

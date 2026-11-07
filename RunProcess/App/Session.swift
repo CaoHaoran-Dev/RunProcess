@@ -129,56 +129,27 @@ final class Session {
 
     // MARK: - Frame Calculation (Multi-Display Support)
 
-    /// 纯函数：计算窗口在指定屏幕可见区内的安全位置（固定宽度）
     static func calculateSafeFrame(screenRect: NSRect, windowWidth: CGFloat, windowHeight: CGFloat) -> NSRect {
-        // 1. X 轴：始终水平居中
         var safeX = screenRect.midX - (windowWidth / 2)
-        
-        // 2. Y 轴：距离顶部固定比例（约占屏幕可见高度的 1/4）
         var safeY = screenRect.maxY - (screenRect.height / 4) - (windowHeight / 2)
-        
-        // 3. 边界兜底保护
-        // 保证左右不超出屏幕边缘
         safeX = max(screenRect.minX + 20, min(safeX, screenRect.maxX - windowWidth - 20))
-        
-        // 保证顶部不贴死在菜单栏上（预留至少 40pt 的顶部空间）
-        if safeY + windowHeight > screenRect.maxY - 40 {
-            safeY = screenRect.maxY - 40 - windowHeight
-        }
-        
-        // 保证底部不会掉出屏幕
-        if safeY < screenRect.minY + 20 {
-            safeY = screenRect.minY + 20
-        }
-        
+        if safeY + windowHeight > screenRect.maxY - 40 { safeY = screenRect.maxY - 40 - windowHeight }
+        if safeY < screenRect.minY + 20 { safeY = screenRect.minY + 20 }
         return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
     }
 
-    /// 动态计算并应用窗口位置（严格的安全区保护，且锁定宽度）
     func updateFrameForActiveScreen(forceCenter: Bool = false) {
         let targetScreen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
         guard let screen = targetScreen else { return }
         
         let screenRect = screen.visibleFrame
         let currentFrame = window.frame
+        if !forceCenter && screenRect.contains(currentFrame) { return }
         
-        // 如果不需要强制居中，且窗口已经完全在当前屏幕的安全区内，就保留用户手动拖拽的位置
-        if !forceCenter && screenRect.contains(currentFrame) {
-            return
-        }
-        
-        // 宽度固定为 600，高度保持当前高度（或者初始高度）
         let finalWidth: CGFloat = 600
         let finalHeight = currentFrame.height > 0 ? currentFrame.height : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        let newFrame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: finalWidth, windowHeight: finalHeight)
         
-        // 调用纯函数计算安全 Frame
-        let newFrame = Session.calculateSafeFrame(
-            screenRect: screenRect,
-            windowWidth: finalWidth,
-            windowHeight: finalHeight
-        )
-        
-        // 增加一点点动画会让跨屏显得更平滑
         if window.isVisible {
             window.setFrame(newFrame, display: true, animate: true)
         } else {
@@ -230,10 +201,28 @@ final class Session {
         }
     }
 
-    // MARK: - Execution
+    // MARK: - Execute (路由中心)
 
     private func execute(command: String, useSudo: Bool, password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
+        
+        #if BETA
+        if let hostId = viewModel.activeRemoteHostId,
+           let host = RemoteHostStore.shared.get(id: hostId) {
+            
+            Task {
+                do {
+                    let executor = RemoteExecutor()
+                    let output = try await executor.execute(command: command, on: host)
+                    DispatchQueue.main.async { completion(.success(output)) }
+                } catch {
+                    DispatchQueue.main.async { completion(.failure(error)) }
+                }
+            }
+            return
+        }
+        #endif
+
         if useSudo {
             guard let password = password else {
                 completion(.failure(NSError(domain: "RunProcess", code: -1, userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.sudo.missing.password", comment: "")])))
@@ -371,19 +360,27 @@ final class Session {
         }
     }
 
-    private func updateWindowTitle() {
-        guard usesSessionMode else { window.title = baseTitle; return }
-        let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
-        window.title = "\(baseTitle) — \(displayCWD)"
+    func updateWindowTitle() {
+        var titleParts: [String] = [baseTitle]
+
+        #if BETA
+        if let hostId = viewModel.activeRemoteHostId,
+           let host = RemoteHostStore.shared.get(id: hostId) {
+            titleParts.append("🌐 \(host.name)")
+        }
+        #endif
+
+        if usesSessionMode {
+            let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
+            titleParts.append("— \(displayCWD)")
+        }
+
+        window.title = titleParts.joined(separator: " ")
     }
 
     func show() {
         hasShown = true
-        
-        // 关键修复：先显示窗口，让底层 Window Server 感知到它要在这个屏幕呈现
         window.makeKeyAndOrderFront(nil)
-        
-        // 显示后再平滑调整位置（如果不在目标屏幕内）
         updateFrameForActiveScreen(forceCenter: false)
     }
 

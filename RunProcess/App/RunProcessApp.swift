@@ -8,6 +8,8 @@
 import SwiftUI
 import KeyboardShortcuts
 import Sparkle
+import Network
+import RemoteLinkKit
 
 @main
 struct RunProcessApp: App {
@@ -31,15 +33,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var keyMonitor: Any?
 
     private var updaterController: SPUStandardUpdaterController?
-
+    
     var updaterControllerForSettings: SPUStandardUpdaterController? {
         updaterController
     }
 
     private var hasBeenActive = false
+    
+    // MARK: - Bonjour Discovery
+    #if BETA
+    private var bonjourBrowser: BonjourBrowser?
+    private var discoveredHosts: [String: NWEndpoint] = [:]
+    #endif
 
     // MARK: - Menu
-    private lazy var statusMenu: NSMenu = {
+    // 动态生成菜单，每次点击都会重新构建，确保能实时看到 Bonjour 发现的设备
+    private var statusMenu: NSMenu {
         let menu = NSMenu()
 
         let newWindowItem = NSMenuItem(
@@ -60,6 +69,67 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(toggleItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        #if BETA
+        let remoteHosts = RemoteHostStore.shared.hosts
+        
+        let remoteMenu = NSMenu()
+        
+        // 1. 本地
+        let localItem = NSMenuItem(title: NSLocalizedString("menu.remote.local", comment: ""), action: #selector(selectRemoteHost(_:)), keyEquivalent: "")
+        localItem.target = self
+        localItem.representedObject = nil
+        if let img = NSImage(systemSymbolName: "desktopcomputer", accessibilityDescription: nil) {
+            localItem.image = img
+        }
+        remoteMenu.addItem(localItem)
+        
+        // 2. 已配对主机
+        if !remoteHosts.isEmpty {
+            remoteMenu.addItem(NSMenuItem.separator())
+            for host in remoteHosts {
+                let item = NSMenuItem(title: host.name, action: #selector(selectRemoteHost(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = host.id
+                if let img = NSImage(systemSymbolName: "server.rack", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                remoteMenu.addItem(item)
+            }
+        }
+        
+        // 3. Bonjour 发现的未配对设备
+        if !discoveredHosts.isEmpty {
+            remoteMenu.addItem(NSMenuItem.separator())
+            let headerItem = NSMenuItem(title: NSLocalizedString("menu.remote.discovered", comment: "Discovered Devices"), action: nil, keyEquivalent: "")
+            headerItem.isEnabled = false
+            remoteMenu.addItem(headerItem)
+            
+            for (name, endpoint) in discoveredHosts {
+                let item = NSMenuItem(title: name, action: #selector(connectToDiscoveredHost(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = endpoint
+                if let img = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                remoteMenu.addItem(item)
+            }
+        }
+        
+        let remoteSubItem = NSMenuItem(title: NSLocalizedString("menu.remote.title", comment: ""), action: nil, keyEquivalent: "")
+        if let img = NSImage(systemSymbolName: "network", accessibilityDescription: nil) {
+            remoteSubItem.image = img
+        }
+        remoteSubItem.submenu = remoteMenu
+        
+        if let settingsIndex = menu.items.firstIndex(where: { $0.action == #selector(openSettings) }) {
+            menu.insertItem(remoteSubItem, at: settingsIndex)
+            menu.insertItem(NSMenuItem.separator(), at: settingsIndex + 1)
+        } else {
+            menu.addItem(remoteSubItem)
+            menu.addItem(NSMenuItem.separator())
+        }
+        #endif
 
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
@@ -127,7 +197,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         return menu
-    }()
+    }
 
     // MARK: - Lifecycle
 
@@ -146,6 +216,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupGlobalHotkey()
         setupKeyMonitor()
         setupAppActiveObserver()
+        
+        #if BETA
+        setupBonjourBrowser()
+        
+        if AppSettings.allowRemoteControl {
+            RemoteServerManager.shared.start()
+        }
+        #endif
 
         if AppSettings.hideWindowOnLaunch {
             _ = sessionManager.newSessionWithoutShowing()
@@ -181,9 +259,33 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             keyMonitor = nil
         }
 
+        #if BETA
+        bonjourBrowser?.stop()
+        RemoteServerManager.shared.stop()
+        #endif
+
         sessionManager.removeAll()
         print("🛑 RunProcess is exiting")
     }
+
+    // MARK: - Bonjour Browser
+
+    #if BETA
+    private func setupBonjourBrowser() {
+        bonjourBrowser = BonjourBrowser()
+        bonjourBrowser?.onFound = { [weak self] service in
+            DispatchQueue.main.async {
+                self?.discoveredHosts[service.name] = service.endpoint
+            }
+        }
+        bonjourBrowser?.onLost = { [weak self] service in
+            DispatchQueue.main.async {
+                self?.discoveredHosts.removeValue(forKey: service.name)
+            }
+        }
+        bonjourBrowser?.start()
+    }
+    #endif
 
     // MARK: - Status Bar
 
@@ -292,9 +394,45 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Actions
 
     @objc func toggleMenu() {
+        // 每次点击时，把最新的动态菜单赋给 statusItem
         statusItem?.menu = statusMenu
         statusItem?.button?.performClick(nil)
     }
+
+    #if BETA
+    @objc func selectRemoteHost(_ sender: NSMenuItem) {
+        let hostId = sender.representedObject as? String
+        if let session = sessionManager.activeSession() {
+            session.viewModel.activeRemoteHostId = hostId
+            session.updateWindowTitle()
+        }
+    }
+    
+    @objc func connectToDiscoveredHost(_ sender: NSMenuItem) {
+        guard let endpoint = sender.representedObject as? NWEndpoint else { return }
+        
+        Task {
+            do {
+                let (host, _) = try await BonjourBrowser.resolve(endpoint)
+                
+                DispatchQueue.main.async {
+                    let alert = NSAlert()
+                    alert.messageText = NSLocalizedString("settings.remote.discovered.title", comment: "")
+                    alert.informativeText = String(format: NSLocalizedString("settings.remote.discovered.message", comment: ""), host)
+                    alert.addButton(withTitle: NSLocalizedString("settings.remote.discovered.action", comment: ""))
+                    alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
+                    
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        self.openSettings()
+                        NotificationCenter.default.post(name: NSNotification.Name("PreFillRemoteHost"), object: host)
+                    }
+                }
+            } catch {
+                print("Failed to resolve Bonjour endpoint: \(error)")
+            }
+        }
+    }
+    #endif
 
     @objc func newWindow() {
         _ = sessionManager.newSession()
@@ -358,8 +496,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         helpWindow?.orderOut(nil)
     }
 
-    // MARK: - History
-
     @objc func openHistory() {
         let session = sessionManager.activeSession() ?? sessionManager.newSession()
 
@@ -372,8 +508,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             session.viewModel.showHistoryPanel = true
         }
     }
-
-    // MARK: - Help
 
     @objc func openHelp() {
         NSApp.activate(ignoringOtherApps: true)
@@ -411,8 +545,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         setupWindowCloseObserver(for: window)
     }
-
-    // MARK: - Settings
 
     @objc func openSettings() {
         NSApp.activate(ignoringOtherApps: true)
@@ -473,7 +605,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // 监听子窗口关闭，强制主窗口夺回焦点
     private func setupWindowCloseObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
@@ -482,15 +613,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             guard let self = self else { return }
             guard let activeSession = self.sessionManager.activeSession() else { return }
-
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 activeSession.window.makeKey()
                 activeSession.viewModel.forceRestoreInputFocus()
             }
         }
     }
-
-    // MARK: - Clear History
 
     @objc func clearHistory() {
         CommandHistory.shared.clearAll()
@@ -502,8 +630,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: NSLocalizedString("button.ok", comment: "OK button"))
         alert.runModal()
     }
-
-    // MARK: - About
 
     @objc func openAbout() {
         if let existing = aboutWindow {
@@ -541,8 +667,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupWindowCloseObserver(for: window)
     }
 
-    // MARK: - Updates
-
     @objc func checkForUpdates() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -577,8 +701,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(AppSettings.customUpdateURL, forKey: "SUFeedURL")
         }
     }
-
-    // MARK: - Quit
 
     @objc func quitApp() {
         NSApp.terminate(nil)

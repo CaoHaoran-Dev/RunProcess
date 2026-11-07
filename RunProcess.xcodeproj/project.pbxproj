@@ -18,6 +18,10 @@
 		AD1515D73084B3E500073710 /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
+		AD79ED71309ED14200D6847D /* RemoteLinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED70309ED14200D6847D /* RemoteLinkKit */; settings = {ATTRIBUTES = (Weak, ); }; };
+		AD79ED73309ED14200D6847D /* RemoteProcessProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED72309ED14200D6847D /* RemoteProcessProtocol */; settings = {ATTRIBUTES = (Weak, ); }; };
+		AD79ED75309ED15000D6847D /* RemoteLinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED74309ED15000D6847D /* RemoteLinkKit */; settings = {ATTRIBUTES = (Weak, ); }; };
+		AD79ED77309ED15000D6847D /* RemoteProcessProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED76309ED15000D6847D /* RemoteProcessProtocol */; settings = {ATTRIBUTES = (Weak, ); }; };
 		AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
 		ADDC692930738CCB009B650E /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = ADDC692830738CCB009B650E /* Yams */; };
 		ADDC692C30738D21009B650E /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = ADDC692B30738D21009B650E /* KeyboardShortcuts */; };
@@ -109,8 +113,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				AD1515D03084B3E500073710 /* Sparkle in Frameworks */,
+				AD79ED77309ED15000D6847D /* RemoteProcessProtocol in Frameworks */,
 				AD1515D13084B3E500073710 /* Yams in Frameworks */,
 				AD1515D23084B3E500073710 /* KeyboardShortcuts in Frameworks */,
+				AD79ED75309ED15000D6847D /* RemoteLinkKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -119,8 +125,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				ADDC692F3073912F009B650E /* Sparkle in Frameworks */,
+				AD79ED73309ED14200D6847D /* RemoteProcessProtocol in Frameworks */,
 				ADDC692930738CCB009B650E /* Yams in Frameworks */,
 				ADDC692C30738D21009B650E /* KeyboardShortcuts in Frameworks */,
+				AD79ED71309ED14200D6847D /* RemoteLinkKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,6 +163,7 @@
 				AD682D59303E762B00A624CF /* RunProcessTests */,
 				AD17FC6C3035CC7A00A52CD6 /* Products */,
 				ADE1CFF3303C5B8E0099A9EC /* .github */,
+				AD79ED6F309ED14200D6847D /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -167,6 +176,13 @@
 				AD71287D30970B7800238EE5 /* RunProcessPreviewTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		AD79ED6F309ED14200D6847D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		ADE1CFF2303C5B8E0099A9EC /* workflows */ = {
@@ -210,6 +226,8 @@
 				AD1515C83084B3E500073710 /* Yams */,
 				AD1515CA3084B3E500073710 /* KeyboardShortcuts */,
 				AD1515CC3084B3E500073710 /* Sparkle */,
+				AD79ED74309ED15000D6847D /* RemoteLinkKit */,
+				AD79ED76309ED15000D6847D /* RemoteProcessProtocol */,
 			);
 			productName = RunProcess;
 			productReference = AD1515DC3084B3E500073710 /* RunProcess Preview.app */;
@@ -237,6 +255,8 @@
 				ADDC692830738CCB009B650E /* Yams */,
 				ADDC692B30738D21009B650E /* KeyboardShortcuts */,
 				ADDC692E3073912F009B650E /* Sparkle */,
+				AD79ED70309ED14200D6847D /* RemoteLinkKit */,
+				AD79ED72309ED14200D6847D /* RemoteProcessProtocol */,
 			);
 			productName = RunProcess;
 			productReference = AD17FC6B3035CC7A00A52CD6 /* RunProcess.app */;
@@ -326,6 +346,7 @@
 				ADDC692730738CCB009B650E /* XCRemoteSwiftPackageReference "Yams" */,
 				ADDC692A30738D21009B650E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				ADDC692D3073912F009B650E /* XCRemoteSwiftPackageReference "Sparkle" */,
+				AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = AD17FC6C3035CC7A00A52CD6 /* Products */;
@@ -495,7 +516,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = "3.6.0-Beta.1";
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess.beta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -533,7 +554,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = "3.6.0-Beta.1";
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess.beta;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -699,7 +720,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -737,7 +758,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 12.4;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 3.5.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.HaoranCao.RunProcess;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -917,6 +938,14 @@
 				minimumVersion = 2.10.0;
 			};
 		};
+		AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CaoHaoran-Dev/RemoteLinkKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		ADDC692730738CCB009B650E /* XCRemoteSwiftPackageReference "Yams" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/jpsim/Yams";
@@ -958,6 +987,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = AD1515CD3084B3E500073710 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		AD79ED70309ED14200D6847D /* RemoteLinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */;
+			productName = RemoteLinkKit;
+		};
+		AD79ED72309ED14200D6847D /* RemoteProcessProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */;
+			productName = RemoteProcessProtocol;
+		};
+		AD79ED74309ED15000D6847D /* RemoteLinkKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */;
+			productName = RemoteLinkKit;
+		};
+		AD79ED76309ED15000D6847D /* RemoteProcessProtocol */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AD79ED6E309ED10C00D6847D /* XCRemoteSwiftPackageReference "RemoteLinkKit" */;
+			productName = RemoteProcessProtocol;
 		};
 		ADDC692830738CCB009B650E /* Yams */ = {
 			isa = XCSwiftPackageProductDependency;

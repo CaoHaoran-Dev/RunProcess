@@ -19,6 +19,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
     case aliases
     #if BETA
     case workflows
+    case remote
     #endif
     case startup
     case updates
@@ -35,6 +36,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .aliases:    return NSLocalizedString("settings.category.aliases", comment: "")
         #if BETA
         case .workflows:  return NSLocalizedString("settings.category.workflows", comment: "")
+        case .remote:     return NSLocalizedString("settings.category.remote", comment: "")
         #endif
         case .startup:    return NSLocalizedString("settings.category.startup", comment: "")
         case .updates:    return NSLocalizedString("settings.category.updates", comment: "")
@@ -51,6 +53,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .aliases:    return "wand.and.stars"
         #if BETA
         case .workflows:  return "doc.text.fill"
+        case .remote:     return "server.rack"
         #endif
         case .startup:    return "power"
         case .updates:    return "arrow.triangle.2.circlepath"
@@ -67,6 +70,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .aliases:    return .purple
         #if BETA
         case .workflows:  return .blue
+        case .remote:     return .green
         #endif
         case .startup:    return .orange
         case .updates:    return .green
@@ -83,6 +87,7 @@ enum SettingsCategory: String, CaseIterable, Identifiable {
         case .aliases:    return NSLocalizedString("settings.aliases.subtitle", comment: "")
         #if BETA
         case .workflows:  return NSLocalizedString("settings.workflows.subtitle", comment: "")
+        case .remote:     return NSLocalizedString("settings.remote.subtitle", comment: "")
         #endif
         case .startup:    return NSLocalizedString("settings.startup.subtitle", comment: "")
         case .updates:    return NSLocalizedString("settings.updates.subtitle", comment: "")
@@ -183,6 +188,15 @@ struct SettingsView: View {
             case .aliases:    AliasesPane()
             #if BETA
             case .workflows:  WorkflowsPane()
+            case .remote:
+                if #available(macOS 13.0, *) {
+                    RemoteHostsPane()
+                } else {
+                    Text(NSLocalizedString("settings.remote.unsupported", comment: ""))
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding()
+                }
             #endif
             case .startup:    StartupPane()
             case .updates:    UpdatesPane()
