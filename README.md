@@ -2,7 +2,7 @@
 
 > A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
 
-> [English] · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
+> English · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
 
 ---
 

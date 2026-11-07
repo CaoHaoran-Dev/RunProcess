@@ -2,7 +2,7 @@
 
 > 给 macOS 做的“伪 Windows 运行框” —— 能跑真命令，有玻璃质感，常驻菜单栏
 
-> [English](../../README.md) · [简体中文] · [繁體中文](../zh-Hant/README.zh-Hant.md)
+> [English](../../README.md) · 简体中文 · [繁體中文](../zh-Hant/README.zh-Hant.md)
 
 ---
 

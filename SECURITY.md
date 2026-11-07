@@ -1,6 +1,6 @@
 # Security Policy
 
-> [English] · [简体中文](Docs/zh-Hans/SECURITY.zh-Hans.md) · [繁體中文](Docs/zh-Hant/SECURITY.zh-Hant.md)
+> English · [简体中文](Docs/zh-Hans/SECURITY.zh-Hans.md) · [繁體中文](Docs/zh-Hant/SECURITY.zh-Hant.md)
 
 ## Supported Versions
 

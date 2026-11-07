@@ -1,6 +1,6 @@
 # Contributing to RunProcess
 
-> [English] · [简体中文](Docs/zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](Docs/zh-Hant/CONTRIBUTING.zh-Hant.md)
+> English · [简体中文](Docs/zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](Docs/zh-Hant/CONTRIBUTING.zh-Hant.md)
 
 Thanks for your interest in improving RunProcess. This document describes how to report bugs, suggest features, and submit code.
 

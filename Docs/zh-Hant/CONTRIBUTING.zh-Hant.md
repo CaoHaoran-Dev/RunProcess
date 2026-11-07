@@ -1,6 +1,6 @@
 # 為 RunProcess 貢獻
 
-> [English](../../CONTRIBUTING.md) · [简体中文](../zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文]
+> [English](../../CONTRIBUTING.md) · [简体中文](../zh-Hans/CONTRIBUTING.zh-Hans.md) · 繁體中文
 
 感謝你願意改進 RunProcess。本文件說明如何回報 bug、提出需求、提交程式碼。
 

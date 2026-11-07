@@ -1,6 +1,6 @@
 # 安全策略
 
-> [English](../../SECURITY.md) · [简体中文] · [繁體中文](../zh-Hant/SECURITY.zh-Hant.md)
+> [English](../../SECURITY.md) · 简体中文 · [繁體中文](../zh-Hant/SECURITY.zh-Hant.md)
 
 ## 支持的版本
 
