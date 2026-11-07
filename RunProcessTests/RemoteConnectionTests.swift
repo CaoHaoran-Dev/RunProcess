@@ -56,11 +56,15 @@ final class RemoteConnectionTests: XCTestCase {
         await clientChannel.start()
         await serverChannel.start()
         
-        // 3. 测试：客户端发送命令，服务端接收
-        let expectation = XCTestExpectation(description: "Server received exec command")
         let commandId = UUID().uuidString
         let command = "echo 'RunProcess Test'"
         
+        // ==========================================
+        // 关键修复：先设置好两端的监听器，再发送命令
+        // ==========================================
+        
+        // 3. 设置服务端的监听
+        let serverExpectation = XCTestExpectation(description: "Server received exec command")
         await serverChannel.setOnClientMessage { msg in
             if case .exec(let id, let cmd, _) = msg {
                 XCTAssertEqual(id, commandId)
@@ -71,17 +75,11 @@ final class RemoteConnectionTests: XCTestCase {
                     try await serverChannel.send(.output(id: id, stream: .stdout, data: Data("RunProcess Test\n".utf8)))
                     try await serverChannel.send(.done(id: id, exit: 0, cwd: "/"))
                 }
-                expectation.fulfill()
+                serverExpectation.fulfill()
             }
         }
         
-        // 4. 客户端发送命令
-        try await clientChannel.send(.exec(id: commandId, cmd: command, timeout: 5.0))
-        
-        // 等待服务端接收（调大至 5 秒，防止 CI 运行缓慢超时）
-        await fulfillment(of: [expectation], timeout: 5.0)
-        
-        // 5. 验证客户端是否能成功解密接收到的返回数据
+        // 4. 设置客户端的监听（必须在发送前设置）
         let clientExpectation = XCTestExpectation(description: "Client received output")
         await clientChannel.setOnServerMessage { msg in
             switch msg {
@@ -95,8 +93,11 @@ final class RemoteConnectionTests: XCTestCase {
             }
         }
         
-        // 等待客户端处理完所有消息（调大至 5 秒）
-        await fulfillment(of: [clientExpectation], timeout: 5.0)
+        // 5. 客户端发送命令
+        try await clientChannel.send(.exec(id: commandId, cmd: command, timeout: 5.0))
+        
+        // 6. 等待两端都处理完成
+        await fulfillment(of: [serverExpectation, clientExpectation], timeout: 5.0)
     }
 }
-#endif // 👈 结束 BETA 宏
+#endif
