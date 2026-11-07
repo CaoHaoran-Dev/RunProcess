@@ -2,7 +2,7 @@
 
 > A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
 
-> [English](README.md) · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
+> [English] · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
 
 ---
 
@@ -92,8 +92,8 @@ Three appearance modes are available in **Settings → Appearance**:
 
 | Mode | Description | Availability |
 | :--- | :--- | :--- |
-| None | Solid system window background | macOS 12.4 and later |
-| Frosted Glass | `NSVisualEffectView` blur | macOS 12.4 and later |
+| None | Solid system window background | macOS 13.0 and later |
+| Frosted Glass | `NSVisualEffectView` blur | macOS 13.0 and later |
 | Liquid Glass | Native Liquid Glass material | macOS 26 and later |
 
 The default is Frosted Glass on macOS 15 and earlier, and Liquid Glass on macOS 26 and later. The Liquid Glass option is hidden on systems that do not support it.
@@ -264,7 +264,7 @@ RunProcess supports English, Simplified Chinese, and Traditional Chinese. To use
 
 ## Requirements
 
-- macOS 12.4 or later
+- macOS 13.0 or later
 - Apple Silicon or Intel
 
 ---
