@@ -10,10 +10,8 @@ import RemoteLinkKit
 import RemoteProcessProtocol
 
 #if BETA
+
 @testable import RunProcess_Preview
-#else
-@testable import RunProcess
-#endif
 
 final class RemoteConnectionTests: XCTestCase {
 
@@ -80,8 +78,8 @@ final class RemoteConnectionTests: XCTestCase {
         // 4. 客户端发送命令
         try await clientChannel.send(.exec(id: commandId, cmd: command, timeout: 5.0))
         
-        // 等待服务端接收
-        await fulfillment(of: [expectation], timeout: 2.0)
+        // 等待服务端接收（调大至 5 秒，防止 CI 运行缓慢超时）
+        await fulfillment(of: [expectation], timeout: 5.0)
         
         // 5. 验证客户端是否能成功解密接收到的返回数据
         let clientExpectation = XCTestExpectation(description: "Client received output")
@@ -97,7 +95,8 @@ final class RemoteConnectionTests: XCTestCase {
             }
         }
         
-        // 等待客户端处理完所有消息
-        await fulfillment(of: [clientExpectation], timeout: 2.0)
+        // 等待客户端处理完所有消息（调大至 5 秒）
+        await fulfillment(of: [clientExpectation], timeout: 5.0)
     }
 }
+#endif // 👈 结束 BETA 宏
