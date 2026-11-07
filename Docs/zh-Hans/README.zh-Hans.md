@@ -2,7 +2,7 @@
 
 > 给 macOS 做的“伪 Windows 运行框” —— 能跑真命令，有玻璃质感，常驻菜单栏
 
-> [English](../../README.md) · [简体中文] · [繁體中文](../zh-Hant/README.zh-Hant.md)
+> [English](../../README.md) · [简体中文](README.zh-Hans.md) · [繁體中文](../zh-Hant/README.zh-Hant.md)
 
 ---
 
@@ -94,8 +94,8 @@ B 站看多了“我修复了 Linux 运行框”的视频，手痒在 macOS 上�
 
 | 模式 | 说明 | 支持系统 |
 | :--- | :--- | :--- |
-| 无 | 系统窗口纯色背景 | macOS 13.0+ |
-| 毛玻璃 | `NSVisualEffectView` 模糊 | macOS 13.0+ |
+| 无 | 系统窗口纯色背景 | macOS 12.4+ |
+| 毛玻璃 | `NSVisualEffectView` 模糊 | macOS 12.4+ |
 | 液态玻璃 | 原生 Liquid Glass 材质 | macOS 26+ |
 
 macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不支持的系统上“液态玻璃”选项会被隐藏。
@@ -268,7 +268,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
 
 ## 系统要求
 
-macOS 13.0+，Apple Silicon / Intel 都行
+macOS 12.4+，Apple Silicon / Intel 都行
 
 ---
 

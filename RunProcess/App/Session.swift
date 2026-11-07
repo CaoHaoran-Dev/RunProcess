@@ -52,10 +52,8 @@ final class Session {
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
-        // 初始宽高：Lite 模式高度 56，经典模式 140
-        let initialHeight: CGFloat = (AppSettings.mainUIMode == .lite) ? 56 : 140
         let window = BorderlessWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: initialHeight),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -67,11 +65,27 @@ final class Session {
         if AppSettings.mainUIMode == .lite {
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
             window.isMovableByWindowBackground = true
+            window.setContentSize(NSSize(width: 600, height: 56))
             window.minSize = NSSize(width: 400, height: 56)
+
+            if let screen = NSScreen.main {
+                let screenRect = screen.visibleFrame
+                let x = screenRect.midX - 300
+                let y = screenRect.maxY - (screenRect.height / 4)
+                window.setFrameOrigin(NSPoint(x: x, y: y))
+            }
         } else {
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true
+            window.setContentSize(NSSize(width: 600, height: 140))
             window.minSize = NSSize(width: 520, height: 140)
+
+            if let screen = NSScreen.main {
+                let screenRect = screen.visibleFrame
+                let x = screenRect.midX - 300
+                let y = screenRect.maxY - (screenRect.height / 4)
+                window.setFrameOrigin(NSPoint(x: x, y: y))
+            }
         }
 
         window.isMovableByWindowBackground = true
@@ -127,38 +141,6 @@ final class Session {
         sudoAuth.revoke()
     }
 
-    // MARK: - Frame Calculation (Multi-Display Support)
-
-    static func calculateSafeFrame(screenRect: NSRect, windowWidth: CGFloat, windowHeight: CGFloat) -> NSRect {
-        var safeX = screenRect.midX - (windowWidth / 2)
-        var safeY = screenRect.maxY - (screenRect.height / 4) - (windowHeight / 2)
-        safeX = max(screenRect.minX + 20, min(safeX, screenRect.maxX - windowWidth - 20))
-        if safeY + windowHeight > screenRect.maxY - 40 { safeY = screenRect.maxY - 40 - windowHeight }
-        if safeY < screenRect.minY + 20 { safeY = screenRect.minY + 20 }
-        return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
-    }
-
-    func updateFrameForActiveScreen(forceCenter: Bool = false) {
-        let targetScreen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
-        guard let screen = targetScreen else { return }
-        
-        let screenRect = screen.visibleFrame
-        let currentFrame = window.frame
-        if !forceCenter && screenRect.contains(currentFrame) { return }
-        
-        let finalWidth: CGFloat = 600
-        let finalHeight = currentFrame.height > 0 ? currentFrame.height : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
-        let newFrame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: finalWidth, windowHeight: finalHeight)
-        
-        if window.isVisible {
-            window.setFrame(newFrame, display: true, animate: true)
-        } else {
-            window.setFrame(newFrame, display: false)
-        }
-    }
-
-    // MARK: - Window Management
-
     func setContentWidth(_ width: CGFloat, animated: Bool = true) {
         guard let contentView = window.contentView else { return }
         let currentWidth = contentView.frame.width
@@ -201,28 +183,8 @@ final class Session {
         }
     }
 
-    // MARK: - Execute (路由中心)
-
     private func execute(command: String, useSudo: Bool, password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
-        
-        #if BETA
-        if let hostId = viewModel.activeRemoteHostId,
-           let host = RemoteHostStore.shared.get(id: hostId) {
-            
-            Task {
-                do {
-                    let executor = RemoteExecutor()
-                    let output = try await executor.execute(command: command, on: host)
-                    DispatchQueue.main.async { completion(.success(output)) }
-                } catch {
-                    DispatchQueue.main.async { completion(.failure(error)) }
-                }
-            }
-            return
-        }
-        #endif
-
         if useSudo {
             guard let password = password else {
                 completion(.failure(NSError(domain: "RunProcess", code: -1, userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.sudo.missing.password", comment: "")])))
@@ -241,6 +203,7 @@ final class Session {
         }
     }
 
+    /// 用当前选中的 shell 执行（非会话模式路径）
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -253,6 +216,8 @@ final class Session {
         task.executableURL = URL(fileURLWithPath: shellPath)
         task.currentDirectoryURL = URL(fileURLWithPath: cwd)
 
+        // 仅 zsh 且开关开启时，在脚本里追加自定义 PATH。
+        // 用单引号包裹，并转义内部的 '，避免路径里的特殊字符被 shell 解释。
         var script = command
         if AppSettings.isZshShell && AppSettings.customPathEnabled {
             let extra = PathStore.shared.customPathString()
@@ -262,6 +227,7 @@ final class Session {
             }
         }
 
+        // 不设置 task.environment，继承父环境；用 -l 让 shell 加载用户配置补全 PATH
         task.arguments = ["-l", "-c", script]
         task.standardOutput = outPipe
         task.standardError = errPipe
@@ -360,28 +326,15 @@ final class Session {
         }
     }
 
-    func updateWindowTitle() {
-        var titleParts: [String] = [baseTitle]
-
-        #if BETA
-        if let hostId = viewModel.activeRemoteHostId,
-           let host = RemoteHostStore.shared.get(id: hostId) {
-            titleParts.append("🌐 \(host.name)")
-        }
-        #endif
-
-        if usesSessionMode {
-            let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
-            titleParts.append("— \(displayCWD)")
-        }
-
-        window.title = titleParts.joined(separator: " ")
+    private func updateWindowTitle() {
+        guard usesSessionMode else { window.title = baseTitle; return }
+        let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
+        window.title = "\(baseTitle) — \(displayCWD)"
     }
 
     func show() {
         hasShown = true
         window.makeKeyAndOrderFront(nil)
-        updateFrameForActiveScreen(forceCenter: false)
     }
 
     func hide() {

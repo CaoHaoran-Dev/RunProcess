@@ -21,11 +21,6 @@ class CommandViewModel: ObservableObject {
 
     @Published var pendingSudoRequest: Bool = false
 
-    #if BETA
-    /// 当前窗口绑定的远程主机 ID。nil 代表本地。
-    @Published var activeRemoteHostId: String? = nil
-    #endif
-
     var usesSessionMode: Bool = false
     weak var session: Session?
 
@@ -210,16 +205,14 @@ class CommandViewModel: ObservableObject {
         var processedCommand = CommandPreprocessor.process(inputText)
         processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
         
-        #if BETA
-        processedCommand = WorkflowStore.shared.expandWorkflow(in: processedCommand)
-        #endif
-        
+        // 👇 修改为调用 AliasStore 里的方法
         processedCommand = AliasStore.shared.expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
             inputText = processedCommand
         }
 
+        // 多行命令跳过交互式检查
         if !processedCommand.contains("\n") && CommandPreprocessor.isInteractive(processedCommand) {
             isRunning = false
             canCancel = false

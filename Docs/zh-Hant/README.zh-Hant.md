@@ -2,7 +2,7 @@
 
 > 一款具備半透明介面與選單列整合的 Spotlight 風格 macOS 指令啟動器。
 
-> [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · [繁體中文]
+> [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · [繁體中文](README.zh-Hant.md)
 
 ---
 
@@ -92,8 +92,8 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 | 模式 | 說明 | 支援情況 |
 | :--- | :--- | :--- |
-| 無 | 純色系統視窗背景 | macOS 13.0 及以上 |
-| 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 13.0 及以上 |
+| 無 | 純色系統視窗背景 | macOS 12.4 及以上 |
+| 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 12.4 及以上 |
 | 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26 及以上 |
 
 在 macOS 15 及更早版本中，預設為毛玻璃；在 macOS 26 及以上版本中，預設為液態玻璃。不支援的系統上會隱藏液態玻璃選項。
@@ -266,7 +266,7 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 ## 系統需求
 
-- macOS 13.0 或以上版本
+- macOS 12.4 或以上版本
 - Apple Silicon 或 Intel 處理器
 
 ---
@@ -286,6 +286,9 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 2. 將 `RunProcess.app` 移至您的 `Applications` 資料夾。
 
 > 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告（請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**）。此外，預覽版會將使用者資料存放在 `~/Library/Application Support/RunProcess-Beta/` 目錄下，與正式版互不影響。
+
+### Homebrew
+...
 
 ### Homebrew
 
