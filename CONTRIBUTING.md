@@ -1,6 +1,6 @@
 # Contributing to RunProcess
 
-> [English](CONTRIBUTING.md) · [简体中文](Docs/zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](Docs/zh-Hant/CONTRIBUTING.zh-Hant.md)
+> [English] · [简体中文](Docs/zh-Hans/CONTRIBUTING.zh-Hans.md) · [繁體中文](Docs/zh-Hant/CONTRIBUTING.zh-Hant.md)
 
 Thanks for your interest in improving RunProcess. This document describes how to report bugs, suggest features, and submit code.
 
@@ -110,6 +110,7 @@ The app launches as a menu bar accessory. Look for the ⚡ icon.
 Managed via Swift Package Manager:
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) – global hotkey
+- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) - Remote connection
 - [Sparkle](https://sparkle-project.org) – update delivery
 - [Yams](https://github.com/jpsim/Yams) – YAML parsing for aliases and history
 

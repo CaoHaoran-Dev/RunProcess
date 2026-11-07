@@ -21,6 +21,7 @@
 "button.copy" = "Copy";
 "button.selectAll" = "Select All";
 "button.copy.output" = "Copy Output";
+"button.remove" = "Remove";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -32,6 +33,9 @@
 "menu.check.updates" = "Check for Updates…";
 "menu.about" = "About RunProcess";
 "menu.quit" = "Quit";
+"menu.remote.title" = "Remote Connection";
+"menu.remote.local" = "Local";
+"menu.remote.discovered" = "Discovered Devices";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "Cleared";
@@ -63,6 +67,8 @@
 "error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
+"error.remote.missing.token" = "Pairing token not found locally.";
+"error.remote.timeout" = "Remote execution timed out.";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 Explanation: The command '%@' was not found. Check for typos, or make sure the tool is installed and in your PATH.";
@@ -86,6 +92,8 @@
 "settings.category.paths" = "Paths";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "Aliases";
+"settings.category.workflows" = "Workflows";
+"settings.category.remote" = "Remote";
 "settings.category.startup" = "Startup";
 "settings.category.updates" = "Updates";
 
@@ -96,6 +104,8 @@
 "settings.paths.subtitle" = "Set the default working directory and custom executable search paths.";
 "settings.sudo.subtitle" = "Configure root privilege execution.";
 "settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
+"settings.workflows.subtitle" = "Define multi-line scripts for one-click execution.";
+"settings.remote.subtitle" = "Manage and pair remote devices.";
 "settings.startup.subtitle" = "Control how RunProcess starts.";
 "settings.updates.subtitle" = "Manage automatic updates and version information.";
 
@@ -116,7 +126,7 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "Main Interface Style";
 "settings.appearance.uiMode.header" = "Interface Mode";
 "settings.appearance.uiMode.restartHint" = "Changes take effect in newly opened windows.";
@@ -144,7 +154,7 @@
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
 "settings.session.requiresZsh" = "Session mode requires zsh.";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "Add Custom Shell...";
@@ -190,6 +200,51 @@
 "settings.aliases.error.empty" = "Cannot be empty.";
 "settings.aliases.error.space" = "Short name cannot contain spaces.";
 "settings.aliases.error.duplicate" = "An alias with this name already exists.";
+
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "No workflows yet. Click Add Workflow to create one.";
+"settings.workflows.add" = "Add Workflow...";
+"settings.workflows.hint" = "Workflows contain multi-line commands. Type the trigger name in the input field to execute the script instantly.";
+"settings.workflows.delete.title" = "Delete Workflow?";
+"settings.workflows.delete.message" = "Delete \"%@\"? This cannot be undone.";
+
+"settings.workflows.add.title" = "New Workflow";
+"settings.workflows.edit.title" = "Edit Workflow";
+"settings.workflows.field.name" = "Trigger";
+"settings.workflows.field.description" = "Description (Optional)";
+"settings.workflows.field.description.placeholder" = "Deploy to production";
+"settings.workflows.field.commands" = "Execution Script";
+"settings.workflows.editor.hint" = "Type the trigger in the main window to execute this script.";
+
+"settings.workflows.error.empty" = "Cannot be empty.";
+"settings.workflows.error.space" = "Trigger cannot contain spaces.";
+"settings.workflows.error.duplicate" = "A workflow with this trigger already exists.";
+
+/* ========== Settings — Remote (Beta) ========== */
+"settings.remote.hostMode" = "Host Mode";
+"settings.remote.clients" = "Paired Clients";
+"settings.remote.noClients" = "No clients connected.";
+"settings.remote.paired" = "Paired";
+"settings.remote.pairingRequest" = "Pairing Request";
+"settings.remote.pairingCodeIs" = "Please enter this code on the requesting device: %@";
+"settings.remote.allowControl" = "Allow Remote Control";
+"settings.remote.allowControl.hint" = "When enabled, other devices can pair with this Mac and execute commands.";
+"settings.remote.empty" = "No remote hosts configured. Click Add Host to pair a device.";
+"settings.remote.add" = "Add Host...";
+"settings.remote.add.title" = "Pair Remote Host";
+"settings.remote.field.name" = "Name (Optional)";
+"settings.remote.field.host" = "IP Address";
+"settings.remote.field.code" = "6-digit Pairing Code";
+"settings.remote.pair" = "Pair";
+"settings.remote.pairing" = "Pairing...";
+"settings.remote.error.port" = "Invalid port format.";
+"settings.remote.devices" = "Paired Servers";
+"settings.remote.requestPairing" = "Request Pairing";
+"settings.remote.portNote" = "The pairing port (52732) is used automatically.";
+"settings.remote.codeHint" = "A 6-digit code should appear on the target device. Please enter it below.";
+"settings.remote.discovered.title" = "New Device Found";
+"settings.remote.discovered.message" = "Found device at %@. Go to settings to pair?";
+"settings.remote.discovered.action" = "Open Settings";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "Launch at Login";
