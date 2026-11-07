@@ -52,8 +52,10 @@ final class Session {
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
+        // 初始宽高：Lite 模式高度 56，经典模式 140
+        let initialHeight: CGFloat = (AppSettings.mainUIMode == .lite) ? 56 : 140
         let window = BorderlessWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: initialHeight),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -65,27 +67,11 @@ final class Session {
         if AppSettings.mainUIMode == .lite {
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
             window.isMovableByWindowBackground = true
-            window.setContentSize(NSSize(width: 600, height: 56))
             window.minSize = NSSize(width: 400, height: 56)
-
-            if let screen = NSScreen.main {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.midX - 300
-                let y = screenRect.maxY - (screenRect.height / 4)
-                window.setFrameOrigin(NSPoint(x: x, y: y))
-            }
         } else {
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true
-            window.setContentSize(NSSize(width: 600, height: 140))
             window.minSize = NSSize(width: 520, height: 140)
-
-            if let screen = NSScreen.main {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.midX - 300
-                let y = screenRect.maxY - (screenRect.height / 4)
-                window.setFrameOrigin(NSPoint(x: x, y: y))
-            }
         }
 
         window.isMovableByWindowBackground = true
@@ -141,6 +127,67 @@ final class Session {
         sudoAuth.revoke()
     }
 
+    // MARK: - Frame Calculation (Multi-Display Support)
+
+    /// 纯函数：计算窗口在指定屏幕可见区内的安全位置（固定宽度）
+    static func calculateSafeFrame(screenRect: NSRect, windowWidth: CGFloat, windowHeight: CGFloat) -> NSRect {
+        // 1. X 轴：始终水平居中
+        var safeX = screenRect.midX - (windowWidth / 2)
+        
+        // 2. Y 轴：距离顶部固定比例（约占屏幕可见高度的 1/4）
+        var safeY = screenRect.maxY - (screenRect.height / 4) - (windowHeight / 2)
+        
+        // 3. 边界兜底保护
+        // 保证左右不超出屏幕边缘
+        safeX = max(screenRect.minX + 20, min(safeX, screenRect.maxX - windowWidth - 20))
+        
+        // 保证顶部不贴死在菜单栏上（预留至少 40pt 的顶部空间）
+        if safeY + windowHeight > screenRect.maxY - 40 {
+            safeY = screenRect.maxY - 40 - windowHeight
+        }
+        
+        // 保证底部不会掉出屏幕
+        if safeY < screenRect.minY + 20 {
+            safeY = screenRect.minY + 20
+        }
+        
+        return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
+    }
+
+    /// 动态计算并应用窗口位置（严格的安全区保护，且锁定宽度）
+    func updateFrameForActiveScreen(forceCenter: Bool = false) {
+        let targetScreen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
+        guard let screen = targetScreen else { return }
+        
+        let screenRect = screen.visibleFrame
+        let currentFrame = window.frame
+        
+        // 如果不需要强制居中，且窗口已经完全在当前屏幕的安全区内，就保留用户手动拖拽的位置
+        if !forceCenter && screenRect.contains(currentFrame) {
+            return
+        }
+        
+        // 宽度固定为 600，高度保持当前高度（或者初始高度）
+        let finalWidth: CGFloat = 600
+        let finalHeight = currentFrame.height > 0 ? currentFrame.height : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        
+        // 调用纯函数计算安全 Frame
+        let newFrame = Session.calculateSafeFrame(
+            screenRect: screenRect,
+            windowWidth: finalWidth,
+            windowHeight: finalHeight
+        )
+        
+        // 增加一点点动画会让跨屏显得更平滑
+        if window.isVisible {
+            window.setFrame(newFrame, display: true, animate: true)
+        } else {
+            window.setFrame(newFrame, display: false)
+        }
+    }
+
+    // MARK: - Window Management
+
     func setContentWidth(_ width: CGFloat, animated: Bool = true) {
         guard let contentView = window.contentView else { return }
         let currentWidth = contentView.frame.width
@@ -183,6 +230,8 @@ final class Session {
         }
     }
 
+    // MARK: - Execution
+
     private func execute(command: String, useSudo: Bool, password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
         if useSudo {
@@ -203,7 +252,6 @@ final class Session {
         }
     }
 
-    /// 用当前选中的 shell 执行（非会话模式路径）
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -216,8 +264,6 @@ final class Session {
         task.executableURL = URL(fileURLWithPath: shellPath)
         task.currentDirectoryURL = URL(fileURLWithPath: cwd)
 
-        // 仅 zsh 且开关开启时，在脚本里追加自定义 PATH。
-        // 用单引号包裹，并转义内部的 '，避免路径里的特殊字符被 shell 解释。
         var script = command
         if AppSettings.isZshShell && AppSettings.customPathEnabled {
             let extra = PathStore.shared.customPathString()
@@ -227,7 +273,6 @@ final class Session {
             }
         }
 
-        // 不设置 task.environment，继承父环境；用 -l 让 shell 加载用户配置补全 PATH
         task.arguments = ["-l", "-c", script]
         task.standardOutput = outPipe
         task.standardError = errPipe
@@ -334,7 +379,12 @@ final class Session {
 
     func show() {
         hasShown = true
+        
+        // 关键修复：先显示窗口，让底层 Window Server 感知到它要在这个屏幕呈现
         window.makeKeyAndOrderFront(nil)
+        
+        // 显示后再平滑调整位置（如果不在目标屏幕内）
+        updateFrameForActiveScreen(forceCenter: false)
     }
 
     func hide() {

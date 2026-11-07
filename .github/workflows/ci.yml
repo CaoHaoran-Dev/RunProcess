@@ -7,7 +7,7 @@ on:
     branches: [ "main", "master", "dev" ]
     
 jobs:
-  # 单独抽出来的 Resolve 步骤，作为并行的前置依赖
+  # 单独抽出的 Resolve 步骤，作为并行的前置依赖
   resolve:
     runs-on: macos-26
     steps:
@@ -23,7 +23,7 @@ jobs:
           -project "RunProcess.xcodeproj" \
           -scheme "RunProcess"
 
-  # 依赖 resolve 成功后，才会并行分叉出 arm64 和 x86_64
+  # 依赖 resolve 成功后，并行跑 arm64 和 x86_64 的测试
   build-and-test:
     needs: resolve
     runs-on: macos-26
@@ -40,28 +40,21 @@ jobs:
     - name: Select Xcode 26
       run: sudo xcode-select -s "/Applications/Xcode_26.5.app"
 
-    # ================= ARM 或是 x86 都会先走这里 =================
-    - name: Build & Test (Release)
+    # ================= 跑正式版 (Release) 测试 =================
+    - name: Test (Release)
       run: |
         set -o pipefail
         
-        echo "==> Building Release for ${{ matrix.arch }}..."
-        xcodebuild build \
-          -project "RunProcess.xcodeproj" \
-          -scheme "RunProcess" \
-          -destination "platform=macOS,arch=${{ matrix.arch }}" \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
-
         echo "==> Testing Release for ${{ matrix.arch }}..."
         xcodebuild test \
           -project "RunProcess.xcodeproj" \
           -scheme "RunProcess" \
           -destination "platform=macOS,arch=${{ matrix.arch }}" \
           CODE_SIGNING_ALLOWED=NO \
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG RUNPROCESS_TEST" \
           | xcbeautify --renderer github-actions
 
-    # ================= 跑完 Release 后再跑 Preview =================
+    # ================= 跑预览版 (Preview/Beta) 测试 =================
     - name: Test (Preview/Beta)
       run: |
         set -o pipefail
@@ -72,4 +65,5 @@ jobs:
           -scheme "RunProcess Preview" \
           -destination "platform=macOS,arch=${{ matrix.arch }}" \
           CODE_SIGNING_ALLOWED=NO \
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS="BETA DEBUG RUNPROCESS_TEST" \
           | xcbeautify --renderer github-actions

@@ -252,8 +252,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 return nil
             }
 
-            // ⌘U 检查更新（不依赖 NSMenuItem.keyEquivalent，
-            // 因为 statusItem.menu 是临时赋值的，菜单关闭后 keyEquivalent 失效）
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "u" {
                 self.checkForUpdates()
@@ -485,7 +483,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self = self else { return }
             guard let activeSession = self.sessionManager.activeSession() else { return }
 
-            // 延迟一点点，等子窗口彻底从层级中移除
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 activeSession.window.makeKey()
                 activeSession.viewModel.forceRestoreInputFocus()
@@ -546,11 +543,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Updates
 
-    /// 菜单栏「检查更新」。绑定 ⌘U。
-    ///
-    /// 菜单栏应用（.accessory）点击菜单项时，Sparkle 的独立窗口可能不会弹出。
-    /// 参考 Sparkle 官方文档：需要临时切换到 .regular，让更新窗口能正常显示。
-    /// https://sparkle-project.org/documentation/gentle-reminders/
     @objc func checkForUpdates() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)

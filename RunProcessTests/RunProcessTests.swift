@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import AppKit
 
 // 根据编译条件，动态决定测试哪个 Target
 #if BETA
@@ -434,6 +435,59 @@ final class AliasExpansionTests: XCTestCase {
 
     func testExpandAliasEmptyStringUnchanged() {
         XCTAssertEqual(store.expandAlias(in: ""), "")
+    }
+}
+
+// MARK: - 多显示器定位测试 (虚拟显示器坐标验证)
+
+final class WindowPositionTests: XCTestCase {
+
+    // 模拟 1080P 屏幕 (扣除菜单栏和 Dock)
+    func test1080pScreenPositioning() {
+        let screenRect = NSRect(x: 0, y: 0, width: 1920, height: 985)
+        let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
+        
+        // 宽度固定
+        XCTAssertEqual(frame.width, 600)
+        // 水平居中
+        XCTAssertEqual(frame.minX, 660, accuracy: 0.01)
+        // 顶部防飞出
+        XCTAssertLessThanOrEqual(frame.maxY, 945)
+        // 底部防飞出
+        XCTAssertGreaterThanOrEqual(frame.minY, 0)
+    }
+
+    // 模拟 1280x800 副屏
+    func test1280x800ScreenPositioning() {
+        let screenRect = NSRect(x: 0, y: 0, width: 1280, height: 705)
+        let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
+        
+        XCTAssertEqual(frame.width, 600)
+        XCTAssertEqual(frame.minX, 340, accuracy: 0.01)
+        XCTAssertEqual(frame.minY, 458.75, accuracy: 0.01)
+        XCTAssertTrue(screenRect.contains(frame), "窗口超出了安全区")
+    }
+
+    // 模拟极小屏
+    func testTinyScreenPositioning() {
+        let screenRect = NSRect(x: 0, y: 0, width: 1024, height: 600)
+        let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
+        
+        XCTAssertEqual(frame.width, 600)
+        XCTAssertEqual(frame.minX, 212, accuracy: 0.01)
+        XCTAssertEqual(frame.minY, 380, accuracy: 0.01)
+        XCTAssertTrue(screenRect.contains(frame), "窗口超出了安全区")
+    }
+    
+    // 模拟副屏在主屏左侧（负坐标）
+    func testScreenWithNegativeXOrigin() {
+        // 假设 1080P 主屏在 0,0。副屏在主屏左边，X 为负数。
+        let screenRect = NSRect(x: -1920, y: 0, width: 1920, height: 1080)
+        let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
+        
+        XCTAssertEqual(frame.width, 600)
+        XCTAssertEqual(frame.minX, -1260, accuracy: 0.01)
+        XCTAssertTrue(screenRect.contains(frame), "窗口超出了负坐标副屏的安全区")
     }
 }
 
