@@ -6,6 +6,7 @@
 
 ---
 
+
 ## Overview
 
 RunProcess is a lightweight macOS application that provides a quick command execution interface inspired by the Windows Run dialog. It combines the power of a shell (`/bin/zsh` by default) with a polished, modern interface that remains accessible from the menu bar at all times.
