@@ -1,6 +1,6 @@
 # 为 RunProcess 做贡献
 
-> [English](../../CONTRIBUTING.md) · [简体中文](CONTRIBUTING.zh-Hans.md) · [繁體中文](../zh-Hant/CONTRIBUTING.zh-Hant.md)
+> [English](../../CONTRIBUTING.md) · [简体中文]) · [繁體中文](../zh-Hant/CONTRIBUTING.zh-Hant.md)
 
 感谢你愿意改进 RunProcess。本文档说明如何报 bug、提需求、提交代码。
 
@@ -110,6 +110,7 @@ open RunProcess.xcodeproj
 用 Swift Package Manager 管理：
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) —— 全局热键
+- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) - 远程连接
 - [Sparkle](https://sparkle-project.org) —— 更新分发
 - [Yams](https://github.com/jpsim/Yams) —— 别名和历史的 YAML 解析
 
