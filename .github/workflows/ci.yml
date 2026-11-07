@@ -5,6 +5,12 @@ on:
     branches: [ "main", "master", "dev" ]
   pull_request:
     branches: [ "main", "master", "dev" ]
+  workflow_dispatch: # 👈 允许在 GitHub Actions 页面手动点击运行
+
+# 并发控制：如果当前分支已经在跑 CI，再次推送时会取消旧的运行，只跑最新的
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
     
 jobs:
   # 单独抽出的 Resolve 步骤，作为并行的前置依赖
