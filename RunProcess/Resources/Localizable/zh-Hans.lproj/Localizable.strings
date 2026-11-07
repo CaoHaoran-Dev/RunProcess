@@ -86,6 +86,7 @@
 "settings.category.paths" = "路径";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "别名";
+"settings.category.workflows" = "工作流";
 "settings.category.startup" = "启动";
 "settings.category.updates" = "更新";
 
@@ -96,6 +97,7 @@
 "settings.paths.subtitle" = "设置默认工作目录和自定义可执行文件搜索路径。";
 "settings.sudo.subtitle" = "配置 root 权限执行。";
 "settings.aliases.subtitle" = "为常用命令定义快捷方式。";
+"settings.workflows.subtitle" = "为多行脚本定义一键执行的快捷方式。";
 "settings.startup.subtitle" = "控制 RunProcess 的启动方式。";
 "settings.updates.subtitle" = "管理自动更新和版本信息。";
 
@@ -116,7 +118,7 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液态玻璃";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "主界面样式";
 "settings.appearance.uiMode.header" = "界面模式";
 "settings.appearance.uiMode.restartHint" = "新打开的窗口才会生效。";
@@ -144,7 +146,7 @@
 "settings.session.new.window.hint" = "仅影响新打开的窗口。";
 "settings.session.requiresZsh" = "会话模式需要 zsh。";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "添加自定义 Shell...";
@@ -190,6 +192,25 @@
 "settings.aliases.error.empty" = "不能为空。";
 "settings.aliases.error.space" = "短名称不能包含空格。";
 "settings.aliases.error.duplicate" = "已存在同名的别名。";
+
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "还没有工作流。点击下方按钮添加一个。";
+"settings.workflows.add" = "添加工作流...";
+"settings.workflows.hint" = "工作流包含多行命令，在输入框输入其触发词即可直接执行。";
+"settings.workflows.delete.title" = "删除工作流？";
+"settings.workflows.delete.message" = "确定删除 \"%@\" 吗？此操作不可撤销。";
+
+"settings.workflows.add.title" = "新建工作流";
+"settings.workflows.edit.title" = "编辑工作流";
+"settings.workflows.field.name" = "触发词";
+"settings.workflows.field.description" = "描述 (可选)";
+"settings.workflows.field.description.placeholder" = "部署到生产环境";
+"settings.workflows.field.commands" = "执行脚本";
+"settings.workflows.editor.hint" = "在主输入框输入触发词，会直接执行这段多行脚本。";
+
+"settings.workflows.error.empty" = "不能为空。";
+"settings.workflows.error.space" = "触发词不能包含空格。";
+"settings.workflows.error.duplicate" = "已存在同名的工作流。";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "开机自启动";

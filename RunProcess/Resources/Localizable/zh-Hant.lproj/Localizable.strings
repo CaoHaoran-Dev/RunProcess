@@ -86,6 +86,7 @@
 "settings.category.paths" = "路徑";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "別名";
+"settings.category.workflows" = "工作流";
 "settings.category.startup" = "啟動";
 "settings.category.updates" = "更新";
 
@@ -96,6 +97,7 @@
 "settings.paths.subtitle" = "設定預設工作目錄與自訂可執行檔搜尋路徑。";
 "settings.sudo.subtitle" = "設定 root 權限執行。";
 "settings.aliases.subtitle" = "為常用指令定義快捷方式。";
+"settings.workflows.subtitle" = "為多行指令碼定義一鍵執行的快捷方式。";
 "settings.startup.subtitle" = "控制 RunProcess 的啟動方式。";
 "settings.updates.subtitle" = "管理自動更新與版本資訊。";
 
@@ -116,7 +118,7 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液態玻璃";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "主介面樣式";
 "settings.appearance.uiMode.header" = "介面模式";
 "settings.appearance.uiMode.restartHint" = "新開啟的視窗才會生效。";
@@ -144,7 +146,7 @@
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
 "settings.session.requiresZsh" = "工作階段模式需要 zsh。";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "新增自訂 Shell...";
@@ -190,6 +192,25 @@
 "settings.aliases.error.empty" = "不能為空。";
 "settings.aliases.error.space" = "短名稱不能包含空格。";
 "settings.aliases.error.duplicate" = "已存在同名的別名。";
+
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "還沒有工作流。點擊下方按鈕新增一個。";
+"settings.workflows.add" = "新增工作流...";
+"settings.workflows.hint" = "工作流包含多行指令，在輸入框輸入其觸發詞即可直接執行。";
+"settings.workflows.delete.title" = "刪除工作流？";
+"settings.workflows.delete.message" = "確定刪除 \"%@\" 嗎？此操作無法復原。";
+
+"settings.workflows.add.title" = "新增工作流";
+"settings.workflows.edit.title" = "編輯工作流";
+"settings.workflows.field.name" = "觸發詞";
+"settings.workflows.field.description" = "描述 (可選)";
+"settings.workflows.field.description.placeholder" = "部署到生產環境";
+"settings.workflows.field.commands" = "執行指令碼";
+"settings.workflows.editor.hint" = "在主輸入框輸入觸發詞，會直接執行這段多行指令碼。";
+
+"settings.workflows.error.empty" = "不能為空。";
+"settings.workflows.error.space" = "觸發詞不能包含空格。";
+"settings.workflows.error.duplicate" = "已存在同名的工作流。";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "開機自動啟動";

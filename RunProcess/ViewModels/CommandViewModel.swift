@@ -205,7 +205,10 @@ class CommandViewModel: ObservableObject {
         var processedCommand = CommandPreprocessor.process(inputText)
         processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
         
-        // 👇 修改为调用 AliasStore 里的方法
+        #if BETA
+        processedCommand = WorkflowStore.shared.expandWorkflow(in: processedCommand)
+        #endif
+        
         processedCommand = AliasStore.shared.expandAlias(in: processedCommand)
 
         if processedCommand != inputText {

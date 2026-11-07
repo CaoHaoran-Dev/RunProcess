@@ -298,6 +298,15 @@ final class SuggestionTests: XCTestCase {
         XCTAssertGreaterThan(history.priority, command.priority)
         XCTAssertGreaterThan(command.priority, path.priority)
     }
+    
+    #if BETA
+    func testWorkflowHasHighestPriority() {
+        let workflow = Suggestion(text: "deploy", type: .workflow)
+        let alias = Suggestion(text: "deploy", type: .alias)
+        
+        XCTAssertGreaterThan(workflow.priority, alias.priority)
+    }
+    #endif
 
     func testHistoryCountClampedInPriority() {
         let low = Suggestion(text: "x", type: .history, historyCount: -5)
@@ -312,6 +321,10 @@ final class SuggestionTests: XCTestCase {
         XCTAssertEqual(Suggestion.SuggestionType.history.iconName, "clock.arrow.circlepath")
         XCTAssertEqual(Suggestion.SuggestionType.command.iconName, "terminal")
         XCTAssertEqual(Suggestion.SuggestionType.path.iconName, "folder")
+        
+        #if BETA
+        XCTAssertEqual(Suggestion.SuggestionType.workflow.iconName, "doc.text.fill")
+        #endif
     }
 }
 
@@ -438,8 +451,63 @@ final class AliasExpansionTests: XCTestCase {
     }
 }
 
-// MARK: - 多显示器定位测试 (虚拟显示器坐标验证)
+// MARK: - WorkflowStore (仅 Preview)
 
+#if BETA
+final class WorkflowStoreTests: XCTestCase {
+
+    private let store = WorkflowStore.shared
+    private let testName = "__rp_test_workflow__"
+
+    override func setUp() {
+        super.setUp()
+        store.remove(name: testName)
+    }
+
+    override func tearDown() {
+        store.remove(name: testName)
+        super.tearDown()
+    }
+
+    func testAddAndGetWorkflow() {
+        let workflow = Workflow(name: testName, commands: "echo 1\necho 2", description: "Test")
+        store.add(workflow)
+        
+        let fetched = store.get(name: testName)
+        XCTAssertNotNil(fetched)
+        XCTAssertEqual(fetched?.commands, "echo 1\necho 2")
+        XCTAssertEqual(fetched?.description, "Test")
+    }
+
+    func testMatchPrefix() {
+        let workflow = Workflow(name: testName, commands: "ls")
+        store.add(workflow)
+        
+        let matches = store.match(prefix: "__rp_test")
+        XCTAssertTrue(matches.contains { $0.name == testName })
+    }
+
+    func testExpandWorkflowReplacesFirstToken() {
+        let workflow = Workflow(name: testName, commands: "echo 1\necho 2")
+        store.add(workflow)
+        
+        XCTAssertEqual(store.expandWorkflow(in: testName), "echo 1\necho 2")
+    }
+
+    func testExpandWorkflowUnknownTokenUnchanged() {
+        let input = "definitely-not-a-workflow"
+        XCTAssertEqual(store.expandWorkflow(in: input), input)
+    }
+
+    func testExpandWorkflowEmptyStringUnchanged() {
+        XCTAssertEqual(store.expandWorkflow(in: ""), "")
+    }
+}
+#endif
+
+// MARK: - 多显示器定位测试 (仅 Preview)
+
+#if BETA
 final class WindowPositionTests: XCTestCase {
 
     // 模拟 1080P 屏幕 (扣除菜单栏和 Dock)
@@ -447,13 +515,9 @@ final class WindowPositionTests: XCTestCase {
         let screenRect = NSRect(x: 0, y: 0, width: 1920, height: 985)
         let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
         
-        // 宽度固定
         XCTAssertEqual(frame.width, 600)
-        // 水平居中
         XCTAssertEqual(frame.minX, 660, accuracy: 0.01)
-        // 顶部防飞出
         XCTAssertLessThanOrEqual(frame.maxY, 945)
-        // 底部防飞出
         XCTAssertGreaterThanOrEqual(frame.minY, 0)
     }
 
@@ -481,7 +545,6 @@ final class WindowPositionTests: XCTestCase {
     
     // 模拟副屏在主屏左侧（负坐标）
     func testScreenWithNegativeXOrigin() {
-        // 假设 1080P 主屏在 0,0。副屏在主屏左边，X 为负数。
         let screenRect = NSRect(x: -1920, y: 0, width: 1920, height: 1080)
         let frame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: 600, windowHeight: 140)
         
@@ -490,6 +553,7 @@ final class WindowPositionTests: XCTestCase {
         XCTAssertTrue(screenRect.contains(frame), "窗口超出了负坐标副屏的安全区")
     }
 }
+#endif
 
 // MARK: - 版本特定测试 (条件编译)
 
@@ -521,7 +585,6 @@ final class AppEnvironmentTests: XCTestCase {
     }
     #endif
 
-    // 两个版本共用的断言
     func testShellDefaultsToZsh() {
         XCTAssertEqual(AppSettings.resolvedShellPath, "/bin/zsh")
         XCTAssertTrue(AppSettings.isZshShell)

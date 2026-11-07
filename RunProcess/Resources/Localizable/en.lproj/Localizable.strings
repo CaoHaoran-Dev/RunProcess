@@ -86,6 +86,7 @@
 "settings.category.paths" = "Paths";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "Aliases";
+"settings.category.workflows" = "Workflows";
 "settings.category.startup" = "Startup";
 "settings.category.updates" = "Updates";
 
@@ -96,6 +97,7 @@
 "settings.paths.subtitle" = "Set the default working directory and custom executable search paths.";
 "settings.sudo.subtitle" = "Configure root privilege execution.";
 "settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
+"settings.workflows.subtitle" = "Define multi-line scripts for one-click execution.";
 "settings.startup.subtitle" = "Control how RunProcess starts.";
 "settings.updates.subtitle" = "Manage automatic updates and version information.";
 
@@ -116,7 +118,7 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "Main Interface Style";
 "settings.appearance.uiMode.header" = "Interface Mode";
 "settings.appearance.uiMode.restartHint" = "Changes take effect in newly opened windows.";
@@ -144,7 +146,7 @@
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
 "settings.session.requiresZsh" = "Session mode requires zsh.";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "Add Custom Shell...";
@@ -190,6 +192,25 @@
 "settings.aliases.error.empty" = "Cannot be empty.";
 "settings.aliases.error.space" = "Short name cannot contain spaces.";
 "settings.aliases.error.duplicate" = "An alias with this name already exists.";
+
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "No workflows yet. Click Add Workflow to create one.";
+"settings.workflows.add" = "Add Workflow...";
+"settings.workflows.hint" = "Workflows contain multi-line commands. Type the trigger name in the input field to execute the script instantly.";
+"settings.workflows.delete.title" = "Delete Workflow?";
+"settings.workflows.delete.message" = "Delete \"%@\"? This cannot be undone.";
+
+"settings.workflows.add.title" = "New Workflow";
+"settings.workflows.edit.title" = "Edit Workflow";
+"settings.workflows.field.name" = "Trigger";
+"settings.workflows.field.description" = "Description (Optional)";
+"settings.workflows.field.description.placeholder" = "Deploy to production";
+"settings.workflows.field.commands" = "Execution Script";
+"settings.workflows.editor.hint" = "Type the trigger in the main window to execute this script.";
+
+"settings.workflows.error.empty" = "Cannot be empty.";
+"settings.workflows.error.space" = "Trigger cannot contain spaces.";
+"settings.workflows.error.duplicate" = "A workflow with this trigger already exists.";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "Launch at Login";
