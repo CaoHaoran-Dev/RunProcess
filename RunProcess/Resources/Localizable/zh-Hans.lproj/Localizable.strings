@@ -21,7 +21,6 @@
 "button.copy" = "拷贝";
 "button.selectAll" = "全选";
 "button.copy.output" = "复制输出";
-"button.remove" = "移除";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
@@ -33,9 +32,6 @@
 "menu.check.updates" = "检查更新…";
 "menu.about" = "关于 RunProcess";
 "menu.quit" = "退出";
-"menu.remote.title" = "远程连接";
-"menu.remote.local" = "本地";
-"menu.remote.discovered" = "发现的新设备";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
@@ -67,8 +63,6 @@
 "error.sudo.wrong.password" = "密码错误，请检查后重试。";
 "error.sudo.missing.password" = "sudo 命令需要密码。";
 "error.exit.code" = "命令执行失败（退出码：%ld）";
-"error.remote.missing.token" = "本地未找到配对凭证 (Token)。";
-"error.remote.timeout" = "远程执行超时";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 解释：找不到命令 '%@'。请检查拼写，或确保工具已安装并包含在 PATH 中。";
@@ -92,8 +86,6 @@
 "settings.category.paths" = "路径";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "别名";
-"settings.category.workflows" = "工作流";
-"settings.category.remote" = "远程";
 "settings.category.startup" = "启动";
 "settings.category.updates" = "更新";
 
@@ -104,8 +96,6 @@
 "settings.paths.subtitle" = "设置默认工作目录和自定义可执行文件搜索路径。";
 "settings.sudo.subtitle" = "配置 root 权限执行。";
 "settings.aliases.subtitle" = "为常用命令定义快捷方式。";
-"settings.workflows.subtitle" = "为多行脚本定义一键执行的快捷方式。";
-"settings.remote.subtitle" = "管理和配对你的远程设备。";
 "settings.startup.subtitle" = "控制 RunProcess 的启动方式。";
 "settings.updates.subtitle" = "管理自动更新和版本信息。";
 
@@ -126,7 +116,7 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液态玻璃";
 
-/* ========== Settings — Interface Mode ========== */
+/* ========== Settings — Interface Mode (Beta) ========== */
 "settings.appearance.uiMode" = "主界面样式";
 "settings.appearance.uiMode.header" = "界面模式";
 "settings.appearance.uiMode.restartHint" = "新打开的窗口才会生效。";
@@ -154,7 +144,7 @@
 "settings.session.new.window.hint" = "仅影响新打开的窗口。";
 "settings.session.requiresZsh" = "会话模式需要 zsh。";
 
-/* ========== Settings — Shell ========== */
+/* ========== Settings — Shell (Beta) ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "添加自定义 Shell...";
@@ -200,51 +190,6 @@
 "settings.aliases.error.empty" = "不能为空。";
 "settings.aliases.error.space" = "短名称不能包含空格。";
 "settings.aliases.error.duplicate" = "已存在同名的别名。";
-
-/* ========== Settings — Workflows (Beta) ========== */
-"settings.workflows.empty" = "还没有工作流。点击下方按钮添加一个。";
-"settings.workflows.add" = "添加工作流...";
-"settings.workflows.hint" = "工作流包含多行命令，在输入框输入其触发词即可直接执行。";
-"settings.workflows.delete.title" = "删除工作流？";
-"settings.workflows.delete.message" = "确定删除 \"%@\" 吗？此操作不可撤销。";
-
-"settings.workflows.add.title" = "新建工作流";
-"settings.workflows.edit.title" = "编辑工作流";
-"settings.workflows.field.name" = "触发词";
-"settings.workflows.field.description" = "描述 (可选)";
-"settings.workflows.field.description.placeholder" = "部署到生产环境";
-"settings.workflows.field.commands" = "执行脚本";
-"settings.workflows.editor.hint" = "在主输入框输入触发词，会直接执行这段多行脚本。";
-
-"settings.workflows.error.empty" = "不能为空。";
-"settings.workflows.error.space" = "触发词不能包含空格。";
-"settings.workflows.error.duplicate" = "已存在同名的工作流。";
-
-/* ========== Settings — Remote (Beta) ========== */
-"settings.remote.hostMode" = "主机模式";
-"settings.remote.clients" = "已配对的客户端";
-"settings.remote.noClients" = "暂无客户端连接。";
-"settings.remote.paired" = "已配对";
-"settings.remote.pairingRequest" = "配对请求";
-"settings.remote.pairingCodeIs" = "请在请求的设备上输入此验证码：%@";
-"settings.remote.allowControl" = "允许远程控制";
-"settings.remote.allowControl.hint" = "开启后，其他设备可以与此 Mac 配对并执行命令。";
-"settings.remote.empty" = "还没有远程主机。点击「添加主机」进行配对。";
-"settings.remote.add" = "添加主机...";
-"settings.remote.add.title" = "配对远程主机";
-"settings.remote.field.name" = "名称 (可选)";
-"settings.remote.field.host" = "IP 地址";
-"settings.remote.field.code" = "6 位配对码";
-"settings.remote.pair" = "配对";
-"settings.remote.pairing" = "配对中...";
-"settings.remote.error.port" = "端口格式错误。";
-"settings.remote.devices" = "已配对的主机";
-"settings.remote.requestPairing" = "请求配对";
-"settings.remote.portNote" = "配对时将在后台自动使用 52732 端口。";
-"settings.remote.codeHint" = "目标设备上已弹出 6 位验证码，请在下方输入。";
-"settings.remote.discovered.title" = "发现新设备";
-"settings.remote.discovered.message" = "在 %@ 发现了一台开启远程控制的设备，是否前往设置配对？";
-"settings.remote.discovered.action" = "前往设置";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "开机自启动";

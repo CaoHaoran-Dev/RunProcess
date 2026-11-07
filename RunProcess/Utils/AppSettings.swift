@@ -49,15 +49,19 @@ enum MainUIMode: String, CaseIterable {
 enum AppSettings {
 
     // MARK: - Key Prefix
+    //
+    // 正式版与 Beta 版共用同一套 UserDefaults，但 key 按 target 加前缀隔离，
+    // 保证两版的偏好设置互不干扰。
+    //   - 正式版：无前缀
+    //   - Beta  ："beta." 前缀
 
     private static var keyPrefix: String {
-        if AppEnvironment.isTest { return "test." }
-        if AppEnvironment.isBeta { return "beta." }
-        return ""
+        AppEnvironment.isBeta ? "beta." : ""
     }
 
     // MARK: - Update Channel
 
+    /// 更新源通道
     enum UpdateChannel: String, CaseIterable {
         case github
         case cloudflare
@@ -94,11 +98,6 @@ enum AppSettings {
         // Shell 与自定义 PATH 注入
         static var shellPath: String               { keyPrefix + "shell.path" }
         static var customPathEnabled: String       { keyPrefix + "paths.customEnabled" }
-
-        // 远程控制
-        #if BETA
-        static var allowRemoteControl: String      { keyPrefix + "remote.allowControl" }
-        #endif
     }
 
     private static let defaults = UserDefaults.standard
@@ -117,6 +116,7 @@ enum AppSettings {
 
     // MARK: - Shell
 
+    /// 当前选择的 shell 绝对路径。默认 /bin/zsh。
     static var shellPathRaw: String {
         get {
             let raw = defaults.string(forKey: Keys.shellPath) ?? ""
@@ -125,6 +125,7 @@ enum AppSettings {
         set { defaults.set(newValue, forKey: Keys.shellPath) }
     }
 
+    /// 生效的 shell 路径（若文件不存在回退到 /bin/zsh）
     static var resolvedShellPath: String {
         let raw = shellPathRaw
         if FileManager.default.isExecutableFile(atPath: raw) {
@@ -133,6 +134,7 @@ enum AppSettings {
         return "/bin/zsh"
     }
 
+    /// 当前选择的是否为 zsh（会话模式与 PATH 注入仅 zsh 可用）
     static var isZshShell: Bool {
         (resolvedShellPath as NSString).lastPathComponent == "zsh"
     }
@@ -141,6 +143,7 @@ enum AppSettings {
 
     static var sessionModeEnabled: Bool {
         get {
+            // 非 zsh 强制关闭
             guard isZshShell else { return false }
             return defaults.bool(forKey: Keys.sessionModeEnabled)
         }
@@ -292,6 +295,8 @@ enum AppSettings {
 
     // MARK: - 自定义 PATH 注入
 
+    /// 是否把 PathStore 里的自定义路径追加到子进程 PATH。
+    /// 仅 zsh 可用；非 zsh 强制关闭。
     static var customPathEnabled: Bool {
         get {
             guard isZshShell else { return false }
@@ -308,7 +313,7 @@ enum AppSettings {
     static var updateChannel: UpdateChannel {
         get {
             let raw = defaults.string(forKey: Keys.updateChannel) ?? ""
-            return UpdateChannel(rawValue: raw) ?? .github
+            return UpdateChannel(rawValue: raw) ?? .github // 默认 GitHub
         }
         set { defaults.set(newValue.rawValue, forKey: Keys.updateChannel) }
     }
@@ -317,25 +322,4 @@ enum AppSettings {
         get { defaults.string(forKey: Keys.customUpdateURL) ?? "" }
         set { defaults.set(newValue, forKey: Keys.customUpdateURL) }
     }
-
-    // MARK: - 远程控制
-
-    #if BETA
-    static var allowRemoteControl: Bool {
-        get {
-            if defaults.object(forKey: Keys.allowRemoteControl) == nil {
-                return false
-            }
-            return defaults.bool(forKey: Keys.allowRemoteControl)
-        }
-        set {
-            defaults.set(newValue, forKey: Keys.allowRemoteControl)
-            if newValue {
-                RemoteServerManager.shared.start()
-            } else {
-                RemoteServerManager.shared.stop()
-            }
-        }
-    }
-    #endif
 }
