@@ -50,13 +50,15 @@ enum AppSettings {
 
     // MARK: - Key Prefix
     //
-    // 正式版与 Beta 版共用同一套 UserDefaults，但 key 按 target 加前缀隔离，
-    // 保证两版的偏好设置互不干扰。
+    // 正式版与 Beta/Test 版共用同一套 UserDefaults，但 key 按 target 加前缀隔离：
     //   - 正式版：无前缀
-    //   - Beta  ："beta." 前缀
+    //   - Beta / Preview：  "beta." 前缀
+    //   - 测试构建：        "test." 前缀
 
     private static var keyPrefix: String {
-        AppEnvironment.isBeta ? "beta." : ""
+        if AppEnvironment.isTest { return "test." }
+        if AppEnvironment.isBeta { return "beta." }
+        return ""
     }
 
     // MARK: - Update Channel

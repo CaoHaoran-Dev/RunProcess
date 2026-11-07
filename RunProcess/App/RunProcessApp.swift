@@ -245,21 +245,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.openHistory()
                 return nil
             }
-            
+
             if flags == .command,
                event.charactersIgnoringModifiers == "/" {
                 self.openHelp()
                 return nil
             }
 
-            if flags == .command,
-               event.charactersIgnoringModifiers?.lowercased() == "u" {
-                self.checkForUpdates()
-                return nil
-            }
-
-            // ✅ ⌘U 检查更新（不依赖 NSMenuItem.keyEquivalent，
-            //    因为 statusItem.menu 是临时赋值的，菜单关闭后 keyEquivalent 失效）
+            // ⌘U 检查更新（不依赖 NSMenuItem.keyEquivalent，
+            // 因为 statusItem.menu 是临时赋值的，菜单关闭后 keyEquivalent 失效）
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "u" {
                 self.checkForUpdates()
@@ -481,7 +475,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // 👇 新增：监听子窗口关闭，强制主窗口夺回焦点
+    // 监听子窗口关闭，强制主窗口夺回焦点
     private func setupWindowCloseObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
@@ -490,7 +484,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             guard let self = self else { return }
             guard let activeSession = self.sessionManager.activeSession() else { return }
-            
+
             // 延迟一点点，等子窗口彻底从层级中移除
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 activeSession.window.makeKey()

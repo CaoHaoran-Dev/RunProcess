@@ -446,11 +446,11 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testPreviewAppSupportFolderName() {
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta")
+        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
     }
 
     func testPreviewCustomPathEnabledDefaultsTrue() {
-        UserDefaults.standard.removeObject(forKey: "paths.customEnabled")
+        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.customPathEnabled)
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #else
@@ -466,10 +466,21 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #endif
-    
+
     // 两个版本共用的断言
     func testShellDefaultsToZsh() {
         XCTAssertEqual(AppSettings.resolvedShellPath, "/bin/zsh")
         XCTAssertTrue(AppSettings.isZshShell)
     }
+
+    #if RUNPROCESS_TEST
+    func testTestEnvironmentFolderName() {
+        XCTAssertTrue(AppEnvironment.isTest)
+        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
+    }
+
+    func testTestKeyPrefixIsIsolated() {
+        XCTAssertTrue(AppSettings.Keys.sessionModeEnabled.hasPrefix("test."))
+    }
+    #endif
 }
