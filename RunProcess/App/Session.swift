@@ -7,7 +7,6 @@
 
 internal import AppKit
 import SwiftUI
-import QuartzCore
 
 class BorderlessWindow: NSWindow {
     override var canBecomeKey: Bool { true }
@@ -138,28 +137,52 @@ final class Session {
         return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
     }
 
-    func updateFrameForActiveScreen(forceCenter: Bool = false) {
-        let targetScreen = NSScreen.screens.first { NSMouseInRect(NSEvent.mouseLocation, $0.frame, false) } ?? NSScreen.main
-        guard let screen = targetScreen else { return }
-        
+    /// 鼠标当前所在的屏幕；找不到则回退到主屏。
+    static func screenUnderMouse() -> NSScreen? {
+        NSScreen.screens.first {
+            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+        } ?? NSScreen.main
+    }
+
+    /// 把窗口放到指定屏幕（无动画）。
+    private func placeWindow(on screen: NSScreen?) {
+        guard let screen = screen else { return }
         let screenRect = screen.visibleFrame
-        let currentFrame = window.frame
-        if !forceCenter && screenRect.contains(currentFrame) { return }
-        
-        let finalWidth: CGFloat = 600
-        let finalHeight = currentFrame.height > 0 ? currentFrame.height : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
-        let newFrame = Session.calculateSafeFrame(screenRect: screenRect, windowWidth: finalWidth, windowHeight: finalHeight)
-        
-        if window.isVisible {
-            window.setFrame(newFrame, display: true, animate: true)
-        } else {
-            window.setFrame(newFrame, display: false)
-        }
+        let height = window.frame.height > 0
+            ? window.frame.height
+            : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        let newFrame = Session.calculateSafeFrame(
+            screenRect: screenRect,
+            windowWidth: 600,
+            windowHeight: height
+        )
+        window.setFrame(newFrame, display: false)
+    }
+
+    /// 新建 / 首次显示：落在鼠标当前所在屏幕（焦点屏）。
+    private func placeOnFocusScreenOnCreate() {
+        placeWindow(on: Session.screenUnderMouse())
+    }
+
+    /// 从隐藏状态唤醒：跟随鼠标所在屏幕（已在目标屏则不动）。
+    private func moveToFocusScreenOnWake() {
+        guard let screen = Session.screenUnderMouse() else { return }
+        if screen.visibleFrame.contains(window.frame) { return }
+        let screenRect = screen.visibleFrame
+        let height = window.frame.height > 0
+            ? window.frame.height
+            : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        let newFrame = Session.calculateSafeFrame(
+            screenRect: screenRect,
+            windowWidth: 600,
+            windowHeight: height
+        )
+        window.setFrame(newFrame, display: true)
     }
 
     // MARK: - Window Management
 
-    func setContentWidth(_ width: CGFloat, animated: Bool = true) {
+    func setContentWidth(_ width: CGFloat) {
         guard let contentView = window.contentView else { return }
         let currentWidth = contentView.frame.width
         guard abs(currentWidth - width) > 1 else { return }
@@ -168,19 +191,10 @@ final class Session {
         let delta = width - currentWidth
         frame.size.width += delta
         frame.origin.x -= delta / 2
-
-        if animated {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.18
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                window.animator().setFrame(frame, display: true)
-            }
-        } else {
-            window.setFrame(frame, display: true)
-        }
+        window.setFrame(frame, display: true)
     }
 
-    func setContentHeight(_ height: CGFloat, animated: Bool = true) {
+    func setContentHeight(_ height: CGFloat) {
         guard let contentView = window.contentView else { return }
         let currentHeight = contentView.frame.height
         guard abs(currentHeight - height) > 1 else { return }
@@ -189,16 +203,7 @@ final class Session {
         let delta = height - currentHeight
         frame.size.height += delta
         frame.origin.y -= delta
-
-        if animated {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.18
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                window.animator().setFrame(frame, display: true)
-            }
-        } else {
-            window.setFrame(frame, display: true)
-        }
+        window.setFrame(frame, display: true)
     }
 
     // MARK: - Execute (路由中心)
@@ -378,10 +383,18 @@ final class Session {
         window.title = titleParts.joined(separator: " ")
     }
 
-    func show() {
+    /// - Parameter isWake: true 表示从隐藏状态恢复；false 表示新建 / 首次显示。
+    func show(isWake: Bool = false) {
+        let wasShown = hasShown
         hasShown = true
+
+        if !wasShown {
+            placeOnFocusScreenOnCreate()
+        } else if isWake {
+            moveToFocusScreenOnWake()
+        }
+
         window.makeKeyAndOrderFront(nil)
-        updateFrameForActiveScreen(forceCenter: false)
     }
 
     func hide() {

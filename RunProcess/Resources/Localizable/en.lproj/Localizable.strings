@@ -47,6 +47,7 @@
 "hint.history.navigation" = "Up/Down History";
 "hint.hide.window" = "Cmd+W Hide";
 "hint.shift.enter" = "Shift+Enter Newline";
+"hint.option.enter.sudo" = "Option + Return to run as root";
 
 /* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "Administrator Privileges Required";
@@ -277,6 +278,7 @@
 "history.hint.navigate" = "navigate";
 "history.hint.apply" = "apply";
 "history.hint.close" = "close";
+"suggestion.history.count" = "%d×";
 
 /* ========== Help ========== */
 "help.search" = "Search";

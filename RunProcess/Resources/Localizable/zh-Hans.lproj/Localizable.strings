@@ -47,6 +47,7 @@
 "hint.history.navigation" = "上下键历史";
 "hint.hide.window" = "Cmd+W 隐藏";
 "hint.shift.enter" = "Shift+Enter 换行";
+"hint.option.enter.sudo" = "Option + Return 以 root 执行";
 
 /* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "需要管理员权限";
@@ -277,6 +278,7 @@
 "history.hint.navigate" = "选择";
 "history.hint.apply" = "应用";
 "history.hint.close" = "关闭";
+"suggestion.history.count" = "%d次";
 
 /* ========== Help ========== */
 "help.search" = "搜索";

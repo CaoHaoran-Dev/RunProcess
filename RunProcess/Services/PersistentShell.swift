@@ -15,6 +15,15 @@ final class PersistentShell {
         let cwd: String
     }
 
+    // MARK: - 定界符
+
+    /// 每次执行前，先发这一行告诉 shell 本轮 marker 是什么。
+    private static let markerSetPrefix = "__RP_MARKER_SET__ "
+    /// 命令段开始。
+    private static let beginDelimiter = "__RP_BEGIN__"
+    /// 命令段结束。
+    private static let endDelimiter = "__RP_END__"
+
     // MARK: - State
 
     private var process: Process?
@@ -244,13 +253,17 @@ final class PersistentShell {
             self.outputBuffer.removeAll()
             self.errorBuffer.removeAll()
 
-            let wrapped = """
+            // 整段命令用定界符包起来，由 bootstrap 读到 __RP_END__ 后一次性 eval，
+            // 从而支持 for / if / case / heredoc 等跨行结构。
+            let payload = """
+            \(Self.markerSetPrefix)\(marker)
+            \(Self.beginDelimiter)
             \(command)
-            __rp_exit=$?
-            printf '\\n\(marker):%d:%s\\n' "$__rp_exit" "$(pwd)"
+            \(Self.endDelimiter)
+
             """
 
-            guard let data = (wrapped + "\n").data(using: .utf8) else {
+            guard let data = payload.data(using: .utf8) else {
                 self.pendingCompletion = nil
                 self.pendingMarker = nil
                 DispatchQueue.main.async {
@@ -379,8 +392,24 @@ final class PersistentShell {
     unsetopt INC_APPEND_HISTORY 2>/dev/null
     unsetopt SHARE_HISTORY 2>/dev/null
     setopt NO_HIST_VERIFY 2>/dev/null
+
+    __rp_marker=''
     while IFS= read -r __rp_line; do
-        eval "$__rp_line"
+        case "$__rp_line" in
+            __RP_MARKER_SET__*)
+                __rp_marker="${__rp_line#__RP_MARKER_SET__ }"
+                ;;
+            __RP_BEGIN__)
+                __rp_script=''
+                while IFS= read -r __rp_line; do
+                    [ "$__rp_line" = "__RP_END__" ] && break
+                    __rp_script+="$__rp_line"$'\\n'
+                done
+                eval "$__rp_script"
+                __rp_exit=$?
+                printf '\\n%s:%d:%s\\n' "$__rp_marker" "$__rp_exit" "$(pwd)"
+                ;;
+        esac
     done
     """
 }

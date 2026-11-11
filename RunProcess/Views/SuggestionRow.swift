@@ -35,7 +35,7 @@ struct SuggestionRow: View {
             Spacer()
 
             if suggestion.type == .history, let count = suggestion.historyCount, count > 0 {
-                Text("\(count)次")
+                Text(String(format: NSLocalizedString("suggestion.history.count", comment: ""), count))
                     .font(.system(size: 11))
                     .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
             }

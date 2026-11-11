@@ -451,6 +451,54 @@ final class AliasExpansionTests: XCTestCase {
     }
 }
 
+// MARK: - SessionFrame（弱断言，只校验返回尺寸合理、不崩溃）
+
+final class SessionFrameTests: XCTestCase {
+
+    func testCalculateSafeFrameKeepsWindowSize() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertEqual(frame.width, 600, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 140, accuracy: 0.5)
+        XCTAssertTrue(frame.origin.x.isFinite)
+        XCTAssertTrue(frame.origin.y.isFinite)
+    }
+
+    func testCalculateSafeFrameCentersOnWideScreen() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        // 宽屏下水平大致居中
+        XCTAssertEqual(frame.midX, screen.midX, accuracy: 1.0)
+    }
+
+    func testCalculateSafeFrameDoesNotCrashOnNarrowScreen() {
+        // 窗口比屏幕还宽：现有 clamp 逻辑会得到非理想值，
+        // 这里只要求返回有限尺寸，不固化具体坐标。
+        let screen = NSRect(x: 0, y: 0, width: 400, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertTrue(frame.origin.x.isFinite)
+        XCTAssertTrue(frame.origin.y.isFinite)
+        XCTAssertEqual(frame.width, 600, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 140, accuracy: 0.5)
+    }
+
+    func testCalculateSafeFrameStaysInsideVerticalBounds() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        // 现有逻辑保证窗口底部不低于 minY+20、顶部不超过 maxY-40
+        XCTAssertGreaterThanOrEqual(frame.minY, screen.minY + 20 - 0.5)
+        XCTAssertLessThanOrEqual(frame.maxY, screen.maxY - 40 + 0.5)
+    }
+}
+
 // MARK: - 版本特定测试 (条件编译)
 
 final class AppEnvironmentTests: XCTestCase {
@@ -460,7 +508,7 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testPreviewAppSupportFolderName() {
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
+        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta")
     }
 
     func testPreviewCustomPathEnabledDefaultsTrue() {
@@ -473,11 +521,7 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testReleaseAppSupportFolderName() {
-        #if RUNPROCESS_TEST
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
-        #else
         XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess")
-        #endif
     }
 
     func testReleaseCustomPathAlwaysEnabled() {
@@ -492,11 +536,6 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     #if RUNPROCESS_TEST
-    func testTestEnvironmentFolderName() {
-        XCTAssertTrue(AppEnvironment.isTest)
-        XCTAssertEqual(AppEnvironment.appSupportFolderName, "RunProcess-Beta-Test")
-    }
-
     func testTestKeyPrefixIsIsolated() {
         XCTAssertTrue(AppSettings.Keys.sessionModeEnabled.hasPrefix("test."))
     }

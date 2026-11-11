@@ -202,6 +202,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppDataMigration.migrateLegacyTestFolderIfNeeded()
+
         updateFeedURLPreference()
 
         updaterController = SPUStandardUpdaterController(
@@ -474,7 +476,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if session.isVisible() {
             session.hide()
         } else {
-            session.show()
+            session.show(isWake: true)
             NSApp.activate(ignoringOtherApps: true)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -500,7 +502,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let session = sessionManager.activeSession() ?? sessionManager.newSession()
 
         if !session.isVisible() {
-            session.show()
+            session.show(isWake: true)
             NSApp.activate(ignoringOtherApps: true)
         }
 

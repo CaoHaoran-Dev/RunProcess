@@ -168,8 +168,8 @@ struct ContentView: View {
                     .foregroundColor(.secondary.opacity(0.4))
                     .font(.system(size: 16))
                     .frame(width: 44, height: 44)
-                    .help("Option + Return 以 root 执行")
-
+                    .help(NSLocalizedString("hint.option.enter.sudo", comment: ""))
+                
                 inputField.frame(maxWidth: .infinity)
 
                 if viewModel.isRunning {
