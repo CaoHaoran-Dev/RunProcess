@@ -35,31 +35,3 @@ enum AppEnvironment {
         return "RunProcess"
     }
 }
-
-// MARK: - 旧数据目录迁移
-
-/// 早期版本把 Beta / 测试构建的数据写到 `RunProcess-Beta-Test/`。
-/// 这里在新目录不存在、旧目录存在时做一次性整体搬移。
-enum AppDataMigration {
-    static func migrateLegacyTestFolderIfNeeded() {
-        guard AppEnvironment.isBeta else { return }
-
-        let fm = FileManager.default
-        guard let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return
-        }
-
-        let old = base.appendingPathComponent("RunProcess-Beta-Test")
-        let new = base.appendingPathComponent(AppEnvironment.appSupportFolderName)
-
-        guard fm.fileExists(atPath: old.path),
-              !fm.fileExists(atPath: new.path) else { return }
-
-        do {
-            try fm.moveItem(at: old, to: new)
-            print("📦 已迁移旧数据目录: RunProcess-Beta-Test → \(new.lastPathComponent)")
-        } catch {
-            print("⚠️ 迁移旧数据目录失败: \(error)")
-        }
-    }
-}

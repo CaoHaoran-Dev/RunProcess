@@ -202,8 +202,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        AppDataMigration.migrateLegacyTestFolderIfNeeded()
-
         updateFeedURLPreference()
 
         updaterController = SPUStandardUpdaterController(
