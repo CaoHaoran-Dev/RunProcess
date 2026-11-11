@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AppEnvironment {
+nonisolated enum AppEnvironment {
 
     /// 是否为测试构建（由 test target 的 Other Swift Flags 注入 -D RUNPROCESS_TEST）
     static var isTest: Bool {

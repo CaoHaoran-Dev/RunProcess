@@ -22,6 +22,7 @@
 "button.selectAll" = "全选";
 "button.copy.output" = "复制输出";
 "button.remove" = "移除";
+"button.back" = "返回";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新建窗口";
@@ -38,6 +39,11 @@
 "menu.remote.discovered" = "发现的新设备";
 "menu.remote.searching" = "正在搜索附近设备…";
 "menu.remote.retry" = "未找到设备，重新搜索";
+
+/* ========== Notifications ========== */
+"notification.pairing.title" = "配对请求";
+"notification.pairing.body" = "请在请求的设备上输入此验证码：%@";
+"notification.pairing.open" = "打开设置";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
@@ -72,6 +78,8 @@
 "error.exit.code" = "命令执行失败（退出码：%ld）";
 "error.remote.missing.token" = "本地未找到配对凭证 (Token)。";
 "error.remote.timeout" = "远程执行超时";
+"error.remote.capability.denied" = "主机已禁用该功能。";
+"error.remote.blocked.word" = "命令被拒绝：包含违禁词“%@”。";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 解释：找不到命令 '%@'。请检查拼写，或确保工具已安装并包含在 PATH 中。";
@@ -222,6 +230,8 @@
 "settings.workflows.error.empty" = "不能为空。";
 "settings.workflows.error.space" = "触发词不能包含空格。";
 "settings.workflows.error.duplicate" = "已存在同名的工作流。";
+"settings.remote.field.port" = "端口";
+"settings.remote.error.host.invalid" = "请输入合法的 IPv4 地址或主机名。";
 
 /* ========== Settings — Remote (Beta) ========== */
 "settings.remote.hostMode" = "主机模式";
@@ -248,6 +258,23 @@
 "settings.remote.discovered.title" = "发现新设备";
 "settings.remote.discovered.message" = "在 %@ 发现了一台开启远程控制的设备，是否前往设置配对？";
 "settings.remote.discovered.action" = "前往设置";
+
+/* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
+"settings.remote.capability.header" = "远程权限";
+"settings.remote.capability.subtitle" = "选择允许远程客户端执行的操作。";
+"settings.remote.capability.exec" = "执行命令";
+"settings.remote.capability.workflow" = "运行工作流";
+"settings.remote.capability.sudo" = "以 root 执行";
+"settings.remote.capability.aliases" = "修改别名";
+"settings.remote.capability.history" = "读取或清除历史";
+"settings.remote.capability.file" = "访问文件";
+"settings.remote.capability.hint" = "未勾选的功能在远程客户端请求时会被拒绝。";
+"settings.remote.blocked.header" = "违禁词";
+"settings.remote.blocked.empty" = "还没有违禁词。";
+"settings.remote.blocked.summary" = "%d 个词";
+"settings.remote.blocked.placeholder" = "添加违禁词…";
+"settings.remote.blocked.add" = "添加";
+"settings.remote.blocked.hint" = "远程命令中命中任一违禁词即拒绝执行。";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "开机自启动";

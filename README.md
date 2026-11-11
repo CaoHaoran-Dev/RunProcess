@@ -285,6 +285,13 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 
 > **Note:** The application is not notarized, so macOS may display a security warning on first launch (go to **System Settings → Privacy & Security** and click **Open Anyway**). The Preview version stores user data in `~/Library/Application Support/RunProcess-Beta/`.
 
+### Preview Build
+
+A Preview build ships alongside the stable release. It uses a separate data directory (`RunProcess-Beta`) and update feed, and adds remote execution, workflows, and remote access policy. Preview features are still under testing and may change.
+
+- **Download**: [RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **Details**: [About Preview Version](Docs/en/About-Preview-Version.md)
+
 ### Homebrew
 
 ```bash
@@ -298,10 +305,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-Requires Xcode 16.0 or later.
+The built app is at `build/Build/Products/Release/RunProcess.app`. To build the Preview version, replace `-scheme RunProcess` with `-scheme "RunProcess Preview"`. Requires Xcode 16.0 or later.
 
 ### Try It Online
 

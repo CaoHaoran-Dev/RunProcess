@@ -10,6 +10,7 @@ import KeyboardShortcuts
 import Sparkle
 import Network
 import RemoteLinkKit
+import UserNotifications
 
 @main
 struct RunProcessApp: App {
@@ -190,6 +191,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupAppActiveObserver()
         
         #if BETA
+        RemotePairingNotifier.requestAuthorizationIfNeeded()
+        UNUserNotificationCenter.current().delegate = self
         startDiscovery()
         
         if AppSettings.allowRemoteControl {
@@ -437,17 +440,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             do {
                 let (host, _) = try await BonjourBrowser.resolve(endpoint)
+                let normalized = HostAddress.stripPort(host)
                 
                 DispatchQueue.main.async {
                     let alert = NSAlert()
                     alert.messageText = NSLocalizedString("settings.remote.discovered.title", comment: "")
-                    alert.informativeText = String(format: NSLocalizedString("settings.remote.discovered.message", comment: ""), host)
+                    alert.informativeText = String(format: NSLocalizedString("settings.remote.discovered.message", comment: ""), normalized)
                     alert.addButton(withTitle: NSLocalizedString("settings.remote.discovered.action", comment: ""))
                     alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
                     
                     if alert.runModal() == .alertFirstButtonReturn {
                         self.openSettings()
-                        NotificationCenter.default.post(name: NSNotification.Name("PreFillRemoteHost"), object: host)
+                        NotificationCenter.default.post(name: NSNotification.Name("PreFillRemoteHost"), object: normalized)
                     }
                 }
             } catch {
@@ -760,6 +764,37 @@ extension AppDelegate: SPUStandardUserDriverDelegate {
         andInImmediateFocus immediateFocus: Bool
     ) -> Bool {
         return immediateFocus
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        if let code = userInfo["pairingCode"] as? String {
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                self.openSettings()
+                NotificationCenter.default.post(
+                    name: NSNotification.Name("ShowRemotePairingCode"),
+                    object: code
+                )
+            }
+        }
+        completionHandler()
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }
 

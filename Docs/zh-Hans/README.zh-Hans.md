@@ -288,6 +288,13 @@ macOS 13.0+，Apple Silicon / Intel 都行
 
 > 应用没公证，第一次打开 macOS 会提示不安全，去设置里的隐私与安全性点仍要打开，不骗你。另外，预览版 会把用户数据存放在 `~/Library/Application Support/RunProcess-Beta/` 目录下，和正式版互不影响。
 
+### 预览版
+
+预览版和正式版并行发布。它使用独立的数据目录（`RunProcess-Beta`）和更新源，额外包含远程执行、工作流和远程权限。预览版功能仍在测试中，可能随时改动。
+
+- **下载**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **详细说明**：[关于预览版](About-Preview-Version.zh-Hans.md)
+
 ### Homebrew
 
 ```bash
@@ -301,10 +308,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-需要 Xcode 16.0+。
+产物在 `build/Build/Products/Release/RunProcess.app`。要编译预览版，把 `-scheme RunProcess` 换成 `-scheme "RunProcess Preview"`。需要 Xcode 16.0+。
 
 ### 在线体验
 

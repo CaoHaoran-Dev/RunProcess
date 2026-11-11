@@ -28,16 +28,42 @@ final class RemoteConnectionManager {
             throw NSError(domain: "RunProcess.Remote", code: 401, userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.remote.missing.token", comment: "")])
         }
         
-        let config = ConnectionConfig(host: host.host, port: host.port)
-        let plainTransport = URLSessionTransport(config: config, transform: PassthroughTransform())
+        let endpointHost = HostAddress.formattedForURL(host.host)
+        let config = ConnectionConfig(
+            host: endpointHost,
+            port: host.port,
+            pairingPort: 52732,
+            scheme: .ws,
+            connectTimeout: 10
+        )
+        
+        print("🔌 [Remote] plain connect ws://\(endpointHost):\(host.port)")
+        let plainTransport = URLSessionTransport(
+            config: config,
+            transform: PassthroughTransform(),
+            reconnectPolicy: ReconnectPolicy()
+        )
+        plainTransport.onStateChange = { state in
+            print("🔌 [Remote] plain state: \(state)")
+        }
         try await plainTransport.connect()
+        print("✅ [Remote] plain connected")
         
         let sessionKeyData = try await negotiateKey(transport: plainTransport, token: token)
+        print("✅ [Remote] key negotiated")
         plainTransport.close()
         
         let cipher = try AESGCMCipher(key: sessionKeyData)
-        let secureTransport = URLSessionTransport(config: config)
+        let secureTransport = URLSessionTransport(
+            config: config,
+            reconnectPolicy: ReconnectPolicy()
+        )
+        secureTransport.onStateChange = { state in
+            print("🔐 [Remote] secure state: \(state)")
+        }
+        print("🔐 [Remote] secure connect ws://\(endpointHost):\(host.port)")
         try await secureTransport.connect()
+        print("✅ [Remote] secure connected")
         
         let channel = SecureChannel(
             transport: secureTransport,
@@ -54,6 +80,7 @@ final class RemoteConnectionManager {
     private func negotiateKey(transport: URLSessionTransport, token: String) async throws -> Data {
         return try await withCheckedThrowingContinuation { continuation in
             transport.onReceive = { data in
+                print("📨 [Remote] plain received \(data.count) bytes")
                 do {
                     let msg = try MessageCodec.decodeServer(data)
                     guard case .custom(let type, let payload) = msg, type == "server-challenge" else {
@@ -71,7 +98,6 @@ final class RemoteConnectionManager {
                     let clientNonce = KeyDerivation.randomBytes(32)
                     let tokenHash = PairingToken(rawValue: token).hash()
                     
-                    // 💡 关键点：客户端利用 tokenHash 派生 SessionKey
                     let sessionKey = KeyDerivation.deriveKey(
                         sharedSecret: Data(tokenHash.utf8),
                         salt: clientNonce + serverNonce,
@@ -94,10 +120,16 @@ final class RemoteConnectionManager {
                     let encoded = try MessageCodec.encode(authMsg)
                     
                     Task {
-                        try await transport.send(encoded)
-                        continuation.resume(returning: sessionKey)
+                        do {
+                            try await transport.send(encoded)
+                            print("✅ [Remote] client-auth sent")
+                            continuation.resume(returning: sessionKey)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
                     }
                 } catch {
+                    print("❌ [Remote] negotiate failed: \(error)")
                     continuation.resume(throwing: error)
                 }
             }

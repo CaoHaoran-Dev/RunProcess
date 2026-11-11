@@ -15,7 +15,10 @@ nonisolated final class RemoteExecutor {
     
     nonisolated init() {}
     
-    func execute(command: String, on host: RemoteHost, timeout: TimeInterval = 10) async throws -> String {
+    func execute(command: String,
+                 on host: RemoteHost,
+                 kind: RemoteExecPayload.Kind = .command,
+                 timeout: TimeInterval = 10) async throws -> String {
         let channel = try await RemoteConnectionManager.shared.getChannel(for: host)
         let commandId = UUID().uuidString
         let buffer = OutputBuffer()
@@ -40,7 +43,29 @@ nonisolated final class RemoteExecutor {
             }
         }
         
-        try await channel.send(.exec(id: commandId, cmd: command, timeout: timeout))
+        // 普通命令走 .exec，保持与旧服务端兼容；
+        // 其余 kind 走 .custom("exec-v2")。
+        if kind == .command {
+            let msg: RemoteProcessProtocol.ClientMessage = .exec(
+                id: commandId,
+                cmd: command,
+                timeout: timeout
+            )
+            try await channel.send(msg)
+        } else {
+            let payload = RemoteExecPayload(
+                id: commandId,
+                cmd: command,
+                kind: kind.rawValue,
+                timeout: timeout
+            )
+            let data = try JSONEncoder().encode(payload)
+            let msg: RemoteProcessProtocol.ClientMessage = .custom(
+                type: "exec-v2",
+                payload: data
+            )
+            try await channel.send(msg)
+        }
         
         return try await buffer.waitForResult(timeout: timeout + 2)
     }

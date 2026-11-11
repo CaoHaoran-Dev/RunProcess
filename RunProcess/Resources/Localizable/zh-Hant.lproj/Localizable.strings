@@ -22,6 +22,7 @@
 "button.selectAll" = "全選";
 "button.copy.output" = "複製輸出";
 "button.remove" = "移除";
+"button.back" = "返回";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新增視窗";
@@ -38,6 +39,11 @@
 "menu.remote.discovered" = "發現的新裝置";
 "menu.remote.searching" = "正在搜尋附近裝置…";
 "menu.remote.retry" = "未找到裝置，重新搜尋";
+
+/* ========== Notifications ========== */
+"notification.pairing.title" = "配對請求";
+"notification.pairing.body" = "請在請求的裝置上輸入此驗證碼：%@";
+"notification.pairing.open" = "開啟設定";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
@@ -72,6 +78,8 @@
 "error.exit.code" = "指令執行失敗（結束碼：%ld）";
 "error.remote.missing.token" = "本機未找到配對憑證 (Token)。";
 "error.remote.timeout" = "遠端執行逾時";
+"error.remote.capability.denied" = "主機已停用該功能。";
+"error.remote.blocked.word" = "指令被拒絕：包含違禁詞「%@」。";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 解釋：找不到指令 '%@'。請檢查拼寫，或確保工具已安裝並包含在 PATH 中。";
@@ -248,6 +256,25 @@
 "settings.remote.discovered.title" = "發現新裝置";
 "settings.remote.discovered.message" = "在 %@ 發現了一台開啟遠端控制的裝置，是否前往設定配對？";
 "settings.remote.discovered.action" = "前往設定";
+"settings.remote.field.port" = "連接埠";
+"settings.remote.error.host.invalid" = "請輸入合法的 IPv4 位址或主機名稱。";
+
+/* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
+"settings.remote.capability.header" = "遠端權限";
+"settings.remote.capability.subtitle" = "選擇允許遠端用戶端執行的操作。";
+"settings.remote.capability.exec" = "執行指令";
+"settings.remote.capability.workflow" = "執行工作流";
+"settings.remote.capability.sudo" = "以 root 執行";
+"settings.remote.capability.aliases" = "修改別名";
+"settings.remote.capability.history" = "讀取或清除記錄";
+"settings.remote.capability.file" = "存取檔案";
+"settings.remote.capability.hint" = "未勾選的功能在遠端用戶端請求時會被拒絕。";
+"settings.remote.blocked.header" = "違禁詞";
+"settings.remote.blocked.empty" = "還沒有違禁詞。";
+"settings.remote.blocked.summary" = "%d 個詞";
+"settings.remote.blocked.placeholder" = "新增違禁詞…";
+"settings.remote.blocked.add" = "新增";
+"settings.remote.blocked.hint" = "遠端指令中命中任一違禁詞即拒絕執行。";
 
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "開機自動啟動";

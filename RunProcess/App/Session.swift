@@ -32,7 +32,6 @@ final class Session {
     var onBecomeKey: (() -> Void)?
 
     init(usesSessionMode: Bool) {
-        // 非 zsh 强制关闭会话模式
         let effectiveSessionMode = usesSessionMode && AppSettings.isZshShell
 
         self.usesSessionMode = effectiveSessionMode
@@ -51,7 +50,6 @@ final class Session {
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
-        // 初始宽高：Lite 模式高度 56，经典模式 140
         let initialHeight: CGFloat = (AppSettings.mainUIMode == .lite) ? 56 : 140
         let window = BorderlessWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: initialHeight),
@@ -93,8 +91,12 @@ final class Session {
             shell.start()
         }
 
-        viewModel.executeHandler = { [weak self] command, useSudo, password, completion in
-            self?.execute(command: command, useSudo: useSudo, password: password, completion: completion)
+        viewModel.executeHandler = { [weak self] command, isWorkflow, useSudo, password, completion in
+            self?.execute(command: command,
+                          isWorkflow: isWorkflow,
+                          useSudo: useSudo,
+                          password: password,
+                          completion: completion)
         }
         viewModel.cancelHandler = { [weak self] in self?.cancelExecution() }
     }
@@ -137,14 +139,12 @@ final class Session {
         return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
     }
 
-    /// 鼠标当前所在的屏幕；找不到则回退到主屏。
     static func screenUnderMouse() -> NSScreen? {
         NSScreen.screens.first {
             NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
         } ?? NSScreen.main
     }
 
-    /// 把窗口放到指定屏幕（无动画）。
     private func placeWindow(on screen: NSScreen?) {
         guard let screen = screen else { return }
         let screenRect = screen.visibleFrame
@@ -159,12 +159,10 @@ final class Session {
         window.setFrame(newFrame, display: false)
     }
 
-    /// 新建 / 首次显示：落在鼠标当前所在屏幕（焦点屏）。
     private func placeOnFocusScreenOnCreate() {
         placeWindow(on: Session.screenUnderMouse())
     }
 
-    /// 从隐藏状态唤醒：跟随鼠标所在屏幕（已在目标屏则不动）。
     private func moveToFocusScreenOnWake() {
         guard let screen = Session.screenUnderMouse() else { return }
         if screen.visibleFrame.contains(window.frame) { return }
@@ -208,17 +206,29 @@ final class Session {
 
     // MARK: - Execute (路由中心)
 
-    private func execute(command: String, useSudo: Bool, password: String?,
+    private func execute(command: String,
+                         isWorkflow: Bool,
+                         useSudo: Bool,
+                         password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
-        
+
         #if BETA
         if let hostId = viewModel.activeRemoteHostId,
            let host = RemoteHostStore.shared.get(id: hostId) {
-            
+
+            let kind: RemoteExecPayload.Kind
+            if useSudo {
+                kind = .sudo
+            } else if isWorkflow {
+                kind = .workflow
+            } else {
+                kind = .command
+            }
+
             Task {
                 do {
                     let executor = RemoteExecutor()
-                    let output = try await executor.execute(command: command, on: host)
+                    let output = try await executor.execute(command: command, on: host, kind: kind)
                     DispatchQueue.main.async { completion(.success(output)) }
                 } catch {
                     DispatchQueue.main.async { completion(.failure(error)) }
@@ -383,7 +393,6 @@ final class Session {
         window.title = titleParts.joined(separator: " ")
     }
 
-    /// - Parameter isWake: true 表示从隐藏状态恢复；false 表示新建 / 首次显示。
     func show(isWake: Bool = false) {
         let wasShown = hasShown
         hasShown = true

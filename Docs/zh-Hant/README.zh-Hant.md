@@ -287,6 +287,13 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 > 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告（請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**）。此外，預覽版會將使用者資料存放在 `~/Library/Application Support/RunProcess-Beta/` 目錄下，與正式版互不影響。
 
+### 預覽版
+
+預覽版和正式版並行發佈。它使用獨立的資料目錄（`RunProcess-Beta`）和更新來源，額外包含遠端執行、工作流和遠端權限。預覽版功能仍在測試中，可能隨時變動。
+
+- **下載**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **詳細說明**：[關於預覽版](About-Preview-Version.zh-Hant.md)
+
 ### Homebrew
 
 ```bash
@@ -300,10 +307,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-需要 Xcode 16.0 或以上版本。
+產物在 `build/Build/Products/Release/RunProcess.app`。要建置預覽版，把 `-scheme RunProcess` 換成 `-scheme "RunProcess Preview"`。需要 Xcode 16.0 或以上版本。
 
 ### 線上體驗
 

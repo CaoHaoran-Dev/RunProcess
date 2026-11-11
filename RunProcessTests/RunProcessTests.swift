@@ -8,7 +8,6 @@
 import XCTest
 import AppKit
 
-// 根据编译条件，动态决定测试哪个 Target
 #if BETA
 @testable import RunProcess_Preview
 #else
@@ -471,13 +470,10 @@ final class SessionFrameTests: XCTestCase {
         let frame = Session.calculateSafeFrame(screenRect: screen,
                                                windowWidth: 600,
                                                windowHeight: 140)
-        // 宽屏下水平大致居中
         XCTAssertEqual(frame.midX, screen.midX, accuracy: 1.0)
     }
 
     func testCalculateSafeFrameDoesNotCrashOnNarrowScreen() {
-        // 窗口比屏幕还宽：现有 clamp 逻辑会得到非理想值，
-        // 这里只要求返回有限尺寸，不固化具体坐标。
         let screen = NSRect(x: 0, y: 0, width: 400, height: 900)
         let frame = Session.calculateSafeFrame(screenRect: screen,
                                                windowWidth: 600,
@@ -493,13 +489,187 @@ final class SessionFrameTests: XCTestCase {
         let frame = Session.calculateSafeFrame(screenRect: screen,
                                                windowWidth: 600,
                                                windowHeight: 140)
-        // 现有逻辑保证窗口底部不低于 minY+20、顶部不超过 maxY-40
         XCTAssertGreaterThanOrEqual(frame.minY, screen.minY + 20 - 0.5)
         XCTAssertLessThanOrEqual(frame.maxY, screen.maxY - 40 + 0.5)
     }
 }
 
-// MARK: - 版本特定测试 (条件编译)
+// MARK: - HostAddress
+
+final class HostAddressTests: XCTestCase {
+
+    func testStripPortFromIPv4() {
+        XCTAssertEqual(HostAddress.stripPort("192.168.1.10:52731"), "192.168.1.10")
+    }
+
+    func testStripPortFromBracketedIPv6() {
+        XCTAssertEqual(HostAddress.stripPort("[fe80::1]:52731"), "fe80::1")
+    }
+
+    func testStripPortLeavesBareIPv6() {
+        XCTAssertEqual(HostAddress.stripPort("fe80::1"), "fe80::1")
+        XCTAssertEqual(HostAddress.stripPort("::1"), "::1")
+    }
+
+    func testStripPortLeavesHostname() {
+        XCTAssertEqual(HostAddress.stripPort("mac.local"), "mac.local")
+        XCTAssertEqual(HostAddress.stripPort("mac.local:52731"), "mac.local")
+    }
+
+    func testIsIPv4() {
+        XCTAssertTrue(HostAddress.isIPv4("127.0.0.1"))
+        XCTAssertTrue(HostAddress.isIPv4("192.168.1.10"))
+        XCTAssertFalse(HostAddress.isIPv4("256.1.1.1"))
+        XCTAssertFalse(HostAddress.isIPv4("fe80::1"))
+    }
+
+    func testIsIPv6() {
+        XCTAssertTrue(HostAddress.isIPv6("::1"))
+        XCTAssertTrue(HostAddress.isIPv6("fe80::1"))
+        XCTAssertFalse(HostAddress.isIPv6("127.0.0.1"))
+        XCTAssertFalse(HostAddress.isIPv6("[::1]"))
+    }
+
+    func testIsHostname() {
+        XCTAssertTrue(HostAddress.isHostname("mac.local"))
+        XCTAssertTrue(HostAddress.isHostname("example.com"))
+        XCTAssertFalse(HostAddress.isHostname(""))
+        XCTAssertFalse(HostAddress.isHostname("-bad.local"))
+    }
+
+    func testIsValidAcceptsIPv4IPv6Hostname() {
+        XCTAssertTrue(HostAddress.isValid("127.0.0.1"))
+        XCTAssertTrue(HostAddress.isValid("::1"))
+        XCTAssertTrue(HostAddress.isValid("mac.local"))
+        XCTAssertFalse(HostAddress.isValid("bad host"))
+    }
+
+    func testFormattedForURLWrapsIPv6() {
+        XCTAssertEqual(HostAddress.formattedForURL("::1"), "[::1]")
+        XCTAssertEqual(HostAddress.formattedForURL("127.0.0.1"), "127.0.0.1")
+        XCTAssertEqual(HostAddress.formattedForURL("mac.local"), "mac.local")
+    }
+
+    func testBareHostRemovesBrackets() {
+        XCTAssertEqual(HostAddress.bareHost("[::1]"), "::1")
+        XCTAssertEqual(HostAddress.bareHost("[fe80::1]:52731"), "fe80::1")
+    }
+}
+
+// MARK: - RemoteHost
+
+#if BETA
+final class RemoteHostTests: XCTestCase {
+
+    func testIdUsesHashSeparator() {
+        let host = RemoteHost(name: "Mac", host: "192.168.1.10", port: 52731)
+        XCTAssertEqual(host.id, "192.168.1.10#52731")
+    }
+
+    func testIdForIPv6HasNoBrackets() {
+        let host = RemoteHost(name: "Mac", host: "[fe80::1]:52731", port: 52731)
+        XCTAssertEqual(host.host, "fe80::1")
+        XCTAssertEqual(host.id, "fe80::1#52731")
+    }
+
+    func testInitStripsPortFromHost() {
+        let host = RemoteHost(name: "Mac", host: "192.168.1.10:9999", port: 52731)
+        XCTAssertEqual(host.host, "192.168.1.10")
+        XCTAssertEqual(host.port, 52731)
+    }
+}
+
+// MARK: - RemoteExecPayload
+
+final class RemoteExecPayloadTests: XCTestCase {
+
+    func testExecKindRoundTrip() throws {
+        for kind in [RemoteExecPayload.Kind.command,
+                     .sudo, .workflow, .alias, .history, .file] {
+            let payload = RemoteExecPayload(
+                id: "1",
+                cmd: "echo hi",
+                kind: kind.rawValue,
+                timeout: 10
+            )
+            let data = try JSONEncoder().encode(payload)
+            let decoded = try JSONDecoder().decode(RemoteExecPayload.self, from: data)
+            XCTAssertEqual(decoded.execKind, kind)
+            XCTAssertEqual(decoded.id, "1")
+            XCTAssertEqual(decoded.cmd, "echo hi")
+        }
+    }
+
+    func testUnknownKindFallsBackToCommand() throws {
+        let payload = RemoteExecPayload(id: "1", cmd: "ls", kind: "nope", timeout: 10)
+        let data = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(RemoteExecPayload.self, from: data)
+        XCTAssertEqual(decoded.execKind, .command)
+    }
+}
+
+// MARK: - RemoteAccessPolicy（token 匹配）
+
+final class RemoteAccessPolicyTests: XCTestCase {
+
+    private let store = RemoteAccessPolicyStore.shared
+    private let testWords = [
+        "__rp_rm__",
+        "__rp_RM__",
+        "__rp_shutdown__"
+    ]
+
+    override func setUp() {
+        super.setUp()
+        for word in testWords {
+            store.removeBlockedWord(word)
+        }
+    }
+
+    override func tearDown() {
+        for word in testWords {
+            store.removeBlockedWord(word)
+        }
+        super.tearDown()
+    }
+
+    func testExactTokenMatch() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "__rp_rm__ -rf /"), "__rp_rm__")
+    }
+
+    func testTokenInsideCommandSubstitution() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "echo $(__rp_rm__ -rf /)"), "__rp_rm__")
+    }
+
+    func testPathSuffixMatches() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "/bin/__rp_rm__ -rf /"), "__rp_rm__")
+    }
+
+    func testSubstringIsNotMatched() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertNil(store.matchedBlockedWord(in: "__rp_rm__extra foo"))
+    }
+
+    func testCaseInsensitive() {
+        store.addBlockedWord("__rp_RM__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "__rp_rm__ -rf /"), "__rp_RM__")
+    }
+
+    func testNoWordsReturnsNil() {
+        XCTAssertNil(store.matchedBlockedWord(in: "__rp_rm__ -rf /"))
+    }
+
+    func testCapabilityAllowedByDefault() {
+        _ = store.isAllowed(.execCommand)
+        _ = store.isAllowed(.sudoCommand)
+    }
+}
+#endif
+
+// MARK: - 版本特定测试
 
 final class AppEnvironmentTests: XCTestCase {
     #if BETA
@@ -529,7 +699,6 @@ final class AppEnvironmentTests: XCTestCase {
     }
     #endif
 
-    // 两个版本共用的断言
     func testShellDefaultsToZsh() {
         XCTAssertEqual(AppSettings.resolvedShellPath, "/bin/zsh")
         XCTAssertTrue(AppSettings.isZshShell)

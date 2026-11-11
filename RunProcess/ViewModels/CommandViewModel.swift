@@ -29,7 +29,8 @@ class CommandViewModel: ObservableObject {
     var usesSessionMode: Bool = false
     weak var session: Session?
 
-    var executeHandler: ((String, Bool, String?, @escaping (Result<String, Error>) -> Void) -> Void)?
+    /// (command, isWorkflow, useSudo, password, completion)
+    var executeHandler: ((String, Bool, Bool, String?, @escaping (Result<String, Error>) -> Void) -> Void)?
     var cancelHandler: (() -> Void)?
 
     private var historyIndex: Int = -1
@@ -209,11 +210,15 @@ class CommandViewModel: ObservableObject {
 
         var processedCommand = CommandPreprocessor.process(inputText)
         processedCommand = CommandPreprocessor.resolveCustomPath(processedCommand)
-        
+
+        var isWorkflow = false
+
         #if BETA
+        let beforeWorkflow = processedCommand
         processedCommand = WorkflowStore.shared.expandWorkflow(in: processedCommand)
+        isWorkflow = processedCommand != beforeWorkflow
         #endif
-        
+
         processedCommand = AliasStore.shared.expandAlias(in: processedCommand)
 
         if processedCommand != inputText {
@@ -243,7 +248,7 @@ class CommandViewModel: ObservableObject {
             return
         }
 
-        handler(processedCommand, useSudo, password) { [weak self] result in
+        handler(processedCommand, isWorkflow, useSudo, password) { [weak self] result in
             guard let self = self else { return }
             DispatchQueue.main.async {
                 self.isRunning = false
