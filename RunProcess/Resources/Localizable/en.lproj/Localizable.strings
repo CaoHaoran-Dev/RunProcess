@@ -36,6 +36,8 @@
 "menu.remote.title" = "Remote Connection";
 "menu.remote.local" = "Local";
 "menu.remote.discovered" = "Discovered Devices";
+"menu.remote.searching" = "Searching for nearby devices…";
+"menu.remote.retry" = "No devices found. Search Again";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "Cleared";

@@ -44,6 +44,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     #if BETA
     private var bonjourBrowser: BonjourBrowser?
     private var discoveredHosts: [String: NWEndpoint] = [:]
+    private var remoteSubmenu: NSMenu?
+    private var isRemoteMenuOpen = false
+
+    /// 是否已超时（10 秒内未发现任何设备）
+    private var discoveryTimedOut = false
+    /// 超时计时器
+    private var discoveryTimeoutWork: DispatchWorkItem?
+    private static let discoveryTimeout: TimeInterval = 10
     #endif
 
     // MARK: - Menu
@@ -71,57 +79,21 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem.separator())
 
         #if BETA
-        let remoteHosts = RemoteHostStore.shared.hosts
-        
-        let remoteMenu = NSMenu()
-        
-        // 1. 本地
-        let localItem = NSMenuItem(title: NSLocalizedString("menu.remote.local", comment: ""), action: #selector(selectRemoteHost(_:)), keyEquivalent: "")
-        localItem.target = self
-        localItem.representedObject = nil
-        if let img = NSImage(systemSymbolName: "desktopcomputer", accessibilityDescription: nil) {
-            localItem.image = img
-        }
-        remoteMenu.addItem(localItem)
-        
-        // 2. 已配对主机
-        if !remoteHosts.isEmpty {
-            remoteMenu.addItem(NSMenuItem.separator())
-            for host in remoteHosts {
-                let item = NSMenuItem(title: host.name, action: #selector(selectRemoteHost(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = host.id
-                if let img = NSImage(systemSymbolName: "server.rack", accessibilityDescription: nil) {
-                    item.image = img
-                }
-                remoteMenu.addItem(item)
-            }
-        }
-        
-        // 3. Bonjour 发现的未配对设备
-        if !discoveredHosts.isEmpty {
-            remoteMenu.addItem(NSMenuItem.separator())
-            let headerItem = NSMenuItem(title: NSLocalizedString("menu.remote.discovered", comment: "Discovered Devices"), action: nil, keyEquivalent: "")
-            headerItem.isEnabled = false
-            remoteMenu.addItem(headerItem)
-            
-            for (name, endpoint) in discoveredHosts {
-                let item = NSMenuItem(title: name, action: #selector(connectToDiscoveredHost(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = endpoint
-                if let img = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil) {
-                    item.image = img
-                }
-                remoteMenu.addItem(item)
-            }
-        }
-        
-        let remoteSubItem = NSMenuItem(title: NSLocalizedString("menu.remote.title", comment: ""), action: nil, keyEquivalent: "")
+        let remoteMenu = NSMenu(title: NSLocalizedString("menu.remote.title", comment: ""))
+        remoteMenu.autoenablesItems = false
+        remoteMenu.delegate = self
+        self.remoteSubmenu = remoteMenu
+
+        let remoteSubItem = NSMenuItem(
+            title: NSLocalizedString("menu.remote.title", comment: ""),
+            action: nil,
+            keyEquivalent: ""
+        )
         if let img = NSImage(systemSymbolName: "network", accessibilityDescription: nil) {
             remoteSubItem.image = img
         }
         remoteSubItem.submenu = remoteMenu
-        
+
         if let settingsIndex = menu.items.firstIndex(where: { $0.action == #selector(openSettings) }) {
             menu.insertItem(remoteSubItem, at: settingsIndex)
             menu.insertItem(NSMenuItem.separator(), at: settingsIndex + 1)
@@ -218,7 +190,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupAppActiveObserver()
         
         #if BETA
-        setupBonjourBrowser()
+        startDiscovery()
         
         if AppSettings.allowRemoteControl {
             RemoteServerManager.shared.start()
@@ -260,6 +232,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         #if BETA
+        discoveryTimeoutWork?.cancel()
+        discoveryTimeoutWork = nil
         bonjourBrowser?.stop()
         RemoteServerManager.shared.stop()
         #endif
@@ -271,19 +245,68 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Bonjour Browser
 
     #if BETA
-    private func setupBonjourBrowser() {
+    private func startDiscovery() {
+        discoveryTimeoutWork?.cancel()
+        discoveryTimeoutWork = nil
+
+        discoveryTimedOut = false
+
+        bonjourBrowser?.stop()
         bonjourBrowser = BonjourBrowser()
         bonjourBrowser?.onFound = { [weak self] service in
             DispatchQueue.main.async {
-                self?.discoveredHosts[service.name] = service.endpoint
+                guard let self = self else { return }
+                // 已超时：后台仍可发现，但不刷新 UI，等待用户点重新搜索
+                guard !self.discoveryTimedOut else { return }
+
+                let wasEmpty = self.discoveredHosts.isEmpty
+                self.discoveredHosts[service.name] = service.endpoint
+
+                // 首次发现设备，取消超时
+                if !self.discoveredHosts.isEmpty {
+                    self.discoveryTimeoutWork?.cancel()
+                    self.discoveryTimeoutWork = nil
+                }
+
+                if wasEmpty,
+                   self.isRemoteMenuOpen,
+                   let sub = self.remoteSubmenu {
+                    self.rebuildRemoteSubmenu(sub)
+                }
             }
         }
         bonjourBrowser?.onLost = { [weak self] service in
             DispatchQueue.main.async {
-                self?.discoveredHosts.removeValue(forKey: service.name)
+                guard let self = self else { return }
+                guard !self.discoveryTimedOut else { return }
+                self.discoveredHosts.removeValue(forKey: service.name)
+                if self.discoveredHosts.isEmpty,
+                   self.isRemoteMenuOpen,
+                   let sub = self.remoteSubmenu {
+                    self.rebuildRemoteSubmenu(sub)
+                }
             }
         }
         bonjourBrowser?.start()
+
+        let work = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            guard self.discoveredHosts.isEmpty else { return }
+            self.discoveryTimedOut = true
+            if self.isRemoteMenuOpen, let sub = self.remoteSubmenu {
+                self.rebuildRemoteSubmenu(sub)
+            }
+        }
+        discoveryTimeoutWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.discoveryTimeout, execute: work)
+    }
+
+    @objc private func retryDiscovery() {
+        discoveredHosts.removeAll()
+        startDiscovery()
+        if isRemoteMenuOpen, let sub = remoteSubmenu {
+            rebuildRemoteSubmenu(sub)
+        }
     }
     #endif
 
@@ -739,3 +762,177 @@ extension AppDelegate: SPUStandardUserDriverDelegate {
         return immediateFocus
     }
 }
+
+// MARK: - Remote Submenu (BETA)
+
+#if BETA
+extension AppDelegate: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        guard menu === remoteSubmenu else { return }
+        isRemoteMenuOpen = true
+        rebuildRemoteSubmenu(menu)
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === remoteSubmenu else { return }
+        isRemoteMenuOpen = false
+    }
+
+    private func rebuildRemoteSubmenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+
+        // 1. 本地
+        let localItem = NSMenuItem(
+            title: NSLocalizedString("menu.remote.local", comment: ""),
+            action: #selector(selectRemoteHost(_:)),
+            keyEquivalent: ""
+        )
+        localItem.target = self
+        localItem.representedObject = nil
+        if let img = NSImage(systemSymbolName: "desktopcomputer", accessibilityDescription: nil) {
+            localItem.image = img
+        }
+        menu.addItem(localItem)
+
+        // 2. 已配对主机
+        let hosts = RemoteHostStore.shared.hosts
+        if !hosts.isEmpty {
+            menu.addItem(NSMenuItem.separator())
+            for host in hosts {
+                let item = NSMenuItem(
+                    title: host.name,
+                    action: #selector(selectRemoteHost(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = host.id
+                if let img = NSImage(systemSymbolName: "server.rack", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                menu.addItem(item)
+            }
+        }
+
+        // 3. Bonjour 发现
+        menu.addItem(NSMenuItem.separator())
+
+        if !discoveredHosts.isEmpty {
+            let headerItem = NSMenuItem(
+                title: NSLocalizedString("menu.remote.discovered", comment: "Discovered Devices"),
+                action: nil,
+                keyEquivalent: ""
+            )
+            headerItem.isEnabled = false
+            menu.addItem(headerItem)
+
+            for name in discoveredHosts.keys.sorted() {
+                guard let endpoint = discoveredHosts[name] else { continue }
+                let item = NSMenuItem(
+                    title: name,
+                    action: #selector(connectToDiscoveredHost(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = endpoint
+                if let img = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                menu.addItem(item)
+            }
+        } else if discoveryTimedOut {
+            menu.addItem(makeRetryMenuItem())
+        } else {
+            menu.addItem(makeSearchingMenuItem())
+        }
+    }
+
+    /// view-backed 菜单项：点击后不关闭菜单，直接触发重试。
+    private func makeRetryMenuItem() -> NSMenuItem {
+        let item = NSMenuItem()
+        item.isEnabled = true
+
+        let rowHeight: CGFloat = 26
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 240, height: rowHeight))
+
+        let icon = NSImageView(frame: NSRect(x: 10, y: (rowHeight - 16) / 2, width: 16, height: 16))
+        icon.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
+        icon.contentTintColor = .secondaryLabelColor
+        container.addSubview(icon)
+
+        let label = NSTextField(labelWithString: NSLocalizedString("menu.remote.retry", comment: ""))
+        label.font = NSFont.systemFont(ofSize: 13)
+        label.textColor = .labelColor
+        label.lineBreakMode = .byTruncatingTail
+        label.frame = NSRect(
+            x: 32,
+            y: (rowHeight - 18) / 2,
+            width: container.frame.width - 32 - 10,
+            height: 18
+        )
+        container.addSubview(label)
+
+        let button = NSButton(frame: container.bounds)
+        button.isBordered = false
+        button.title = ""
+        button.target = self
+        button.action = #selector(retryDiscovery)
+        button.autoresizingMask = [.width, .height]
+        container.addSubview(button)
+
+        item.view = container
+        return item
+    }
+
+    private func makeSearchingMenuItem() -> NSMenuItem {
+        let item = NSMenuItem()
+        item.isEnabled = false
+
+        let spinner = NSProgressIndicator()
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isIndeterminate = true
+        spinner.isDisplayedWhenStopped = true
+        spinner.frame = NSRect(x: 0, y: 0, width: 14, height: 14)
+        spinner.startAnimation(nil)
+
+        let label = NSTextField(labelWithString: NSLocalizedString("menu.remote.searching", comment: ""))
+        label.font = NSFont.systemFont(ofSize: 12)
+        label.textColor = .secondaryLabelColor
+        label.lineBreakMode = .byTruncatingTail
+        label.sizeToFit()
+
+        let spacing: CGFloat = 8
+        let leftInset: CGFloat = 10
+        let rightInset: CGFloat = 10
+        let topInset: CGFloat = 4
+        let bottomInset: CGFloat = 4
+
+        let labelSize = label.frame.size
+        let contentHeight = max(14, labelSize.height)
+        let containerWidth = max(200, leftInset + 14 + spacing + labelSize.width + rightInset)
+        let containerHeight = contentHeight + topInset + bottomInset
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: containerWidth, height: containerHeight))
+
+        spinner.frame = NSRect(
+            x: leftInset,
+            y: topInset + (contentHeight - 14) / 2,
+            width: 14,
+            height: 14
+        )
+        label.frame = NSRect(
+            x: leftInset + 14 + spacing,
+            y: topInset + (contentHeight - labelSize.height) / 2,
+            width: labelSize.width,
+            height: labelSize.height
+        )
+
+        container.addSubview(spinner)
+        container.addSubview(label)
+        container.autoresizingMask = [.width]
+
+        item.view = container
+        return item
+    }
+}
+#endif

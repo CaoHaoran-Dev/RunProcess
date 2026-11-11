@@ -36,6 +36,8 @@
 "menu.remote.title" = "遠端連線";
 "menu.remote.local" = "本機";
 "menu.remote.discovered" = "發現的新裝置";
+"menu.remote.searching" = "正在搜尋附近裝置…";
+"menu.remote.retry" = "未找到裝置，重新搜尋";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";

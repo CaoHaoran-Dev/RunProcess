@@ -36,6 +36,8 @@
 "menu.remote.title" = "远程连接";
 "menu.remote.local" = "本地";
 "menu.remote.discovered" = "发现的新设备";
+"menu.remote.searching" = "正在搜索附近设备…";
+"menu.remote.retry" = "未找到设备，重新搜索";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
