@@ -2,8 +2,8 @@
 
 > 给 macOS 做的“伪 Windows 运行框” —— 能跑真命令，有玻璃质感，常驻菜单栏
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="Images/RunProcessDemo-Dark.png">
-  <img alt="RunProcess Image" src="Images/RunProcess-Light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="../../Images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="../../Images/RunProcessDemo-Light.png">
 </picture>
 
 > [English](../../README.md) · 简体中文 · [繁體中文](../zh-Hant/README.zh-Hant.md)
