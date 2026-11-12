@@ -1,6 +1,10 @@
 # RunProcess
 
 > A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="images/RunProcess-Light.png">
+</picture>
 
 > English · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
 

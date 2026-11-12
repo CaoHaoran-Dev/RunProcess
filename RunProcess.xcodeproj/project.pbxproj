@@ -13,10 +13,8 @@
 		AD1515D13084B3E500073710 /* Yams in Frameworks */ = {isa = PBXBuildFile; productRef = AD1515C83084B3E500073710 /* Yams */; };
 		AD1515D23084B3E500073710 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = AD1515CA3084B3E500073710 /* KeyboardShortcuts */; };
 		AD1515D43084B3E500073710 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = ADF84791303D6F8A00462C27 /* README.md */; };
-		AD1515D53084B3E500073710 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD1515D63084B3E500073710 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
 		AD1515D73084B3E500073710 /* LICENSE.md in Resources */ = {isa = PBXBuildFile; fileRef = AD8D43FA3036E17700B0576B /* LICENSE.md */; };
-		AD49D2863036EE74007BD3A5 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = AD49D2853036EE5E007BD3A5 /* .gitignore */; };
 		AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */ = {isa = PBXBuildFile; fileRef = AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */; };
 		AD79ED71309ED14200D6847D /* RemoteLinkKit in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED70309ED14200D6847D /* RemoteLinkKit */; settings = {ATTRIBUTES = (Weak, ); }; };
 		AD79ED73309ED14200D6847D /* RemoteProcessProtocol in Frameworks */ = {isa = PBXBuildFile; productRef = AD79ED72309ED14200D6847D /* RemoteProcessProtocol */; settings = {ATTRIBUTES = (Weak, ); }; };
@@ -80,8 +78,25 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				"beta-Info.plist",
+				Info.plist,
 			);
 			target = AD1515C73084B3E500073710 /* RunProcess Preview */;
+		};
+		AD1886DC30A56041005EB390 /* Exceptions for "Images" folder in "RunProcess Preview" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"RunProcessDemo-Dark.png",
+				"RunProcessDemo-Light.png",
+			);
+			target = AD1515C73084B3E500073710 /* RunProcess Preview */;
+		};
+		AD1886DD30A5606F005EB390 /* Exceptions for "Images" folder in "RunProcess" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"RunProcessDemo-Dark.png",
+				"RunProcessDemo-Light.png",
+			);
+			target = AD17FC6A3035CC7A00A52CD6 /* RunProcess */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -93,6 +108,15 @@
 				AD15160A3084BD5D00073710 /* Exceptions for "RunProcess" folder in "RunProcess Preview" target */,
 			);
 			path = RunProcess;
+			sourceTree = "<group>";
+		};
+		AD1886D530A55F57005EB390 /* Images */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AD1886DD30A5606F005EB390 /* Exceptions for "Images" folder in "RunProcess" target */,
+				AD1886DC30A56041005EB390 /* Exceptions for "Images" folder in "RunProcess Preview" target */,
+			);
+			path = Images;
 			sourceTree = "<group>";
 		};
 		AD682D59303E762B00A624CF /* RunProcessTests */ = {
@@ -153,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				AD110E393098A666002C940E /* SECURITY.md */,
+				AD1886D530A55F57005EB390 /* Images */,
 				AD712883309712F300238EE5 /* RunProcess Preview.xctestplan */,
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
 				AD6BFBBE3071E01600689042 /* CONTRIBUTING.md */,
@@ -219,6 +244,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
+				AD1886D530A55F57005EB390 /* Images */,
 				ADF8478F303D6F5300462C27 /* Docs */,
 			);
 			name = "RunProcess Preview";
@@ -248,6 +274,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				AD17FC6D3035CC7A00A52CD6 /* RunProcess */,
+				AD1886D530A55F57005EB390 /* Images */,
 				ADF8478F303D6F5300462C27 /* Docs */,
 			);
 			name = RunProcess;
@@ -367,7 +394,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				AD1515D43084B3E500073710 /* README.md in Resources */,
-				AD1515D53084B3E500073710 /* .gitignore in Resources */,
 				AD1515D63084B3E500073710 /* CONTRIBUTING.md in Resources */,
 				AD1515D73084B3E500073710 /* LICENSE.md in Resources */,
 				AD110E3A3098A666002C940E /* SECURITY.md in Resources */,
@@ -379,7 +405,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				ADF84792303D6F8A00462C27 /* README.md in Resources */,
-				AD49D2863036EE74007BD3A5 /* .gitignore in Resources */,
 				AD6BFBBF3071E01600689042 /* CONTRIBUTING.md in Resources */,
 				AD110E3B3098A666002C940E /* SECURITY.md in Resources */,
 				AD8D43FB3036E17700B0576B /* LICENSE.md in Resources */,

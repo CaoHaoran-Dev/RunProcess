@@ -1,6 +1,10 @@
 # RunProcess
 
 > 一款具備半透明介面與選單列整合的 Spotlight 風格 macOS 指令啟動器。
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="images/RunProcess-Light.png">
+</picture>
 
 > [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · 繁體中文
 
