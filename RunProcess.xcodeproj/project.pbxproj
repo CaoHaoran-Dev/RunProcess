@@ -967,8 +967,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/CaoHaoran-Dev/RemoteLinkKit.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMinorVersion;
+				minimumVersion = 1.1.2;
 			};
 		};
 		ADDC692730738CCB009B650E /* XCRemoteSwiftPackageReference "Yams" */ = {

@@ -34,13 +34,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var keyMonitor: Any?
 
     private var updaterController: SPUStandardUpdaterController?
-    
+
     var updaterControllerForSettings: SPUStandardUpdaterController? {
         updaterController
     }
 
     private var hasBeenActive = false
-    
+
     // MARK: - Bonjour Discovery
     #if BETA
     private var bonjourBrowser: BonjourBrowser?
@@ -189,12 +189,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupGlobalHotkey()
         setupKeyMonitor()
         setupAppActiveObserver()
-        
+
         #if BETA
-        RemotePairingNotifier.requestAuthorizationIfNeeded()
+        // 先注册类别、设 delegate，再请求权限。
+        // 避免启动早期收到的通知走默认展示行为。
+        RemotePairingNotifier.registerCategoryIfNeeded()
         UNUserNotificationCenter.current().delegate = self
+        RemotePairingNotifier.requestAuthorizationIfNeeded()
+
         startDiscovery()
-        
+
         if AppSettings.allowRemoteControl {
             RemoteServerManager.shared.start()
         }
@@ -433,22 +437,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             session.updateWindowTitle()
         }
     }
-    
+
     @objc func connectToDiscoveredHost(_ sender: NSMenuItem) {
         guard let endpoint = sender.representedObject as? NWEndpoint else { return }
-        
+
         Task {
             do {
                 let (host, _) = try await BonjourBrowser.resolve(endpoint)
                 let normalized = HostAddress.stripPort(host)
-                
+
                 DispatchQueue.main.async {
                     let alert = NSAlert()
                     alert.messageText = NSLocalizedString("settings.remote.discovered.title", comment: "")
                     alert.informativeText = String(format: NSLocalizedString("settings.remote.discovered.message", comment: ""), normalized)
                     alert.addButton(withTitle: NSLocalizedString("settings.remote.discovered.action", comment: ""))
                     alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
-                    
+
                     if alert.runModal() == .alertFirstButtonReturn {
                         self.openSettings()
                         NotificationCenter.default.post(name: NSNotification.Name("PreFillRemoteHost"), object: normalized)
@@ -457,6 +461,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             } catch {
                 print("Failed to resolve Bonjour endpoint: \(error)")
             }
+        }
+    }
+
+    /// 没有系统通知权限时的兜底：直接把验证码弹出来。
+    /// 不依赖设置页是否打开，也不依赖 SwiftUI 视图是否已挂载。
+    func presentPairingCodeInApp(_ code: String) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("notification.pairing.title", comment: "")
+        alert.informativeText = String(
+            format: NSLocalizedString("settings.remote.pairingCodeIs", comment: ""),
+            code
+        )
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+
+        if let window = sessionManager.activeSession()?.window, window.isVisible {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
         }
     }
     #endif
@@ -779,11 +804,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if let code = userInfo["pairingCode"] as? String {
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
-                self.openSettings()
-                NotificationCenter.default.post(
-                    name: NSNotification.Name("ShowRemotePairingCode"),
-                    object: code
-                )
+                self.presentPairingCodeInApp(code)
             }
         }
         completionHandler()

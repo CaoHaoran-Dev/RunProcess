@@ -15,15 +15,9 @@ nonisolated enum RemotePairingNotifier {
 
     private static let categoryId = "RunProcessPairingCode"
 
-    /// 在 App 启动时调用一次，请求权限并注册通知类别。
-    static func requestAuthorizationIfNeeded() {
+    /// 在 App 启动时调用一次，注册通知类别。
+    static func registerCategoryIfNeeded() {
         let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error {
-                print("⚠️ 通知权限请求失败: \(error)")
-            }
-            print("🔔 通知权限: \(granted)")
-        }
 
         let openAction = UNNotificationAction(
             identifier: "OPEN_SETTINGS",
@@ -39,10 +33,37 @@ nonisolated enum RemotePairingNotifier {
         center.setNotificationCategories([category])
     }
 
-    /// 发送配对码通知。`code` 是 6 位数字。
-    /// 注意：body 必须是最终文本，不能包含 `%@` 之类的占位符，
-    /// 系统会剥离 printf 风格转义字符。
-    static func notifyPairingCode(_ code: String) {
+    /// 请求通知权限（启动时调用一次）。
+    static func requestAuthorizationIfNeeded() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error {
+                print("⚠️ 通知权限请求失败: \(error)")
+            }
+            print("🔔 通知权限: \(granted)")
+        }
+    }
+
+    /// 当前是否已授权系统通知。
+    static func isAuthorized() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        case .denied, .notDetermined:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    /// 发送配对码通知。
+    /// 返回是否成功投递到系统通知中心。
+    /// 调用方在返回 false 时应走 App 内提示兜底。
+    @discardableResult
+    static func notifyPairingCode(_ code: String) async -> Bool {
+        guard await isAuthorized() else { return false }
+
         let content = UNMutableNotificationContent()
         content.title = NSLocalizedString("notification.pairing.title", comment: "")
 
@@ -59,10 +80,12 @@ nonisolated enum RemotePairingNotifier {
             trigger: nil
         )
 
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error {
-                print("⚠️ 发送配对通知失败: \(error)")
-            }
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+            return true
+        } catch {
+            print("⚠️ 发送配对通知失败: \(error)")
+            return false
         }
     }
 }
