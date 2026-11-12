@@ -291,6 +291,18 @@ final class PersistentShell {
         }
     }
 
+    /// 中断当前正在执行的命令（发送 Ctrl-C）。
+    /// 与 `handleTimeout` 不同：不会杀掉并重建 shell，只打断前台命令。
+    /// 若没有正在执行的任务，调用无副作用。
+    func interruptCurrentCommand() {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            guard self.pendingCompletion != nil else { return }
+            guard let stdin = self.stdinPipe?.fileHandleForWriting else { return }
+            try? stdin.write(contentsOf: Data([0x03]))
+        }
+    }
+
     // MARK: - Result extraction
 
     private func tryExtractResultLocked() {

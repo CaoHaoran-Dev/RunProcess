@@ -26,11 +26,11 @@
 
 RunProcess 是**轻量命令启动器**，不是终端模拟器。以下特性有意不支持：
 
-- 交互式 TUI 程序（vim、top、less、ssh 会话）
+- 前台交互式 TUI 程序（vim、top、less、ssh 会话）
 - 完整终端模拟（ANSI 光标移动、清屏）
 - 历史或别名的云同步
 
-需要这些的话，请用专门的终端 App。
+这些工具的非交互用法是支持的，例如 `echo x | less`、`ssh host 'uname -a'`（带管道或重定向的命令不会被判定为交互式）。需要真正的终端，请用专门的终端 App。
 
 ### 计划中，尚未实现
 
@@ -57,6 +57,7 @@ RunProcess 是**轻量命令启动器**，不是终端模拟器。以下特性�
    - 会话模式开没开
    - 外观样式
    - 设置中选择的 Shell
+   - 是否涉及 Preview/Beta 版
 
 **如果应用崩溃**，附上崩溃日志：
 
@@ -67,6 +68,8 @@ RunProcess 是**轻量命令启动器**，不是终端模拟器。以下特性�
 找以 `RunProcess-` 开头的文件。
 
 **如果问题跟命令输出有关**，把完整命令贴上。敏感路径自行打码。
+
+**如果问题跟远程功能有关（仅 Preview 版）**，附上 Console.app 里以 `🌐`、`🔌`、`📨`、`✅`、`⚠️` 开头的日志。
 
 ---
 
@@ -90,6 +93,8 @@ RunProcess 是**轻量命令启动器**，不是终端模拟器。以下特性�
 - Xcode 16.0 或更高
 - Swift 5.9+（随 Xcode 附带）
 
+> **注意**：CI 使用 `macos-26` 上的 Xcode 26。构建或测试 Preview/Beta 功能可能需要比最低要求更新的 Xcode。如果只改稳定版 target，Xcode 16.0 就够。
+
 ### 克隆与构建
 
 ```bash
@@ -105,12 +110,14 @@ open RunProcess.xcodeproj
 
 应用以菜单栏附件的形式启动。找 ⚡ 图标。
 
+要开发 Preview/Beta 功能，选择 `RunProcess Preview` scheme。它编译时带 `BETA` 标记，数据存在 `RunProcess-Beta/`。
+
 ### 依赖
 
 用 Swift Package Manager 管理：
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) —— 全局热键
-- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) - 远程连接
+- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) —— 远程连接
 - [Sparkle](https://sparkle-project.org) —— 更新分发
 - [Yams](https://github.com/jpsim/Yams) —— 别名和历史的 YAML 解析
 
@@ -118,25 +125,40 @@ Xcode 首次构建时会自动拉取。
 
 ### 测试
 
-本项目有两个测试 Target，请使用对应的 Scheme 运行：
+本项目有两个测试 Target，各自绑定对应 Scheme。`RemoteConnectionTests` 导入 `RunProcess_Preview`，只在 Preview Scheme 下编译。
 
 **正式版 (`RunProcessTests`)：**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
 **预览/Beta 版 (`RunProcessPreviewTests`)：**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme "RunProcess Preview" \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
-CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
+CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。本地没有签名证书时请加 `CODE_SIGNING_ALLOWED=NO`。
+
+只跑单个测试类，用 `-only-testing`：
+
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64" \
+  -only-testing:RunProcessTests/ShellQuotingTests \
+  CODE_SIGNING_ALLOWED=NO
+```
 
 ---
 
@@ -151,7 +173,7 @@ CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 
 ### Swift 约定
 
-- **行长**：目标 120 字符，硬上限 150
+- **行长**：目标 120 字符，硬上限 150。存量代码里有超限行——新代码请遵守上限，顺手整理欢迎但不强制。
 - **命名**：类型用 `UpperCamelCase`，成员用 `lowerCamelCase`
 - **访问控制**：默认 `private`，需要时才放宽
 - **可选值**：避免强解包（`!`），除非不变量明显
@@ -176,7 +198,7 @@ CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 - key 按功能分组（如 `settings.aliases.*`）
 - `.strings` 文件保存为 **UTF-8 无 BOM**
 
-漏翻译会以微妙的方式破坏构建。三个文件都要检查。
+缺 key **不会**让构建失败——运行时应用会直接显示原始 key 字符串。提交前请手动检查三份文件。
 
 ### 注释
 
@@ -193,6 +215,7 @@ CI 对每个 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 - [ ] 新增的用户可见字符串已在三种语言里本地化
 - [ ] 手动测过（冷启动、窗口行为等）
 - [ ] 如果改了存储格式，旧数据能无损迁移
+- [ ] 如果改了远程协议或访问策略，在 PR 描述里说明兼容性影响
 
 ### PR 描述
 
@@ -250,6 +273,8 @@ RunProcess 目前支持：
 
 ## 存储格式
 
+### 正式版
+
 RunProcess 把用户数据存在：
 
 ```
@@ -259,7 +284,18 @@ RunProcess 把用户数据存在：
 └── paths.yml        # 自定义可执行文件搜索路径
 ```
 
-*(注：Preview/Beta 版的数据目录为 `RunProcess-Beta/`)*
+### 预览/Beta 版
+
+数据存在 `RunProcess-Beta/`，并额外包含：
+
+```
+├── workflows.yml         # 多行脚本
+├── remote_hosts.yml      # 已配对的远程主机
+├── paired_clients.yml    # 配对到本机的客户端
+└── remote_access.yml     # 能力开关 + 违禁词
+```
+
+Preview 版的 `UserDefaults` key 带 `beta.` 前缀（见 `AppSettings.keyPrefix`），两个版本不共享偏好设置。
 
 格式是 YAML。旧的 JSON 文件（`aliases.json`、`history.json`）首次启动会自动迁移。
 
@@ -268,6 +304,7 @@ RunProcess 把用户数据存在：
 - 版本升级后仍要能读旧数据
 - 用真实的旧文件测一遍迁移
 - 不要静默丢弃用户数据
+- 新增文件时同步更新本节
 
 ---
 
@@ -284,7 +321,7 @@ RunProcess 把用户数据存在：
    - 标题：`RunProcess vX.Y.Z`
    - 双语说明（英文在前，中文在后）
    - 附上 `RunProcess.zip`
-7. 有公证凭据的话，`xcodebuild archive` 后公证
+7. `xcodebuild archive` 打包。有公证凭据则公证；当前公开版本**未**公证，用户首次打开需在系统设置里点「仍要打开」（见 README）。
 
 ---
 

@@ -10,7 +10,10 @@ import Foundation
 class CommandExecutor {
     static let shared = CommandExecutor()
 
+    /// 每次执行的令牌。cancel 只杀匹配 token 的进程，避免
+    /// 并发 execute 时「先杀后建」把新任务误杀或把旧任务变孤儿。
     private struct State {
+        var token: UUID?
         var task: Process?
         var timeoutWork: DispatchWorkItem?
         var cancelled = false
@@ -28,6 +31,7 @@ class CommandExecutor {
                  completion: @escaping (Result<String, Error>) -> Void) {
         cancelCurrentTask()
 
+        let token = UUID()
         let task = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -35,23 +39,15 @@ class CommandExecutor {
         task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
         task.launchPath = "/bin/zsh"
 
-        // ✅ 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已经设好的 PATH
-        let customPath = PathStore.shared.customPathString()
-        let wrappedCommand: String
-        if customPath.isEmpty {
-            wrappedCommand = input
-        } else {
-            wrappedCommand = "export PATH=\"$PATH:\(ShellQuoting.quote(customPath))\"; \(input)"
-        }
-        task.arguments = ["-l", "-c", wrappedCommand]
+        // 追加用户自定义路径，不覆盖 .zshrc / .zprofile 里已设好的 PATH。
+        let wrappedCommand = Self.wrapWithCustomPath(input)
 
+        task.arguments = ["-l", "-c", wrappedCommand]
         task.standardOutput = outputPipe
         task.standardError = errorPipe
 
-        // ✅ 不再设置 task.environment["PATH"]
-        //    让 zsh 自己加载用户的 PATH，bootstrap 里再追加用户路径
-
         stateQueue.sync {
+            self.state.token = token
             self.state.task = task
             self.state.cancelled = false
         }
@@ -63,12 +59,13 @@ class CommandExecutor {
                 _ = setpgid(pid, pid)
             }
         } catch {
-            cleanup()
+            finish(token: token)
             DispatchQueue.main.async { completion(.failure(error)) }
             return
         }
 
-        collectOutput(task: task, outputPipe: outputPipe, errorPipe: errorPipe,
+        collectOutput(token: token, task: task,
+                      outputPipe: outputPipe, errorPipe: errorPipe,
                       timeout: timeout, isSudo: false, completion: completion)
     }
 
@@ -76,6 +73,7 @@ class CommandExecutor {
                          completion: @escaping (Result<String, Error>) -> Void) {
         cancelCurrentTask()
 
+        let token = UUID()
         let task = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -84,14 +82,7 @@ class CommandExecutor {
         task.currentDirectoryURL = URL(fileURLWithPath: AppSettings.resolvedWorkingDirectory)
         task.launchPath = "/usr/bin/sudo"
 
-        // ✅ 追加用户自定义路径
-        let customPath = PathStore.shared.customPathString()
-        let wrappedCommand: String
-        if customPath.isEmpty {
-            wrappedCommand = command
-        } else {
-            wrappedCommand = "export PATH=\"$PATH:\(ShellQuoting.quote(customPath))\"; \(command)"
-        }
+        let wrappedCommand = Self.wrapWithCustomPath(command)
         task.arguments = ["-S", "-k", "/bin/zsh", "-l", "-c", wrappedCommand]
 
         task.standardOutput = outputPipe
@@ -99,6 +90,7 @@ class CommandExecutor {
         task.standardInput = inputPipe
 
         stateQueue.sync {
+            self.state.token = token
             self.state.task = task
             self.state.cancelled = false
         }
@@ -110,7 +102,7 @@ class CommandExecutor {
                 _ = setpgid(pid, pid)
             }
         } catch {
-            cleanup()
+            finish(token: token)
             DispatchQueue.main.async { completion(.failure(error)) }
             return
         }
@@ -119,27 +111,47 @@ class CommandExecutor {
         inputPipe.fileHandleForWriting.write(passwordData)
         inputPipe.fileHandleForWriting.closeFile()
 
-        collectOutput(task: task, outputPipe: outputPipe, errorPipe: errorPipe,
+        collectOutput(token: token, task: task,
+                      outputPipe: outputPipe, errorPipe: errorPipe,
                       timeout: timeout, isSudo: true, completion: completion)
     }
 
-    // MARK: - Private
+    // MARK: - PATH 拼接
 
-    private func collectOutput(task: Process,
+    /// 用单引号包裹自定义路径，避免含空格时被拆成多个 PATH 段。
+    /// 例：`/Users/a b/bin` → `export PATH="$PATH:'/Users/a b/bin'"; ...`
+    private static func wrapWithCustomPath(_ command: String) -> String {
+        let customPath = PathStore.shared.customPathString()
+        guard !customPath.isEmpty else { return command }
+
+        let escaped = customPath.replacingOccurrences(of: "'", with: "'\\''")
+        return "export PATH=\"$PATH:'\(escaped)'\"; \(command)"
+    }
+
+    // MARK: - 输出收集
+
+    private func collectOutput(token: UUID,
+                               task: Process,
                                outputPipe: Pipe, errorPipe: Pipe,
                                timeout: TimeInterval,
                                isSudo: Bool,
                                completion: @escaping (Result<String, Error>) -> Void) {
         var outputData = Data()
         var errorData = Data()
-        let lock = NSLock()
+        let dataLock = NSLock()
 
         let group = DispatchGroup()
         group.enter()
         group.enter()
 
-        var outputDone = false
-        var errorDone = false
+        // 每个 pipe 各一个「只 leave 一次」的守卫，
+        // 避免超时任务与 EOF 读同时 leave 造成 unbalanced crash。
+        let outputLeave = LeaveOnce()
+        let errorLeave = LeaveOnce()
+
+        // 超时标志。超时任务置位，notify 里优先按它判定，
+        // 不再靠 terminationStatus 反推（kill 与自然退出可能竞争）。
+        let timedOut = Flag()
 
         let callbackQueue = DispatchQueue(label: "com.runprocess.executor.callback", qos: .userInitiated)
 
@@ -148,14 +160,14 @@ class CommandExecutor {
                 guard let self = self else { return }
                 let data = handle.availableData
                 if data.isEmpty {
-                    if !outputDone { outputDone = true; group.leave() }
+                    outputLeave.leave(group)
                     return
                 }
-                lock.lock()
+                dataLock.lock()
                 if outputData.count + data.count <= self.maxOutputSize {
                     outputData.append(data)
                 }
-                lock.unlock()
+                dataLock.unlock()
             }
         }
 
@@ -164,37 +176,53 @@ class CommandExecutor {
                 guard let self = self else { return }
                 let data = handle.availableData
                 if data.isEmpty {
-                    if !errorDone { errorDone = true; group.leave() }
+                    errorLeave.leave(group)
                     return
                 }
-                lock.lock()
+                dataLock.lock()
                 if errorData.count + data.count <= self.maxOutputSize {
                     errorData.append(data)
                 }
-                lock.unlock()
+                dataLock.unlock()
             }
         }
 
         let timeoutWork = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
+            // 只有仍是当前令牌的执行才允许超时处理，
+            // 防止旧执行的超时任务误杀新进程。
+            let isCurrent: Bool = self.stateQueue.sync {
+                self.state.token == token
+            }
+            guard isCurrent else { return }
+
+            timedOut.set()
             self.killProcessGroup(task)
+
             outputPipe.fileHandleForReading.readabilityHandler = nil
             errorPipe.fileHandleForReading.readabilityHandler = nil
-            if !outputDone { outputDone = true; group.leave() }
-            if !errorDone { errorDone = true; group.leave() }
+
+            outputLeave.leave(group)
+            errorLeave.leave(group)
+
             self.stateQueue.sync {
-                self.state.timeoutWork = nil
-                self.state.task = nil
+                if self.state.token == token {
+                    self.state.timeoutWork = nil
+                    self.state.task = nil
+                }
             }
         }
 
         stateQueue.sync {
-            self.state.timeoutWork = timeoutWork
+            if self.state.token == token {
+                self.state.timeoutWork = timeoutWork
+            }
         }
         DispatchQueue.global(qos: .userInitiated)
             .asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
 
-        group.notify(queue: .main) { [weak self] in
+        // 后台队列收尾，避免主线程被 waitUntilExit 阻塞。
+        group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
             guard let self = self else { return }
             timeoutWork.cancel()
             outputPipe.fileHandleForReading.readabilityHandler = nil
@@ -202,69 +230,91 @@ class CommandExecutor {
 
             self.waitUntilExit(task, timeout: 3.0)
 
-            let wasCancelled: Bool = self.stateQueue.sync {
+            let (wasCancelled, stillCurrent): (Bool, Bool) = self.stateQueue.sync {
                 let c = self.state.cancelled
-                self.state.task = nil
-                self.state.timeoutWork = nil
-                self.state.cancelled = false
-                return c
+                let current = self.state.token == token
+                if current {
+                    self.state.task = nil
+                    self.state.timeoutWork = nil
+                    self.state.cancelled = false
+                }
+                return (c, current)
             }
 
-            let output = String(data: outputData, encoding: .utf8) ?? ""
-            let error = String(data: errorData, encoding: .utf8) ?? ""
-            let combined = output + (error.isEmpty ? "" : "\n" + error)
+            dataLock.lock()
+            let outputStr = String(data: outputData, encoding: .utf8) ?? ""
+            let errorStr = String(data: errorData, encoding: .utf8) ?? ""
+            dataLock.unlock()
+
+            let combined = outputStr + (errorStr.isEmpty ? "" : "\n" + errorStr)
             let trimmed = combined.trimmingCharacters(in: .newlines)
 
-            if wasCancelled {
-                completion(.failure(NSError(
-                    domain: "RunProcess", code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("output.cancelled", comment: "")])))
-                return
-            }
+            let result: Result<String, Error>
 
-            let status = task.terminationStatus
-            if status == 9 || status == 15 {
+            if timedOut.isSet {
                 let format = isSudo
                     ? NSLocalizedString("error.timeout.short", comment: "")
                     : NSLocalizedString("error.timeout", comment: "")
                 let message = String(format: format, timeout)
-                completion(.failure(NSError(domain: "RunProcess", code: 15,
-                                            userInfo: [NSLocalizedDescriptionKey: message])))
-                return
-            }
-
-            if status == 0 {
-                completion(.success(trimmed))
-                return
-            }
-
-            if isSudo {
-                let lower = trimmed.lowercased()
-                let isPasswordError = lower.contains("sorry") ||
-                    lower.contains("incorrect password") ||
-                    (lower.contains("password") && lower.contains("try again"))
-                if isPasswordError {
-                    completion(.failure(NSError(
+                result = .failure(NSError(
+                    domain: "RunProcess", code: 15,
+                    userInfo: [NSLocalizedDescriptionKey: message]))
+            } else if wasCancelled {
+                result = .failure(NSError(
+                    domain: "RunProcess", code: -2,
+                    userInfo: [NSLocalizedDescriptionKey:
+                        NSLocalizedString("output.cancelled", comment: "")]))
+            } else {
+                let status = task.terminationStatus
+                if status == 0 {
+                    result = .success(trimmed)
+                } else if isSudo, Self.isSudoPasswordError(trimmed) {
+                    result = .failure(NSError(
                         domain: "RunProcess", code: Int(status),
-                        userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.sudo.wrong.password", comment: "")])))
-                    return
+                        userInfo: [NSLocalizedDescriptionKey:
+                            NSLocalizedString("error.sudo.wrong.password", comment: "")]))
+                } else {
+                    let format = NSLocalizedString("error.exit.code", comment: "")
+                    let message = trimmed.isEmpty
+                        ? String(format: format, status)
+                        : trimmed
+                    result = .failure(NSError(
+                        domain: "RunProcess", code: Int(status),
+                        userInfo: [NSLocalizedDescriptionKey: message]))
                 }
             }
 
-            let format = NSLocalizedString("error.exit.code", comment: "")
-            let message = trimmed.isEmpty ? String(format: format, status) : trimmed
-            completion(.failure(NSError(domain: "RunProcess", code: Int(status),
-                                        userInfo: [NSLocalizedDescriptionKey: message])))
+            // 只有当前令牌的执行才回写 completion，
+            // 旧执行的迟到回调直接丢弃。
+            guard stillCurrent || self.isCompletionStillRelevant(token: token) else { return }
+            DispatchQueue.main.async { completion(result) }
         }
     }
+
+    private func isCompletionStillRelevant(token: UUID) -> Bool {
+        // 执行已结束（state.token 被清理成 nil）时仍应回调，
+        // 因为 notify 是本执行的唯一结果出口。
+        // 只有「state.token 已被别的执行占用」才丢弃。
+        stateQueue.sync {
+            self.state.token == nil || self.state.token == token
+        }
+    }
+
+    private static func isSudoPasswordError(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        return lower.contains("sorry")
+            || lower.contains("incorrect password")
+            || (lower.contains("password") && lower.contains("try again"))
+    }
+
+    // MARK: - 进程控制
 
     private func killProcessGroup(_ task: Process) {
         let pid = task.processIdentifier
         if pid > 0 {
             kill(-pid, SIGTERM)
-            let killPid = pid
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
-                kill(-killPid, SIGKILL)
+                kill(-pid, SIGKILL)
             }
         } else if task.isRunning {
             task.terminate()
@@ -281,11 +331,14 @@ class CommandExecutor {
         }
     }
 
-    private func cleanup() {
+    private func finish(token: UUID) {
         stateQueue.sync {
-            self.state.task = nil
-            self.state.timeoutWork = nil
-            self.state.cancelled = false
+            if self.state.token == token {
+                self.state.task = nil
+                self.state.timeoutWork = nil
+                self.state.cancelled = false
+                self.state.token = nil
+            }
         }
     }
 
@@ -298,6 +351,38 @@ class CommandExecutor {
                 self.killProcessGroup(task)
             }
             self.state.task = nil
+            self.state.token = nil
         }
+    }
+}
+
+// MARK: - 辅助类型
+
+/// 只允许 leave 一次，防止 DispatchGroup unbalanced crash。
+private final class LeaveOnce: @unchecked Sendable {
+    private let lock = NSLock()
+    private var left = false
+
+    func leave(_ group: DispatchGroup) {
+        let should: Bool = lock.withLock {
+            guard !left else { return false }
+            left = true
+            return true
+        }
+        if should { group.leave() }
+    }
+}
+
+/// 线程安全的布尔标志。
+private final class Flag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+
+    func set() {
+        lock.withLock { value = true }
+    }
+
+    var isSet: Bool {
+        lock.withLock { value }
     }
 }

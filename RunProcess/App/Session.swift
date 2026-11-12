@@ -28,6 +28,10 @@ final class Session {
     private var didBecomeKeyObserver: NSObjectProtocol?
     private var hasShown = false
 
+    /// 本地非 session 执行时持有的进程，用于取消。
+    private var activeTask: Process?
+    private let activeTaskLock = NSLock()
+
     var onClose: (() -> Void)?
     var onBecomeKey: (() -> Void)?
 
@@ -126,6 +130,12 @@ final class Session {
         if let token = didBecomeKeyObserver { NotificationCenter.default.removeObserver(token) }
         persistentShell?.teardown()
         sudoAuth.revoke()
+        activeTaskLock.lock()
+        if let task = activeTask, task.isRunning {
+            Self.killProcessGroup(task)
+        }
+        activeTask = nil
+        activeTaskLock.unlock()
     }
 
     // MARK: - Frame Calculation (Multi-Display Support)
@@ -268,12 +278,13 @@ final class Session {
         task.executableURL = URL(fileURLWithPath: shellPath)
         task.currentDirectoryURL = URL(fileURLWithPath: cwd)
 
+        // 用单引号包裹自定义路径，避免含空格时被拆成多个 PATH 段。
         var script = command
         if AppSettings.isZshShell && AppSettings.customPathEnabled {
             let extra = PathStore.shared.customPathString()
             if !extra.isEmpty {
-                let quoted = extra.replacingOccurrences(of: "'", with: "'\\''")
-                script = "export PATH=\"$PATH:'\(quoted)'\"; \(command)"
+                let escaped = extra.replacingOccurrences(of: "'", with: "'\\''")
+                script = "export PATH=\"$PATH:'\(escaped)'\"; \(command)"
             }
         }
 
@@ -301,13 +312,23 @@ final class Session {
             bufferLock.unlock()
         }
 
-        let timeoutWork = DispatchWorkItem {
-            if task.isRunning { task.terminate() }
+        // 超时：杀整个进程组，而不是只杀主进程。
+        let timeoutWork = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            Self.killProcessGroup(task)
+            _ = self // 保持 self 捕获语义明确
         }
         DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
 
+        // 持有当前 task，供 cancelExecution 取消。
+        activeTaskLock.lock()
+        activeTask = task
+        activeTaskLock.unlock()
+
         task.terminationHandler = { proc in
             timeoutWork.cancel()
+
+            // 先摘 handler，再读尾巴，避免双重读取竞争。
             outPipe.fileHandleForReading.readabilityHandler = nil
             errPipe.fileHandleForReading.readabilityHandler = nil
 
@@ -345,16 +366,50 @@ final class Session {
 
         do {
             try task.run()
+            let pid = task.processIdentifier
+            if pid > 0 {
+                _ = setpgid(pid, pid)
+            }
         } catch {
             outPipe.fileHandleForReading.readabilityHandler = nil
             errPipe.fileHandleForReading.readabilityHandler = nil
             timeoutWork.cancel()
+            activeTaskLock.lock()
+            if activeTask === task { activeTask = nil }
+            activeTaskLock.unlock()
             completion(.failure(error))
         }
     }
 
     private func cancelExecution() {
+        // 1. 本地非 session：杀自己持有的进程组。
+        activeTaskLock.lock()
+        let task = activeTask
+        activeTask = nil
+        activeTaskLock.unlock()
+        if let task = task, task.isRunning {
+            Self.killProcessGroup(task)
+        }
+
+        // 2. sudo：走 CommandExecutor 单例。
         CommandExecutor.shared.cancelCurrentTask()
+
+        // 3. session 模式：向持久 shell 发中断。
+        if usesSessionMode, let shell = persistentShell {
+            shell.interruptCurrentCommand()
+        }
+    }
+
+    private static func killProcessGroup(_ task: Process) {
+        let pid = task.processIdentifier
+        if pid > 0 {
+            kill(-pid, SIGTERM)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                kill(-pid, SIGKILL)
+            }
+        } else if task.isRunning {
+            task.terminate()
+        }
     }
 
     private func handleShellCrash() {

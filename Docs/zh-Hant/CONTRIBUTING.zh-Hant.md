@@ -26,11 +26,11 @@
 
 RunProcess 是**輕量指令啟動器**，不是終端機模擬器。以下特性有意不支援：
 
-- 互動式 TUI 程式（vim、top、less、ssh 工作階段）
+- 前景互動式 TUI 程式（vim、top、less、ssh 工作階段）
 - 完整終端機模擬（ANSI 游標移動、清屏）
 - 記錄或別名的雲端同步
 
-需要這些的話，請用專門的終端機 App。
+這些工具的非互動用法是支援的，例如 `echo x | less`、`ssh host 'uname -a'`（帶管線或重導向的指令不會被判為互動式）。需要真正的終端機，請用專門的終端機 App。
 
 ### 計劃中，尚未實作
 
@@ -57,6 +57,7 @@ RunProcess 是**輕量指令啟動器**，不是終端機模擬器。以下特�
    - 工作階段模式開沒開
    - 外觀樣式
    - 設定中選擇的 Shell
+   - 是否涉及 Preview/Beta 版
 
 **如果應用程式崩潰**，附上崩潰記錄：
 
@@ -67,6 +68,8 @@ RunProcess 是**輕量指令啟動器**，不是終端機模擬器。以下特�
 找以 `RunProcess-` 開頭的檔案。
 
 **如果問題跟指令輸出有關**，把完整指令貼上。敏感路徑自行打碼。
+
+**如果問題跟遠端功能有關（僅 Preview 版）**，附上 Console.app 裡以 `🌐`、`🔌`、`📨`、`✅`、`⚠️` 開頭的記錄。
 
 ---
 
@@ -90,6 +93,8 @@ RunProcess 是**輕量指令啟動器**，不是終端機模擬器。以下特�
 - Xcode 16.0 或以上
 - Swift 5.9+（隨 Xcode 附帶）
 
+> **注意**：CI 使用 `macos-26` 上的 Xcode 26。建置或測試 Preview/Beta 功能可能需要比最低要求更新的 Xcode。如果只改穩定版 target，Xcode 16.0 就夠。
+
 ### 複製與建置
 
 ```bash
@@ -105,12 +110,14 @@ open RunProcess.xcodeproj
 
 應用程式以選單列附件的形式啟動。找 ⚡ 圖示。
 
+要開發 Preview/Beta 功能，選擇 `RunProcess Preview` scheme。它編譯時帶 `BETA` 標記，資料存在 `RunProcess-Beta/`。
+
 ### 相依套件
 
 用 Swift Package Manager 管理：
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) —— 全域快速鍵
-- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) - 遠端連線
+- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) —— 遠端連線
 - [Sparkle](https://sparkle-project.org) —— 更新分發
 - [Yams](https://github.com/jpsim/Yams) —— 別名與記錄的 YAML 解析
 
@@ -118,25 +125,40 @@ Xcode 首次建置時會自動拉取。
 
 ### 測試
 
-本專案有兩個測試 Target，請使用對應的 Scheme 執行：
+本專案有兩個測試 Target，各自綁定對應 Scheme。`RemoteConnectionTests` 匯入 `RunProcess_Preview`，只在 Preview Scheme 下編譯。
 
 **正式版 (`RunProcessTests`)：**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
 **預覽/Beta 版 (`RunProcessPreviewTests`)：**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme "RunProcess Preview" \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
-CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
+CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。本機沒有簽章憑證時請加 `CODE_SIGNING_ALLOWED=NO`。
+
+只跑單一測試類別，用 `-only-testing`：
+
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64" \
+  -only-testing:RunProcessTests/ShellQuotingTests \
+  CODE_SIGNING_ALLOWED=NO
+```
 
 ---
 
@@ -151,7 +173,7 @@ CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 
 ### Swift 慣例
 
-- **行長**：目標 120 字元，硬上限 150
+- **行長**：目標 120 字元，硬上限 150。現有程式碼有超限行——新程式碼請遵守上限，順手整理歡迎但不強制。
 - **命名**：型別用 `UpperCamelCase`，成員用 `lowerCamelCase`
 - **存取控制**：預設 `private`，需要時才放寬
 - **可選值**：避免強制解包（`!`），除非不變量明顯
@@ -176,7 +198,7 @@ CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 - key 按功能分組（如 `settings.aliases.*`）
 - `.strings` 檔案存成 **UTF-8 無 BOM**
 
-漏翻譯會以微妙的方式破壞建置。三個檔案都要檢查。
+缺 key **不會**讓建置失敗——執行時應用程式會直接顯示原始 key 字串。提交前請手動檢查三份檔案。
 
 ### 註解
 
@@ -193,6 +215,7 @@ CI 對每個 PR 在 `arm64` 和 `x86_64` 上都跑一遍。
 - [ ] 新增的使用者可見字串已在三種語言裡在地化
 - [ ] 手動測過（冷啟動、視窗行為等）
 - [ ] 如果改了儲存格式，舊資料能無損遷移
+- [ ] 如果改了遠端協定或存取策略，在 PR 描述裡說明相容性影響
 
 ### PR 描述
 
@@ -250,6 +273,8 @@ RunProcess 目前支援：
 
 ## 儲存格式
 
+### 正式版
+
 RunProcess 把使用者資料存在：
 
 ```
@@ -259,7 +284,18 @@ RunProcess 把使用者資料存在：
 └── paths.yml        # 自訂執行檔搜尋路徑
 ```
 
-*(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta/`)*
+### 預覽/Beta 版
+
+資料存在 `RunProcess-Beta/`，並額外包含：
+
+```
+├── workflows.yml         # 多行指令稿
+├── remote_hosts.yml      # 已配對的遠端主機
+├── paired_clients.yml    # 配對到本機的用戶端
+└── remote_access.yml     # 能力開關 + 違禁詞
+```
+
+Preview 版的 `UserDefaults` key 帶 `beta.` 前綴（見 `AppSettings.keyPrefix`），兩個版本不共享偏好設定。
 
 格式是 YAML。舊的 JSON 檔案（`aliases.json`、`history.json`）首次啟動會自動遷移。
 
@@ -268,6 +304,7 @@ RunProcess 把使用者資料存在：
 - 版本升級後仍要能讀舊資料
 - 用真實的舊檔案測一遍遷移
 - 不要靜默丟棄使用者資料
+- 新增檔案時同步更新本節
 
 ---
 
@@ -284,7 +321,7 @@ RunProcess 把使用者資料存在：
    - 標題：`RunProcess vX.Y.Z`
    - 雙語說明（英文在前，中文在後）
    - 附上 `RunProcess.zip`
-7. 有公證憑證的話，`xcodebuild archive` 後公證
+7. `xcodebuild archive` 打包。有公證憑證則公證；目前公開版本**未**公證，使用者首次開啟需在系統設定裡點「仍要開啟」（見 README）。
 
 ---
 

@@ -26,11 +26,11 @@ Thanks for your interest in improving RunProcess. This document describes how to
 
 RunProcess is a **lightweight command launcher**, not a terminal emulator. The following are intentionally not supported:
 
-- Interactive TUI programs (vim, top, less, ssh sessions)
+- Interactive TUI programs run in the foreground (vim, top, less, ssh sessions)
 - Full terminal emulation (ANSI cursor movement, screen clearing)
 - Cloud sync of history or aliases
 
-If you want these, consider a dedicated terminal app.
+Non-interactive uses of the same tools are fine — e.g. `echo x | less` or `ssh host 'uname -a'` (piped/redirected commands are not treated as interactive). If you need a real terminal, use a dedicated terminal app.
 
 ### Planned, But Not Yet
 
@@ -57,6 +57,7 @@ A good bug report includes:
    - Session mode on or off
    - Appearance style
    - Shell selected in Settings
+   - Whether the Preview/Beta build is involved
 
 **If the app crashes**, attach the crash log from:
 
@@ -67,6 +68,8 @@ A good bug report includes:
 Look for files starting with `RunProcess-`.
 
 **If the issue is about command output**, include the exact command. Redact sensitive paths.
+
+**If the issue is about remote features (Preview only)**, include the log lines starting with `🌐`, `🔌`, `📨`, `✅`, `⚠️` from Console.app.
 
 ---
 
@@ -90,6 +93,8 @@ Concrete use cases beat abstract ideas. "I run `docker ps` ten times a day and w
 - Xcode 16.0 or later
 - Swift 5.9+ (bundled with Xcode)
 
+> **Note:** CI uses Xcode 26 on `macos-26`. Building or testing Preview/Beta features may require a newer Xcode than the minimum above. If you only touch the stable target, Xcode 16.0 is sufficient.
+
 ### Clone and Build
 
 ```bash
@@ -105,12 +110,14 @@ In Xcode:
 
 The app launches as a menu bar accessory. Look for the ⚡ icon.
 
+To work on Preview/Beta features, select the `RunProcess Preview` scheme instead. It is compiled with the `BETA` flag and stores data in `RunProcess-Beta/`.
+
 ### Dependencies
 
 Managed via Swift Package Manager:
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) – global hotkey
-- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) - Remote connection
+- [RemoteLinkKit](https://github.com/CaoHaoran-Dev/RemoteLinkKit) – remote connection
 - [Sparkle](https://sparkle-project.org) – update delivery
 - [Yams](https://github.com/jpsim/Yams) – YAML parsing for aliases and history
 
@@ -118,25 +125,40 @@ Xcode resolves them automatically on first build.
 
 ### Tests
 
-The project has two test targets. Use the corresponding scheme to run them:
+The project has two test targets, each tied to its scheme. `RemoteConnectionTests` imports `RunProcess_Preview` and only compiles under the Preview scheme.
 
 **Release (`RunProcessTests`):**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme RunProcess \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
 **Preview/Beta (`RunProcessPreviewTests`):**
+
 ```bash
 xcodebuild test \
   -project RunProcess.xcodeproj \
   -scheme "RunProcess Preview" \
-  -destination "platform=macOS,arch=arm64"
+  -destination "platform=macOS,arch=arm64" \
+  CODE_SIGNING_ALLOWED=NO
 ```
 
-CI runs the same on both `arm64` and `x86_64` for every PR.
+CI runs the same on both `arm64` and `x86_64` for every PR. Add `CODE_SIGNING_ALLOWED=NO` when running locally without a signing identity.
+
+To run a single test class, add `-only-testing`:
+
+```bash
+xcodebuild test \
+  -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -destination "platform=macOS,arch=arm64" \
+  -only-testing:RunProcessTests/ShellQuotingTests \
+  CODE_SIGNING_ALLOWED=NO
+```
 
 ---
 
@@ -151,7 +173,7 @@ CI runs the same on both `arm64` and `x86_64` for every PR.
 
 ### Swift Conventions
 
-- **Line length**: aim for 120 characters; hard limit at 150
+- **Line length**: aim for 120 characters; hard limit at 150. Existing code has some longer lines — new code should stay within the limit, and touch-ups are welcome but not required.
 - **Naming**: `UpperCamelCase` for types, `lowerCamelCase` for members
 - **Access control**: prefer `private` by default, widen only when needed
 - **Optionals**: avoid force unwrap (`!`) except where invariants are obvious
@@ -176,7 +198,7 @@ CI runs the same on both `arm64` and `x86_64` for every PR.
 - Group keys by feature (e.g. `settings.aliases.*`)
 - Save all `.strings` files as **UTF-8 without BOM**
 
-Forgetting a translation will break the build in subtle ways. Check all three files.
+A missing key does **not** fail the build — the app falls back to displaying the raw key at runtime. Check all three files manually before submitting.
 
 ### Comments
 
@@ -193,6 +215,7 @@ Comments are in Chinese in most of the codebase. That's fine. Write comments in 
 - [ ] New user-facing strings are localized in all three languages
 - [ ] You've tested the change manually (cold start, window behavior, etc.)
 - [ ] If you changed storage format, old data migrates without loss
+- [ ] If you changed remote protocol or policy, note the compatibility impact in the PR description
 
 ### PR Description
 
@@ -250,6 +273,8 @@ Use the standard [BCP 47](https://en.wikipedia.org/wiki/IETF_language_tag) code 
 
 ## Storage Format
 
+### Stable build
+
 RunProcess stores user data in:
 
 ```
@@ -259,7 +284,18 @@ RunProcess stores user data in:
 └── paths.yml        # custom executable search paths
 ```
 
-*(Note: The Preview/Beta version stores data in `RunProcess-Beta/`)*
+### Preview/Beta build
+
+Stores data in `RunProcess-Beta/` instead, and adds:
+
+```
+├── workflows.yml         # multi-line scripts
+├── remote_hosts.yml      # paired remote servers
+├── paired_clients.yml    # clients paired to this Mac
+└── remote_access.yml     # capability toggles + blocked words
+```
+
+`UserDefaults` keys are prefixed with `beta.` in the Preview build (`AppSettings.keyPrefix`), so the two builds do not share preferences.
 
 Format is YAML. Older JSON files (`aliases.json`, `history.json`) are migrated automatically on first launch.
 
@@ -268,6 +304,7 @@ If you change the schema:
 - Bump the file format in a way that reads old data
 - Test migration with a real old file
 - Don't silently discard user data
+- Update this section if you add a new file
 
 ---
 
@@ -284,7 +321,7 @@ Maintainer-only, but documented here for transparency:
    - Title: `RunProcess vX.Y.Z`
    - Bilingual notes (English first, then Chinese)
    - Attached `RunProcess.zip`
-7. Archive with `xcodebuild archive` and notarize if credentials available
+7. Archive with `xcodebuild archive`. Notarize if credentials are available; current public releases are **not** notarized, so users must use "Open Anyway" on first launch (see README).
 
 ---
 
