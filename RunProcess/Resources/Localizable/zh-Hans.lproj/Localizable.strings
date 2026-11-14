@@ -410,3 +410,20 @@
 "error.intent.sudo.not.authorized" = "以 root 执行需要授权。";
 "error.intent.execution.failed" = "命令执行失败。";
 "error.intent.alias.name.invalid" = "别名不能包含空格。";
+
+/* ========== App Intents — Remote (Preview) ========== */
+"intent.runRemoteCommand.title" = "运行远程命令";
+"intent.runRemoteCommand.description" = "在已配对的远程主机上执行 shell 命令并返回输出。";
+"intent.runRemoteCommand.shortTitle" = "运行远程命令";
+"intent.runRemoteCommand.parameter.host" = "远程主机";
+"intent.runRemoteCommand.parameter.command" = "命令";
+"intent.runRemoteCommand.parameter.throwOnFailure" = "失败时抛出错误";
+
+"intent.searchRemoteHistory.title" = "搜索远程命令历史";
+"intent.searchRemoteHistory.description" = "查找已配对远程主机上执行过的命令。";
+"intent.searchRemoteHistory.shortTitle" = "搜索远程历史";
+"intent.searchRemoteHistory.parameter.host" = "远程主机";
+"intent.searchRemoteHistory.parameter.query" = "查询";
+"intent.searchRemoteHistory.parameter.limit" = "数量上限";
+
+"error.intent.remote.host.missing" = "所选远程主机已不存在。";

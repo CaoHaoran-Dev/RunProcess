@@ -410,3 +410,20 @@
 "error.intent.sudo.not.authorized" = "Root execution requires authorization.";
 "error.intent.execution.failed" = "Command execution failed.";
 "error.intent.alias.name.invalid" = "Alias name cannot contain spaces.";
+
+/* ========== App Intents — Remote (Preview) ========== */
+"intent.runRemoteCommand.title" = "Run Remote Command";
+"intent.runRemoteCommand.description" = "Execute a shell command on a paired remote host and return its output.";
+"intent.runRemoteCommand.shortTitle" = "Run Remote Command";
+"intent.runRemoteCommand.parameter.host" = "Remote Host";
+"intent.runRemoteCommand.parameter.command" = "Command";
+"intent.runRemoteCommand.parameter.throwOnFailure" = "Throw on failure";
+
+"intent.searchRemoteHistory.title" = "Search Remote Command History";
+"intent.searchRemoteHistory.description" = "Find previously executed commands on a paired remote host.";
+"intent.searchRemoteHistory.shortTitle" = "Search Remote History";
+"intent.searchRemoteHistory.parameter.host" = "Remote Host";
+"intent.searchRemoteHistory.parameter.query" = "Query";
+"intent.searchRemoteHistory.parameter.limit" = "Limit";
+
+"error.intent.remote.host.missing" = "The selected remote host no longer exists.";

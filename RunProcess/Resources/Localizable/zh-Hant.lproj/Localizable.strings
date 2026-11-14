@@ -410,3 +410,20 @@
 "error.intent.sudo.not.authorized" = "以 root 執行需要授權。";
 "error.intent.execution.failed" = "指令執行失敗。";
 "error.intent.alias.name.invalid" = "別名不能包含空格。";
+
+/* ========== App Intents — Remote (Preview) ========== */
+"intent.runRemoteCommand.title" = "執行遠端指令";
+"intent.runRemoteCommand.description" = "在已配對的遠端主機上執行 shell 指令並傳回輸出。";
+"intent.runRemoteCommand.shortTitle" = "執行遠端指令";
+"intent.runRemoteCommand.parameter.host" = "遠端主機";
+"intent.runRemoteCommand.parameter.command" = "指令";
+"intent.runRemoteCommand.parameter.throwOnFailure" = "失敗時拋出錯誤";
+
+"intent.searchRemoteHistory.title" = "搜尋遠端指令記錄";
+"intent.searchRemoteHistory.description" = "尋找已配對遠端主機上執行過的指令。";
+"intent.searchRemoteHistory.shortTitle" = "搜尋遠端記錄";
+"intent.searchRemoteHistory.parameter.host" = "遠端主機";
+"intent.searchRemoteHistory.parameter.query" = "查詢";
+"intent.searchRemoteHistory.parameter.limit" = "數量上限";
+
+"error.intent.remote.host.missing" = "所選遠端主機已不存在。";
