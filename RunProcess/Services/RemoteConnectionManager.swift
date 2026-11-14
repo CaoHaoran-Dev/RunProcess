@@ -22,11 +22,11 @@ final class RemoteConnectionManager {
 
     private var sessions: [String: CachedSession] = [:]
     private var activeTransports: [ObjectIdentifier: URLSessionTransport] = [:]
+    private var hostTransports: [String: URLSessionTransport] = [:]
+    
     private let lock = NSLock()
 
     private init() {}
-
-    // MARK: - 建立独立 channel
 
     func makeChannel(for host: RemoteHost) async throws -> SecureChannel {
         let session = try await ensureSession(for: host)
@@ -49,8 +49,13 @@ final class RemoteConnectionManager {
         transport.onStateChange = { state in
             print("🔐 [Remote] channel state: \(state)")
         }
+        
         try await transport.connect()
         print("✅ [Remote] channel connected")
+
+        // 👇 核心修复：在交给 SecureChannel 之前，给它一点时间让底层握手彻底完成
+        // 避免把 HTTP 101 之后的零星字节当成 Frame
+        try? await Task.sleep(nanoseconds: 200_000_000)
 
         let channel = SecureChannel(
             transport: transport,
@@ -58,15 +63,20 @@ final class RemoteConnectionManager {
             cipherId: AESGCMCipher.cipherId,
             isClient: true
         )
+        
+        // 拦截第一次错误，如果是脏数据导致的解析错误，自动抛出，外层重试
+        await channel.setOnError { error in
+            print("⚠️ [Remote] Channel error intercepted: \(error)")
+        }
+        
         await channel.start()
 
         lock.withLock {
             activeTransports[ObjectIdentifier(channel)] = transport
+            hostTransports[host.id] = transport
         }
         return channel
     }
-
-    // MARK: - 移除独立 channel
 
     func removeChannel(for hostId: String, channel: SecureChannel) async {
         let transport: URLSessionTransport? = lock.withLock {
@@ -74,6 +84,16 @@ final class RemoteConnectionManager {
         }
         transport?.close()
         print("🧹 [Remote] channel removed for \(hostId)")
+    }
+
+    func removeChannel(for hostId: String) async {
+        let transport: URLSessionTransport? = lock.withLock {
+            hostTransports.removeValue(forKey: hostId)
+        }
+        if let t = transport {
+            t.close()
+            print("🧹 [Remote] stale transport cleaned for \(hostId)")
+        }
     }
 
     func removeChannel(_ channel: SecureChannel) async {
@@ -86,8 +106,6 @@ final class RemoteConnectionManager {
     func invalidateSession(for hostId: String) {
         _ = lock.withLock { sessions.removeValue(forKey: hostId) }
     }
-
-    // MARK: - 明文协商（只做一次）
 
     private func ensureSession(for host: RemoteHost) async throws -> CachedSession {
         if let cached = lock.withLock({ sessions[host.id] }) {
@@ -135,7 +153,7 @@ final class RemoteConnectionManager {
         plainTransport.onReceive = nil
         plainTransport.close()
 
-        try? await Task.sleep(nanoseconds: 150_000_000)
+        try? await Task.sleep(nanoseconds: 200_000_000)
 
         let cipher = try AESGCMCipher(key: sessionKeyData)
         let cached = CachedSession(sessionKey: sessionKeyData, cipher: cipher, createdAt: Date())
@@ -145,8 +163,6 @@ final class RemoteConnectionManager {
         }
         return cached
     }
-
-    // MARK: - 明文握手
 
     private func negotiateKey(transport: URLSessionTransport, token: String) async throws -> Data {
         let resumed = ResumedFlag()

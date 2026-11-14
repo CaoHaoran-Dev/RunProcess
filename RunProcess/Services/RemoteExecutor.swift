@@ -19,8 +19,27 @@ nonisolated final class RemoteExecutor {
                  on host: RemoteHost,
                  kind: RemoteExecPayload.Kind = .command,
                  timeout: TimeInterval = 10) async throws -> String {
-        // 每次执行使用独立的 channel，避免多窗口并发时
-        // setOnServerMessage / setOnError 被互相覆盖。
+        
+        // 防止 Shortcuts 进程复用旧的脏连接
+        await RemoteConnectionManager.shared.removeChannel(for: host.id)
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        do {
+            return try await _execute(command: command, on: host, kind: kind, timeout: timeout)
+        } catch {
+            // 第一次失败（可能是沙盒环境冷启动导致 WebSocket 状态异常），清理后重试一次
+            print("⚠️ [Remote] Execution failed, retrying once. Error: \(error.localizedDescription)")
+            await RemoteConnectionManager.shared.removeChannel(for: host.id)
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            return try await _execute(command: command, on: host, kind: kind, timeout: timeout)
+        }
+    }
+    
+    private func _execute(command: String,
+                          on host: RemoteHost,
+                          kind: RemoteExecPayload.Kind,
+                          timeout: TimeInterval) async throws -> String {
+        
         let channel = try await RemoteConnectionManager.shared.makeChannel(for: host)
         let commandId = UUID().uuidString
         let buffer = OutputBuffer()
@@ -43,8 +62,12 @@ nonisolated final class RemoteExecutor {
         }
 
         do {
-            // 普通命令走 .exec，保持与旧服务端兼容；
-            // 其余 kind 走 .custom("exec-v2")。
+            // 👇 核心修复：先发一个 ping 强制打通底层 WebSocket，并等待 300ms。
+            // 在 Shortcuts 的 BackgroundShortcutRunner 沙盒里，建立连接后直接发复杂包容易卡死。
+            let pingMsg = RemoteProcessProtocol.ClientMessage.ping(timestamp: Date())
+            try await channel.send(pingMsg)
+            try await Task.sleep(nanoseconds: 300_000_000)
+
             if kind == .command {
                 let msg: RemoteProcessProtocol.ClientMessage = .exec(
                     id: commandId,
@@ -72,7 +95,6 @@ nonisolated final class RemoteExecutor {
             await RemoteConnectionManager.shared.removeChannel(for: host.id, channel: channel)
             return result
         } catch {
-            // 无论成败都要关闭独立 channel，避免连接泄漏。
             await RemoteConnectionManager.shared.removeChannel(for: host.id, channel: channel)
             throw error
         }
@@ -94,8 +116,6 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
     }
 
     func finish(exitCode: Int32) {
-        // 在锁内完成「检查是否已结束 + 写状态」，
-        // 已结束后直接返回，避免超时路径覆盖状态。
         let shouldResume: Bool = lock.withLock {
             guard !isFinished else { return false }
             self.exitCode = exitCode
@@ -117,9 +137,6 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
 
     func waitForResult(timeout: TimeInterval) async throws -> String {
         return try await withCheckedThrowingContinuation { cont in
-            // 如果结果在 continuation 安装前就已产生
-            //（例如 setOnError 早于 waitForResult），立即用已有状态 resume，
-            // 否则任务会永久挂起。
             let snapshot: (finished: Bool, text: String, error: String?, exitCode: Int32) = lock.withLock {
                 (isFinished,
                  String(data: data, encoding: .utf8) ?? "",
@@ -139,7 +156,6 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
 
             DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { [weak self] in
                 guard let self else { return }
-                // finish(error:) 内部是原子的，无需先读 isFinished。
                 self.finish(error: NSLocalizedString("error.remote.timeout", comment: ""))
             }
         }
@@ -150,7 +166,7 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
             guard let c = continuation else { return (nil, "", nil, 0) }
             self.continuation = nil
             let out = String(data: data, encoding: .utf8)
-                ?? String(decoding: data, as: UTF8.self) // 宽容解码，二进制输出不丢
+                ?? String(decoding: data, as: UTF8.self)
             return (c, out, error, exitCode)
         }
 
@@ -158,7 +174,6 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
         Self.resume(cont, text: snapshot.text, error: snapshot.error, exitCode: snapshot.exitCode)
     }
 
-    // 非零退出码视为失败，与本地执行路径行为保持一致。
     private static func resume(_ cont: CheckedContinuation<String, Error>,
                                text: String,
                                error: String?,

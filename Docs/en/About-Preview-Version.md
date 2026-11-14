@@ -16,6 +16,7 @@ RunProcess ships a **Preview** build alongside the stable release. It contains f
 | Workflows | — | Multi-line scripts triggered by a short name |
 | Remote access policy | — | Per-capability permissions and blocked words |
 | Pairing notifications | — | System notifications with the 6-digit code |
+| App Intents (Shortcuts) | Local execution | Local + Remote execution |
 
 The Preview build uses a separate data directory and a separate UserDefaults key prefix, so it can be installed next to the stable release without conflicts.
 
@@ -40,3 +41,4 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 - Data written by the Preview build is not automatically migrated to the stable build.
 - The Preview build is not notarized, same as the stable release.
 - If you hit an issue that only happens in Preview, include the build number from the About window and the log lines starting with `🌐`, `🔌`, `📨`, `✅`, `⚠️` in your report.
+- When using Shortcuts to run remote commands, macOS may restrict loopback connections (`127.0.0.1`) under sandbox rules. If you encounter a timeout, try using your Mac's local network IP (e.g., `192.168.x.x`) instead.
