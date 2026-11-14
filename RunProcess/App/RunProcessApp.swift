@@ -794,6 +794,7 @@ extension AppDelegate: SPUStandardUserDriverDelegate {
 
 // MARK: - UNUserNotificationCenterDelegate
 
+#if BETA
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -804,6 +805,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if let code = userInfo["pairingCode"] as? String {
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
+                // 这个原本报错的方法，现在也确保包裹在 BETA 里
                 self.presentPairingCodeInApp(code)
             }
         }
@@ -818,6 +820,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler([.banner, .sound])
     }
 }
+#endif
 
 // MARK: - Remote Submenu (BETA)
 
