@@ -171,6 +171,13 @@ class CommandExecutor {
                 dataLock.lock()
                 if outputData.count + data.count <= self.maxOutputSize {
                     outputData.append(data)
+                } else {
+                    // Data 没有 hasSuffix，转成 String 检查尾部
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: outputData.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        outputData.append(Data(warningStr.utf8))
+                    }
                 }
                 dataLock.unlock()
             }
@@ -187,6 +194,13 @@ class CommandExecutor {
                 dataLock.lock()
                 if errorData.count + data.count <= self.maxOutputSize {
                     errorData.append(data)
+                } else {
+                    // Data 没有 hasSuffix，转成 String 检查尾部
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: errorData.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        errorData.append(Data(warningStr.utf8))
+                    }
                 }
                 dataLock.unlock()
             }

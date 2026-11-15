@@ -56,7 +56,15 @@ final class PersistentShell {
     deinit {
         stdoutPipe?.fileHandleForReading.readabilityHandler = nil
         stderrPipe?.fileHandleForReading.readabilityHandler = nil
-        if let p = process, p.isRunning { p.terminate() }
+        if let p = process, p.isRunning {
+            // 杀掉整个进程组，防止 shell 里启动的后台任务变成孤儿进程
+            let pid = p.processIdentifier
+            if pid > 0 {
+                kill(-pid, SIGKILL)
+            } else {
+                p.terminate()
+            }
+        }
     }
 
     // MARK: - Start / Stop
@@ -123,6 +131,12 @@ final class PersistentShell {
             self.queue.async {
                 if self.outputBuffer.count + data.count <= self.maxOutputSize {
                     self.outputBuffer.append(data)
+                } else {
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: self.outputBuffer.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        self.outputBuffer.append(Data(warningStr.utf8))
+                    }
                 }
                 self.tryExtractResultLocked()
             }
@@ -135,10 +149,16 @@ final class PersistentShell {
             self.queue.async {
                 if self.errorBuffer.count + data.count <= self.maxOutputSize {
                     self.errorBuffer.append(data)
+                } else {
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: self.errorBuffer.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        self.errorBuffer.append(Data(warningStr.utf8))
+                    }
                 }
             }
         }
-
+        
         task.terminationHandler = { [weak self] _ in
             guard let self = self else { return }
             self.queue.async {

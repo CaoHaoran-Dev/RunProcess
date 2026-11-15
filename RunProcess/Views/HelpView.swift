@@ -183,8 +183,6 @@ struct HelpView: View {
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
-                material: .sidebar,
-                blendingMode: .behindWindow
             )
             .ignoresSafeArea()
         )

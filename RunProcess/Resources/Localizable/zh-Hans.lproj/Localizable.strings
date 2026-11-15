@@ -231,7 +231,7 @@
 "settings.workflows.error.space" = "触发词不能包含空格。";
 "settings.workflows.error.duplicate" = "已存在同名的工作流。";
 "settings.remote.field.port" = "端口";
-"settings.remote.error.host.invalid" = "请输入合法的 IPv4 地址或主机名。";
+"settings.remote.error.host.invalid" = "请输入合法的 IPv4/IPv6 地址或主机名。";
 
 /* ========== Settings — Remote (Beta) ========== */
 "settings.remote.hostMode" = "主机模式";
@@ -340,7 +340,7 @@
 "help.shortcut.enter" = "执行命令";
 "help.shortcut.newline" = "插入换行（多行输入）";
 "help.shortcut.complete" = "呼出补全浮窗";
-"help.shortcut.navigate" = "按 frecency 浏览历史";
+"help.shortcut.navigate" = "浏览历史（常用优先）";
 
 "help.tip.drag.title" = "从 Finder 拖入文件";
 "help.tip.drag.desc" = "把任意文件拖进输入框，路径会自动转义并插入，可直接作为参数使用。";
@@ -367,7 +367,7 @@
 "help.aliases.desc" = "别名让你为常用命令定义短名称。它们在补全浮窗里排在最前。";
 "help.aliases.defaults" = "内置示例";
 "help.aliases.custom" = "自定义别名";
-"help.aliases.custom.desc" = "编辑这个 YAML 文件来增删别名。重启应用后生效。";
+"help.aliases.custom.desc" = "可以在这里添加别名，也可以直接编辑这个 YAML 文件。此处改动立即生效；手动修改文件后需重启应用才会重新加载。";
 
 "help.appearance.desc" = "设置 → 外观里有三种外观模式：";
 "help.appearance.none" = "无 —— 系统窗口纯色背景。";

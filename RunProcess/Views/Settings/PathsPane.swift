@@ -15,6 +15,7 @@ struct PathsPane: View {
 
     @State private var customPathEnabled = AppSettings.customPathEnabled
     @State private var isZsh = AppSettings.isZshShell
+    @State private var pathValidity: [String: Bool] = [:]
 
     var body: some View {
         // Section 1: 默认工作目录
@@ -71,6 +72,7 @@ struct PathsPane: View {
                 ForEach(Array(paths.enumerated()), id: \.offset) { idx, path in
                     PathRow(
                         path: path,
+                        isValid: pathValidity[path] ?? true,
                         isFirst: idx == 0,
                         isLast: idx == paths.count - 1,
                         onDelete: {
@@ -105,6 +107,7 @@ struct PathsPane: View {
             paths = PathStore.shared.paths
             isZsh = AppSettings.isZshShell
             if !isZsh { customPathEnabled = false }
+            rebuildValidityCache()
         }
         .onReceive(NotificationCenter.default.publisher(for: .runProcessShellDidChange)) { _ in
             isZsh = AppSettings.isZshShell
@@ -164,6 +167,11 @@ struct PathsPane: View {
 
     private func reload() {
         paths = PathStore.shared.paths
+        rebuildValidityCache()
+    }
+
+    private func rebuildValidityCache() {
+        pathValidity = Dictionary(uniqueKeysWithValues: paths.map { ($0, PathStore.shared.isValid($0)) })
     }
 }
 
@@ -171,6 +179,7 @@ struct PathsPane: View {
 
 struct PathRow: View {
     let path: String
+    let isValid: Bool
     let isFirst: Bool
     let isLast: Bool
     let onDelete: () -> Void
@@ -214,9 +223,5 @@ struct PathRow: View {
         }
         .contentShape(Rectangle())
         .onHover { isHovering = $0 }
-    }
-
-    private var isValid: Bool {
-        PathStore.shared.isValid(path)
     }
 }

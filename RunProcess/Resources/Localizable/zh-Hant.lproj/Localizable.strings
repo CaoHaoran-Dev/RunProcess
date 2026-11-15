@@ -257,7 +257,7 @@
 "settings.remote.discovered.message" = "在 %@ 發現了一台開啟遠端控制的裝置，是否前往設定配對？";
 "settings.remote.discovered.action" = "前往設定";
 "settings.remote.field.port" = "連接埠";
-"settings.remote.error.host.invalid" = "請輸入合法的 IPv4 位址或主機名稱。";
+"settings.remote.error.host.invalid" = "請輸入合法的 IPv4/IPv6 位址或主機名稱。";
 
 /* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
 "settings.remote.capability.header" = "遠端權限";
@@ -340,7 +340,7 @@
 "help.shortcut.enter" = "執行指令";
 "help.shortcut.newline" = "插入換行（多行輸入）";
 "help.shortcut.complete" = "呼出補全浮窗";
-"help.shortcut.navigate" = "依 frecency 瀏覽記錄";
+"help.shortcut.navigate" = "瀏覽記錄（常用優先）";
 
 "help.tip.drag.title" = "從 Finder 拖入檔案";
 "help.tip.drag.desc" = "把任意檔案拖進輸入框，路徑會自動轉義並插入，可直接作為參數使用。";
@@ -367,7 +367,7 @@
 "help.aliases.desc" = "別名讓你為常用指令定義短名稱。它們在補全浮窗裡排在最前。";
 "help.aliases.defaults" = "內建範例";
 "help.aliases.custom" = "自訂別名";
-"help.aliases.custom.desc" = "編輯這個 YAML 檔案來增刪別名。重新啟動應用程式後生效。";
+"help.aliases.custom.desc" = "可以在這裡新增別名，也可以直接編輯這個 YAML 檔案。此處改動立即生效；手動修改檔案後需重新啟動應用程式才會重新載入。";
 
 "help.appearance.desc" = "設定 → 外觀裡有三種外觀模式：";
 "help.appearance.none" = "無 —— 系統視窗純色背景。";

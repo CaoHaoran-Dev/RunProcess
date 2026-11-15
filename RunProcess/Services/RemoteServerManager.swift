@@ -23,11 +23,13 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
     private var pairingServer: HTTPPairingServer?
     private var advertiser: BonjourAdvertiser?
 
-    private var currentPairingCode: PairingCode?
+    /// 记录当前待处理的配对请求（有效代码 + 挑战参数）
+    private var currentPairingSession: (codeObj: PairingCode, serverId: String, nonce: Data)?
 
     private struct PendingSession {
         let cipher: AESGCMCipher
         let createdAt: Date
+        let clientIP: String
     }
     private var pendingSessions: [String: PendingSession] = [:]
     private let pendingLock = NSLock()
@@ -63,7 +65,10 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
         pairingServer = nil
         advertiser?.stop()
         advertiser = nil
-        lock.withLock { activeChannels.removeAll() }
+        lock.withLock {
+            activeChannels.removeAll()
+            currentPairingSession = nil
+        }
         withPendingLock { pendingSessions.removeAll() }
     }
 
@@ -88,22 +93,27 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
         let encoder = JSONEncoder()
 
         if path == "/pair/hello" {
-            let code = PairingCode()
-            lock.withLock { self.currentPairingCode = code }
+            let codeObj = PairingCode()
+            
+            let serverId = "runprocess-host-\(Host.current().localizedName ?? "Mac")"
+            let nonce = KeyDerivation.randomBytes(32)
+            
+            // 保存挑战上下文，用于后续 verify 校验
+            lock.withLock {
+                self.currentPairingSession = (codeObj, serverId, nonce)
+            }
 
             Task { @MainActor in
                 NotificationCenter.default.post(
                     name: NSNotification.Name("ShowRemotePairingCode"),
-                    object: code.code
+                    object: codeObj.code
                 )
-                let delivered = await RemotePairingNotifier.notifyPairingCode(code.code)
+                let delivered = await RemotePairingNotifier.notifyPairingCode(codeObj.code)
                 if !delivered {
                     print("⚠️ [Server] pairing notification not delivered, rely on in-app alert")
                 }
             }
             
-            let serverId = "runprocess-host-\(Host.current().localizedName ?? "Mac")"
-            let nonce = KeyDerivation.randomBytes(32)
             let hello = PairingHandshake.HelloResponse(
                 serverId: serverId,
                 nonce: nonce.map { String(format: "%02x", $0) }.joined(),
@@ -115,12 +125,45 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
             }
 
         } else if path == "/pair/verify" {
-            let hasCode = lock.withLock { self.currentPairingCode != nil }
-            guard hasCode else { return HTTPPairingServer.Response(status: 400) }
+            // 1. 提取当前配对上下文
+            let session = lock.withLock { self.currentPairingSession }
+            guard let session = session else {
+                return HTTPPairingServer.Response(status: 400) // 未发起过 hello 或已过期
+            }
+            
             guard let verifyReq = try? decoder.decode(PairingHandshake.VerifyRequest.self, from: request.body) else {
-                return HTTPPairingServer.Response(status: 400)
+                return HTTPPairingServer.Response(status: 400) // 请求格式错误
             }
 
+            // 2. 防爆破机制
+            if session.codeObj.isLocked {
+                return HTTPPairingServer.Response(status: 429) // 尝试次数过多，锁定
+            }
+            if session.codeObj.isConsumed {
+                return HTTPPairingServer.Response(status: 400) // 已过期或已失效
+            }
+
+            // 3. 数学验证：重新计算期望的 Proof
+            let pairKey = PairingHandshake.derivePairKey(
+                code: session.codeObj.code,
+                serverId: session.serverId,
+                nonce: session.nonce
+            )
+            
+            let clientProofData = Data(hexString: verifyReq.proof)
+            guard !clientProofData.isEmpty,
+                  PairingHandshake.verifyProof(pairKey: pairKey, nonce: session.nonce, proof: clientProofData) else {
+                // 验证失败：增加错误计数（利用内置的 try 报错）
+                _ = try? session.codeObj.verify("__invalid_trigger__")
+                print("❌ [Server] Invalid pairing proof")
+                return HTTPPairingServer.Response(status: 401)
+            }
+
+            // 4. 验证成功：标记 consumed 防重放，清理上下文
+            try? session.codeObj.verify(session.codeObj.code)
+            lock.withLock { self.currentPairingSession = nil }
+
+            // 5. 生成 Token 并落库
             let token = PairingToken.generate(deviceName: verifyReq.deviceName)
             let tokenHash = token.hash()
             let clientName = verifyReq.deviceName ?? "Unknown Device"
@@ -184,7 +227,9 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
     // MARK: - 新连接处理
 
     private nonisolated func handleNewConnection(_ connection: NWConnection) {
-        print("🔌 [Server] new connection from \(connection.endpoint)")
+        let clientIP = extractIP(from: connection.endpoint)
+        print("🔌 [Server] new connection from \(clientIP) (\(connection.endpoint))")
+        
         let transport = NWTransport(connection: connection)
         let serverNonce = KeyDerivation.randomBytes(32)
 
@@ -202,7 +247,7 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
             bindBox.lock.unlock()
             if alreadyBound { return }
 
-            if let matched = self.tryBindPendingSecure(data, transport: transport) {
+            if let matched = self.tryBindPendingSecure(data, transport: transport, clientIP: clientIP) {
                 bindBox.lock.lock(); bindBox.bound = true; bindBox.lock.unlock()
                 print("✅ [Server] secure connection bound (tokenHash \(matched.prefix(8))…)")
                 return
@@ -236,7 +281,11 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
                             return false
                         }
                         self.withPendingLock {
-                            self.pendingSessions[auth.tokenHash] = PendingSession(cipher: cipher, createdAt: Date())
+                            self.pendingSessions[auth.tokenHash] = PendingSession(
+                                cipher: cipher,
+                                createdAt: Date(),
+                                clientIP: clientIP
+                            )
                         }
                         return true
                     }
@@ -248,7 +297,6 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
                     }
 
                     print("✅ [Server] auth ok; closing plain connection, awaiting secure connection")
-                    // 普通 Task 上下文，同步调用 close()，不会被误判为 async
                     transport.close()
                 }
             } catch {
@@ -272,7 +320,7 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
         }
     }
 
-    private nonisolated func tryBindPendingSecure(_ data: Data, transport: NWTransport) -> String? {
+    private nonisolated func tryBindPendingSecure(_ data: Data, transport: NWTransport, clientIP: String) -> String? {
         let snapshot: [String: PendingSession] = withPendingLock {
             let now = Date()
             for (k, v) in pendingSessions where now.timeIntervalSince(v.createdAt) > Self.pendingSessionTTL {
@@ -296,6 +344,9 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
         let nonce = KeyDerivation.nonce(from: seq)
 
         for (tokenHash, session) in snapshot {
+            // 严格校验：IP 必须匹配，防止跨 IP 重放或抢绑
+            guard session.clientIP == clientIP else { continue }
+            
             if (try? session.cipher.open(Data(payload), nonce: nonce, aad: headerData)) != nil {
                 let secureChannel = SecureChannel(
                     transport: transport,
@@ -609,6 +660,17 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
             } catch {
                 Task { try? await channel.send(.error(id: id, message: error.localizedDescription)) }
             }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private nonisolated func extractIP(from endpoint: NWEndpoint) -> String {
+        switch endpoint {
+        case .hostPort(let host, _):
+            return "\(host)"
+        default:
+            return "unknown"
         }
     }
 }

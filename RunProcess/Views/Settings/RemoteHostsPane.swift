@@ -68,7 +68,6 @@ struct RemoteHostsPane: View {
                     .font(.system(size: 13))
                     .onChange(of: allowControl) {
                         AppSettings.allowRemoteControl = $0
-                        if $0 { RemoteServerManager.shared.start() } else { RemoteServerManager.shared.stop() }
                     }
 
                 Text(NSLocalizedString("settings.remote.allowControl.hint", comment: ""))

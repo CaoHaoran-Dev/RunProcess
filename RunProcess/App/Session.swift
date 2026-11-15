@@ -213,6 +213,30 @@ final class Session {
         frame.origin.y -= delta
         window.setFrame(frame, display: true)
     }
+    
+    // MARK: - Window Management
+
+    // 👇 新增：动态切换 Classic / Lite 窗口样式
+    func updateUIMode() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let window = self.window
+            let mode = AppSettings.mainUIMode
+
+            if mode == .lite {
+                // 切换到 Lite：无边框
+                window.styleMask = [.borderless, .fullSizeContentView, .resizable]
+                window.isMovableByWindowBackground = true
+                window.minSize = NSSize(width: 400, height: 56)
+            } else {
+                // 切换到 Classic：带标题栏
+                window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+                window.titlebarAppearsTransparent = true
+                window.minSize = NSSize(width: 520, height: 140)
+            }
+            window.title = self.baseTitle
+        }
+    }
 
     // MARK: - Execute (路由中心)
 
@@ -223,8 +247,15 @@ final class Session {
                          completion: @escaping (Result<String, Error>) -> Void) {
 
         #if BETA
-        if let hostId = viewModel.activeRemoteHostId,
+        // 💡 强制打印当前状态，看切换主机后这里拿到的是什么
+        let currentHostId = viewModel.activeRemoteHostId
+        print("🚀 [Session.execute] 准备执行命令: \(command)")
+        print("🚀 [Session.execute] 当前 activeRemoteHostId: \(String(describing: currentHostId))")
+
+        if let hostId = currentHostId,
            let host = RemoteHostStore.shared.get(id: hostId) {
+            
+            print("🌐 [Session.execute] 路由结论：执行【远程主机】 - \(host.name) (\(host.host))")
 
             let kind: RemoteExecPayload.Kind
             if useSudo {
@@ -245,6 +276,8 @@ final class Session {
                 }
             }
             return
+        } else {
+            print("💻 [Session.execute] 路由结论：执行【本地】")
         }
         #endif
 

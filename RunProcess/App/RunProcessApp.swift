@@ -435,14 +435,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.performClick(nil)
     }
 
-    #if BETA
-    @objc func selectRemoteHost(_ sender: NSMenuItem) {
-        let hostId = sender.representedObject as? String
-        if let session = sessionManager.activeSession() {
-            session.viewModel.activeRemoteHostId = hostId
-            session.updateWindowTitle()
-        }
+#if BETA
+@objc func selectRemoteHost(_ sender: NSMenuItem) {
+    let hostId = sender.representedObject as? String
+    
+    // 强制同步给所有存活的 Session
+    for session in sessionManager.allSessions {
+        session.viewModel.activeRemoteHostId = hostId
+        session.updateWindowTitle()
     }
+}
 
     @objc func connectToDiscoveredHost(_ sender: NSMenuItem) {
         guard let endpoint = sender.representedObject as? NWEndpoint else { return }

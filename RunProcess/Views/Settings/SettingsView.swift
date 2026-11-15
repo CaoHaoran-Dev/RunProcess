@@ -118,8 +118,6 @@ struct SettingsView: View {
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
-                material: .underWindowBackground,
-                blendingMode: .behindWindow
             )
             .ignoresSafeArea()
         )

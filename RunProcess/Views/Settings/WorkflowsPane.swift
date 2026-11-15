@@ -39,6 +39,7 @@ struct WorkflowsPane: View {
                             Image(systemName: "pencil")
                         }
                         .buttonStyle(.borderless)
+                        .help(NSLocalizedString("settings.aliases.delete", comment: ""))
                         Button {
                             pendingDelete = wf
                             showDeleteConfirm = true
@@ -49,6 +50,7 @@ struct WorkflowsPane: View {
                         .buttonStyle(.borderless)
                     }
                     .padding(.vertical, 2)
+                    .help(NSLocalizedString("settings.aliases.delete", comment: ""))
                 }
             }
 

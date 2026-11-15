@@ -257,7 +257,7 @@
 "settings.remote.discovered.message" = "Found device at %@. Go to settings to pair?";
 "settings.remote.discovered.action" = "Open Settings";
 "settings.remote.field.port" = "Port";
-"settings.remote.error.host.invalid" = "Enter a valid IPv4 address or hostname.";
+"settings.remote.error.host.invalid" = "Enter a valid IPv4/IPv6 address or hostname.";
 
 /* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
 "settings.remote.capability.header" = "Remote Permissions";
@@ -340,7 +340,7 @@
 "help.shortcut.enter" = "Execute command";
 "help.shortcut.newline" = "Insert newline (multi-line input)";
 "help.shortcut.complete" = "Trigger completion popup";
-"help.shortcut.navigate" = "Navigate history by frecency";
+"help.shortcut.navigate" = "Navigate history (most used first)";
 
 "help.tip.drag.title" = "Drag files from Finder";
 "help.tip.drag.desc" = "Drag any file into the input field. The path is inserted with proper escaping, ready to use as an argument.";
@@ -367,7 +367,7 @@
 "help.aliases.desc" = "Aliases let you define short names for frequently used commands. They appear first in the completion popup.";
 "help.aliases.defaults" = "Built-in examples";
 "help.aliases.custom" = "Custom aliases";
-"help.aliases.custom.desc" = "Edit this YAML file to add or change aliases. Restart the app to apply changes.";
+"help.aliases.custom.desc" = "You can add aliases here, or edit this YAML file directly. Changes made here apply immediately; if you edit the file by hand, restart the app to reload.";
 
 "help.appearance.desc" = "Three appearance modes are available in Settings → Appearance:";
 "help.appearance.none" = "None — solid system window background.";

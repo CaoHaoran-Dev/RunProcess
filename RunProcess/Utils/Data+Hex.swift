@@ -12,7 +12,8 @@ extension Data {
         self.init()
         var idx = hexString.startIndex
         while idx < hexString.endIndex {
-            let next = hexString.index(idx, offsetBy: 2)
+            // 防越界：确保后面至少还有 1 个字符
+            guard let next = hexString.index(idx, offsetBy: 2, limitedBy: hexString.endIndex) else { break }
             if let b = UInt8(hexString[idx..<next], radix: 16) {
                 append(b)
             }
