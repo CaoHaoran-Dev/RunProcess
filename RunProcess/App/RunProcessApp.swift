@@ -379,11 +379,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
 
             if flags == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "r" {
+                self.reRunLastCommand()
+                return nil
+            }
+
+            if flags == .command,
                event.charactersIgnoringModifiers == "/" {
                 self.openHelp()
                 return nil
             }
-
+            
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "u" {
                 self.checkForUpdates()
@@ -548,6 +554,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         helpWindow?.orderOut(nil)
     }
 
+    @objc func reRunLastCommand() {
+        guard let session = sessionManager.activeSession() else { return }
+        guard !session.viewModel.isRunning else { return }
+
+        // 与 ContentView 的「重跑上一条」逻辑保持一致：
+        // 从历史里取最近一条，写回输入框并执行。
+        let entries = CommandHistory.shared.getAll()
+        guard let last = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first else {
+            return
+        }
+        session.viewModel.inputText = last.command
+        session.viewModel.executeCommand(useSudo: false, password: nil) { _ in
+            session.viewModel.closeSuggestions()
+        }
+    }
+    
     @objc func openHistory() {
         let session = sessionManager.activeSession() ?? sessionManager.newSession()
 

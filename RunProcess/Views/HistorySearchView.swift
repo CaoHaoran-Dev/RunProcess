@@ -166,7 +166,6 @@ private struct KeyCaptureView: NSViewRepresentable {
         view.onDown = onDown
         view.onEnter = onEnter
         view.onEscape = onEscape
-        DispatchQueue.main.async { view.window?.makeFirstResponder(view) }
         return view
     }
 
@@ -178,25 +177,30 @@ private struct KeyCaptureView: NSViewRepresentable {
         v.onEscape = onEscape
     }
 
+    /// 不抢 first responder，只在 responder 链里拦截方向键 / Enter / Esc。
+    /// 字符输入仍由 TextField 处理。
     class KeyView: NSView {
         var onUp: (() -> Void)?
         var onDown: (() -> Void)?
         var onEnter: (() -> Void)?
         var onEscape: (() -> Void)?
 
-        override var acceptsFirstResponder: Bool { true }
+        override var acceptsFirstResponder: Bool { false }
 
-        override func keyDown(with event: NSEvent) {
+        // 用 performKeyEquivalent 在事件到达 firstResponder 之前拦截。
+        // 只吞掉 ↑↓/Enter/Esc，其余返回 false 交给系统继续分发（TextField 输入不受影响）。
+        override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            guard event.type == .keyDown else { return false }
             switch event.keyCode {
-            case 126: onUp?()        // ↑
-            case 125: onDown?()      // ↓
-            case 36, 76: onEnter?()  // Return / Enter
-            case 53: onEscape?()     // Esc
-            default: super.keyDown(with: event)
+            case 126: onUp?(); return true      // ↑
+            case 125: onDown?(); return true    // ↓
+            case 36, 76: onEnter?(); return true // Return / Enter
+            case 53: onEscape?(); return true   // Esc
+            default: return false
             }
         }
 
-        // 不拦截鼠标，只当键盘事件
+        // 不拦截鼠标
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
     }
 }

@@ -155,28 +155,34 @@ struct SettingsView: View {
         .frame(maxWidth: 540)
         .frame(maxWidth: .infinity, alignment: .center)
     }
+    
+    // 所有 Pane 共用的顶部「图标 + 标题 + 简介」头部。
+    @ViewBuilder
+    private func headerView(for category: SettingsCategory) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: category.icon)
+                .font(.system(size: 48, weight: .light))
+                .foregroundColor(category.iconColor)
+                .frame(height: 64)
+
+            Text(category.title)
+                .font(.system(size: 20, weight: .semibold))
+
+            Text(category.subtitle)
+                .font(.system(size: 12))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+    }
 
     private var formContent: some View {
         Form {
             Section {
-                VStack(spacing: 10) {
-                    Image(systemName: selected.icon)
-                        .font(.system(size: 48, weight: .light))
-                        .foregroundColor(selected.iconColor)
-                        .frame(height: 64)
-
-                    Text(selected.title)
-                        .font(.system(size: 20, weight: .semibold))
-
-                    Text(selected.subtitle)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .listRowBackground(Color.clear)
+                headerView(for: selected)
+                    .listRowBackground(Color.clear)
             }
 
             switch selected {

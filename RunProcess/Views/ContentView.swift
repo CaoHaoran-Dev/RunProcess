@@ -44,15 +44,6 @@ struct ContentView: View {
                 ? AnyView(AdaptiveWindowBackground(style: appearanceStyle, material: .underWindowBackground, blendingMode: .behindWindow).ignoresSafeArea())
                 : AnyView(Color.clear)
         )
-        // 👈 隐藏按钮拦截 Cmd + R 用于重新执行
-        .background(
-            Button("") {
-                executeLastCommand()
-            }
-            .keyboardShortcut("r", modifiers: .command)
-            .opacity(0)
-            .frame(width: 0, height: 0)
-        )
         .onExitCommand {
             if viewModel.isRunning {
                 viewModel.cancelExecution()
@@ -84,6 +75,11 @@ struct ContentView: View {
             guard pending else { return }
             useSudo = true
             viewModel.pendingSudoRequest = false
+        }
+        // 👈 「默认以 root 执行」开关变化时，同步已开窗口的 useSudo，
+        //    避免 Toggle 显示锁定但实际不 sudo（或反之）。
+        .onChange(of: defaultSudo) { newValue in
+            useSudo = newValue
         }
         // 👇 修复 Sheet 关闭后无法输入
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) { _ in
@@ -254,19 +250,22 @@ struct ContentView: View {
 
     private var optionsRow: some View {
         HStack {
-            Toggle(isOn: $useSudo) {
+            Toggle(isOn: Binding(
+                get: { defaultSudo || useSudo },
+                set: { useSudo = $0 }
+            )) {
                 HStack(spacing: 4) {
                     Image(systemName: defaultSudo ? "lock.fill" : "lock.shield")
                         .font(.system(size: 12))
-                        .foregroundColor(useSudo ? .orange : .secondary)
+                        .foregroundColor((defaultSudo || useSudo) ? .orange : .secondary)
                     Text(NSLocalizedString("sudo.toggle.label", comment: ""))
                         .font(.system(size: 12))
-                        .foregroundColor(useSudo ? .orange : .secondary)
+                        .foregroundColor((defaultSudo || useSudo) ? .orange : .secondary)
                 }
             }
             .toggleStyle(.checkbox)
             .disabled(defaultSudo)
-
+            
             Spacer()
 
             if !viewModel.outputText.isEmpty {

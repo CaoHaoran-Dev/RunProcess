@@ -32,18 +32,37 @@ struct RemoteHostsPane: View {
     var body: some View {
         switch route {
         case .permissions:
-            RemotePermissionsDetail(onBack: { route = nil })
+            Section {
+                backButton
+            }
+            RemotePermissionsDetail()
         case .blockedWords:
-            RemoteBlockedWordsDetail(onBack: { route = nil })
+            Section {
+                backButton
+            }
+            RemoteBlockedWordsDetail()
         case nil:
             mainPage
         }
     }
 
+    private var backButton: some View {
+        Button {
+            route = nil
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "chevron.left")
+                Text(NSLocalizedString("button.back", comment: ""))
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundColor(.accentColor)
+    }
+
     // MARK: - 主页
 
     private var mainPage: some View {
-        SettingsDetailContainer {
+        Group {
             Section {
                 Toggle(NSLocalizedString("settings.remote.allowControl", comment: ""), isOn: $allowControl)
                     .font(.system(size: 13))
@@ -211,24 +230,17 @@ struct RemoteHostsPane: View {
 // MARK: - 权限详情页
 
 private struct RemotePermissionsDetail: View {
-    let onBack: () -> Void
-
     @State private var allowed: Set<RemoteCapability> = RemoteAccessPolicyStore.shared.allowedCapabilities
 
     var body: some View {
-        SettingsDetailContainer(
-            title: NSLocalizedString("settings.remote.capability.header", comment: ""),
-            onBack: onBack
-        ) {
-            Section {
-                ForEach(RemoteCapability.allCases) { capability in
-                    Toggle(NSLocalizedString(capability.displayNameKey, comment: ""), isOn: binding(for: capability))
-                        .font(.system(size: 13))
-                }
-                Text(NSLocalizedString("settings.remote.capability.hint", comment: ""))
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+        Section {
+            ForEach(RemoteCapability.allCases) { capability in
+                Toggle(NSLocalizedString(capability.displayNameKey, comment: ""), isOn: binding(for: capability))
+                    .font(.system(size: 13))
             }
+            Text(NSLocalizedString("settings.remote.capability.hint", comment: ""))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
     }
 
@@ -246,50 +258,43 @@ private struct RemotePermissionsDetail: View {
 // MARK: - 违禁词详情页
 
 private struct RemoteBlockedWordsDetail: View {
-    let onBack: () -> Void
-
     @State private var words: [String] = RemoteAccessPolicyStore.shared.blockedWords
     @State private var newWord: String = ""
 
     var body: some View {
-        SettingsDetailContainer(
-            title: NSLocalizedString("settings.remote.blocked.header", comment: ""),
-            onBack: onBack
-        ) {
-            Section {
-                if words.isEmpty {
-                    Text(NSLocalizedString("settings.remote.blocked.empty", comment: ""))
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(words, id: \.self) { word in
-                        HStack {
-                            Text(word)
-                                .font(.system(size: 12, design: .monospaced))
-                            Spacer()
-                            Button {
-                                RemoteAccessPolicyStore.shared.removeBlockedWord(word)
-                                reload()
-                            } label: {
-                                Image(systemName: "trash").foregroundColor(.red)
-                            }
-                            .buttonStyle(.borderless)
+        Section {
+            if words.isEmpty {
+                Text(NSLocalizedString("settings.remote.blocked.empty", comment: ""))
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(words, id: \.self) { word in
+                    HStack {
+                        Text(word)
+                            .font(.system(size: 12, design: .monospaced))
+                        Spacer()
+                        Button {
+                            RemoteAccessPolicyStore.shared.removeBlockedWord(word)
+                            reload()
+                        } label: {
+                            Image(systemName: "trash").foregroundColor(.red)
                         }
+                        .buttonStyle(.borderless)
                     }
                 }
-
-                HStack(spacing: 8) {
-                    TextField(NSLocalizedString("settings.remote.blocked.placeholder", comment: ""), text: $newWord)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 12, design: .monospaced))
-                        .onSubmit { addWord() }
-                    Button(NSLocalizedString("settings.remote.blocked.add", comment: "")) { addWord() }
-                        .disabled(newWord.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-
-                Text(NSLocalizedString("settings.remote.blocked.hint", comment: ""))
-                    .font(.system(size: 11))
-                    .foregroundColor(.secondary)
             }
+
+            HStack(spacing: 8) {
+                TextField(NSLocalizedString("settings.remote.blocked.placeholder", comment: ""), text: $newWord)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12, design: .monospaced))
+                    .onSubmit { addWord() }
+                Button(NSLocalizedString("settings.remote.blocked.add", comment: "")) { addWord() }
+                    .disabled(newWord.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+
+            Text(NSLocalizedString("settings.remote.blocked.hint", comment: ""))
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
         }
     }
 
