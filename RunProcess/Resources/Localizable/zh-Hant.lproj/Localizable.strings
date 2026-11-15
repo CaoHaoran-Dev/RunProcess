@@ -71,8 +71,8 @@
 
 /* ========== Errors ========== */
 "error.interactive.command" = "不支援互動式指令（vim、python、top 等），請在系統終端機中執行。";
-"error.timeout" = "指令執行逾時（超過 %@ 秒）。長時間執行的指令請直接在終端機中執行。";
-"error.timeout.short" = "指令執行逾時（超過 %@ 秒）";
+"error.timeout" = "指令執行逾時（超過 %ld 秒）。長時間執行的指令請直接在終端機中執行。";
+"error.timeout.short" = "指令執行逾時（超過 %ld 秒）";
 "error.sudo.wrong.password" = "密碼錯誤，請檢查後重試。";
 "error.sudo.missing.password" = "sudo 指令需要密碼。";
 "error.exit.code" = "指令執行失敗（結束碼：%ld）";
@@ -271,7 +271,7 @@
 "settings.remote.capability.hint" = "未勾選的功能在遠端用戶端請求時會被拒絕。";
 "settings.remote.blocked.header" = "違禁詞";
 "settings.remote.blocked.empty" = "還沒有違禁詞。";
-"settings.remote.blocked.summary" = "%d 個詞";
+"settings.remote.blocked.summary" = "%ld 個詞";
 "settings.remote.blocked.placeholder" = "新增違禁詞…";
 "settings.remote.blocked.add" = "新增";
 "settings.remote.blocked.hint" = "遠端指令中命中任一違禁詞即拒絕執行。";
@@ -307,7 +307,7 @@
 "history.hint.navigate" = "選擇";
 "history.hint.apply" = "套用";
 "history.hint.close" = "關閉";
-"suggestion.history.count" = "%d次";
+"suggestion.history.count" = "%ld次";
 
 /* ========== Help ========== */
 "help.search" = "搜尋";

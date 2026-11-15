@@ -71,8 +71,8 @@
 
 /* ========== Errors ========== */
 "error.interactive.command" = "不支持交互式命令（vim、python、top 等），请在系统终端中运行。";
-"error.timeout" = "命令执行超时（超过 %@ 秒）。长时间运行的命令请直接在终端中执行。";
-"error.timeout.short" = "命令执行超时（超过 %@ 秒）";
+"error.timeout" = "命令执行超时（超过 %ld 秒）。长时间运行的命令请直接在终端中执行。";
+"error.timeout.short" = "命令执行超时（超过 %ld 秒）";
 "error.sudo.wrong.password" = "密码错误，请检查后重试。";
 "error.sudo.missing.password" = "sudo 命令需要密码。";
 "error.exit.code" = "命令执行失败（退出码：%ld）";
@@ -271,7 +271,7 @@
 "settings.remote.capability.hint" = "未勾选的功能在远程客户端请求时会被拒绝。";
 "settings.remote.blocked.header" = "违禁词";
 "settings.remote.blocked.empty" = "还没有违禁词。";
-"settings.remote.blocked.summary" = "%d 个词";
+"settings.remote.blocked.summary" = "%ld 个词";
 "settings.remote.blocked.placeholder" = "添加违禁词…";
 "settings.remote.blocked.add" = "添加";
 "settings.remote.blocked.hint" = "远程命令中命中任一违禁词即拒绝执行。";
@@ -307,7 +307,7 @@
 "history.hint.navigate" = "选择";
 "history.hint.apply" = "应用";
 "history.hint.close" = "关闭";
-"suggestion.history.count" = "%d次";
+"suggestion.history.count" = "%ld次";
 
 /* ========== Help ========== */
 "help.search" = "搜索";

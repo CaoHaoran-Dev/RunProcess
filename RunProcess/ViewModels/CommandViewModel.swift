@@ -170,26 +170,33 @@ class CommandViewModel: ObservableObject {
 
     func navigateHistoryUp() -> String? {
         if historyCommands.isEmpty {
+            // 按 frecency 降序：最常用/最近的在 index 0。
             historyCommands = history.getAll()
                 .sorted { $0.frecency > $1.frecency }
                 .map { $0.command }
             currentInputBackup = inputText
         }
         guard !historyCommands.isEmpty else { return nil }
+
         if historyIndex == -1 {
-            historyIndex = historyCommands.count - 1
-        } else if historyIndex > 0 {
-            historyIndex -= 1
+            // 首次按 ↑ 取最常用（最近）的一条。
+            historyIndex = 0
+        } else if historyIndex < historyCommands.count - 1 {
+            // 继续向上：越往上越冷门，符合 frecency 排序直觉。
+            historyIndex += 1
         }
         return historyCommands[historyIndex]
     }
 
     func navigateHistoryDown() -> String? {
         guard !historyCommands.isEmpty else { return nil }
-        if historyIndex < historyCommands.count - 1 && historyIndex >= 0 {
-            historyIndex += 1
+
+        if historyIndex > 0 {
+            // 向下回退，逐渐回到更常用的命令。
+            historyIndex -= 1
             return historyCommands[historyIndex]
-        } else if historyIndex == historyCommands.count - 1 {
+        } else if historyIndex == 0 {
+            // 已到最常用一条，再按 ↓ 还原用户原始输入。
             historyIndex = -1
             return currentInputBackup
         }
@@ -590,9 +597,20 @@ enum CommandPreprocessor {
         let firstPart = command.split(separator: "|").first.map(String.init) ?? command
         let trimmed = firstPart.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // 带远程命令参数的 ssh / sftp / scp 不算交互：
+        //   ssh host 'uname -a' / ssh -p 22 user@host ls -la / sftp host:path
+        if let remote = remoteCommandKind(trimmed) {
+            switch remote {
+            case .nonInteractive:
+                return false
+            case .interactive:
+                return true
+            }
+        }
+
         let interactive = [
             "vim","vi","nano","emacs","top","htop","less","more",
-            "ssh","telnet","ftp","sftp",
+            "telnet","ftp",
             "python","python3","ipython","irb","node",
             "mysql","psql","sqlite3",
             "gdb","lldb","bc","dc",
@@ -608,6 +626,56 @@ enum CommandPreprocessor {
         if unquoted.contains(" -i ") || unquoted.contains(" --interactive ") { return true }
         return false
     }
+
+    /// 判断 ssh / sftp / scp 这类“远程执行工具”的调用是否带非交互命令。
+    /// 返回 nil 表示不是远程执行工具，交回普通列表判断。
+    private enum RemoteCommandKind {
+        case interactive
+        case nonInteractive
+    }
+
+    private static func remoteCommandKind(_ trimmed: String) -> RemoteCommandKind? {
+        let tokens = trimmed.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard let tool = tokens.first?.lowercased() else { return nil }
+
+        switch tool {
+        case "ssh":
+            // 解析 ssh 选项后，剩下 `[user@]host [command...]`
+            let rest = tokens.dropFirst()
+            var positional: [String] = []
+            var i = rest.startIndex
+            while i < rest.endIndex {
+                let t = rest[i]
+                if t.hasPrefix("-") {
+                    // 带参数的选项（-p port / -i key / -o opt）跳过其值
+                    if sshOptionsWithValue.contains(t) {
+                        i = rest.index(after: i)
+                        if i < rest.endIndex { i = rest.index(after: i) }
+                    } else {
+                        i = rest.index(after: i)
+                    }
+                    continue
+                }
+                positional.append(t)
+                i = rest.index(after: i)
+            }
+            // positional[0] 是 host，之后任何 token 都说明带命令
+            return positional.count >= 2 ? .nonInteractive : .interactive
+
+        case "sftp", "scp":
+            // 带 src/dst 参数即非交互（scp host:file . / sftp host:path）
+            return tokens.count >= 3 ? .nonInteractive : .interactive
+
+        default:
+            return nil
+        }
+    }
+
+    private static let sshOptionsWithValue: Set<String> = [
+        "-b", "-c", "-D", "-E", "-e", "-F", "-I", "-i", "-J",
+        "-L", "-l", "-m", "-O", "-o", "-p", "-Q", "-R", "-S",
+        "-W", "-w"
+    ]
 
     private static func unwrapQuotes(_ s: String) -> String {
         guard s.count >= 2 else { return s }

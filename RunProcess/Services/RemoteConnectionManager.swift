@@ -49,8 +49,12 @@ final class RemoteConnectionManager {
         transport.onStateChange = { state in
             print("🔐 [Remote] channel state: \(state)")
         }
-        
-        try await transport.connect()
+
+        do {
+            try await transport.connect()
+        } catch {
+            throw RemoteExecError.connection(error.localizedDescription)
+        }
         print("✅ [Remote] channel connected")
 
         // 👇 核心修复：在交给 SecureChannel 之前，给它一点时间让底层握手彻底完成
@@ -113,11 +117,9 @@ final class RemoteConnectionManager {
         }
 
         guard let token = KeychainHelper.shared.getToken(for: host.id) else {
-            throw NSError(
-                domain: "RunProcess.Remote",
-                code: 401,
-                userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.remote.missing.token", comment: "")]
-            )
+            // 缺 token 属于配置错误，不可重试；用 server 语义表达。
+            throw RemoteExecError.server(
+                NSLocalizedString("error.remote.missing.token", comment: ""))
         }
 
         let endpointHost = HostAddress.formattedForURL(host.host)
@@ -138,9 +140,13 @@ final class RemoteConnectionManager {
         plainTransport.onStateChange = { state in
             print("🔌 [Remote] plain state: \(state)")
         }
-        try await plainTransport.connect()
+        do {
+            try await plainTransport.connect()
+        } catch {
+            plainTransport.close()
+            throw RemoteExecError.connection(error.localizedDescription)
+        }
         print("✅ [Remote] plain connected")
-
         let sessionKeyData: Data
         do {
             sessionKeyData = try await negotiateKey(transport: plainTransport, token: token)
@@ -174,13 +180,8 @@ final class RemoteConnectionManager {
                 do {
                     let msg = try MessageCodec.decodeServer(data)
                     guard case .custom(let type, let payload) = msg, type == "server-challenge" else {
-                        throw NSError(
-                            domain: "RunProcess",
-                            code: -1,
-                            userInfo: [NSLocalizedDescriptionKey: "收到未知的握手包"]
-                        )
+                        throw RemoteExecError.connection("收到未知的握手包")
                     }
-
                     struct ChallengePayload: Codable {
                         let serverNonce: String
                         let cipherId: UInt16

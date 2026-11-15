@@ -19,16 +19,17 @@ nonisolated final class RemoteExecutor {
                  on host: RemoteHost,
                  kind: RemoteExecPayload.Kind = .command,
                  timeout: TimeInterval = 10) async throws -> String {
-        
+
         // 防止 Shortcuts 进程复用旧的脏连接
         await RemoteConnectionManager.shared.removeChannel(for: host.id)
         try? await Task.sleep(nanoseconds: 200_000_000)
 
         do {
             return try await _execute(command: command, on: host, kind: kind, timeout: timeout)
-        } catch {
-            // 第一次失败（可能是沙盒环境冷启动导致 WebSocket 状态异常），清理后重试一次
-            print("⚠️ [Remote] Execution failed, retrying once. Error: \(error.localizedDescription)")
+        } catch let error as RemoteExecError where error.isRetryable {
+            // 仅连接层错误可重试；命令已执行（非零退出码）绝不重试，
+            // 避免 rm / deploy 之类命令被执行两次。
+            print("⚠️ [Remote] Connection error, retrying once. Error: \(error)")
             await RemoteConnectionManager.shared.removeChannel(for: host.id)
             try? await Task.sleep(nanoseconds: 500_000_000)
             return try await _execute(command: command, on: host, kind: kind, timeout: timeout)
@@ -94,10 +95,44 @@ nonisolated final class RemoteExecutor {
             let result = try await buffer.waitForResult(timeout: timeout + 2)
             await RemoteConnectionManager.shared.removeChannel(for: host.id, channel: channel)
             return result
-        } catch {
+        } catch let error as RemoteExecError {
+            // 业务层已分类的错误（命令非零退出、服务端错误、连接错误）原样抛出。
             await RemoteConnectionManager.shared.removeChannel(for: host.id, channel: channel)
             throw error
+        } catch {
+            // channel.send / JSONEncoder / waitForResult 之外的 RemoteLinkKit 错误
+            // 一律视为连接层错误，允许上层重试一次。
+            await RemoteConnectionManager.shared.removeChannel(for: host.id, channel: channel)
+            throw RemoteExecError.connection(error.localizedDescription)
         }
+    }
+}
+
+/// 远程执行错误。区分「连接层可重试」与「命令已执行不可重试」。
+nonisolated enum RemoteExecError: Error, LocalizedError {
+    /// 连接/握手/传输层错误，可安全重试。
+    case connection(String)
+    /// 命令已在远端执行并返回非零退出码，不可重试。
+    case commandFailed(exitCode: Int32, message: String)
+    /// 服务端返回业务错误或超时，不可重试。
+    case server(String)
+
+    var isRetryable: Bool {
+        if case .connection = self { return true }
+        return false
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case .connection(let m): return m
+        case .commandFailed(_, let m): return m
+        case .server(let m): return m
+        }
+    }
+
+    var exitCode: Int32? {
+        if case .commandFailed(let code, _) = self { return code }
+        return nil
     }
 }
 
@@ -178,30 +213,27 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
                                text: String,
                                error: String?,
                                exitCode: Int32) {
+        // 服务端返回的 error 属于业务/超时错误，不可重试。
         if let error {
-            cont.resume(throwing: NSError(
-                domain: "RunProcess.Remote",
-                code: -1,
-                userInfo: [NSLocalizedDescriptionKey: error]))
+            cont.resume(throwing: RemoteExecError.server(error))
             return
         }
 
+        // 命令已执行，非零退出码不可重试。
         if exitCode != 0 {
             let message: String
             if text.isEmpty {
                 message = String(
                     format: NSLocalizedString("error.exit.code", comment: ""),
-                    exitCode)
+                    Int(exitCode))
             } else {
                 message = text
             }
-            cont.resume(throwing: NSError(
-                domain: "RunProcess.Remote",
-                code: Int(exitCode),
-                userInfo: [NSLocalizedDescriptionKey: message]))
+            cont.resume(throwing: RemoteExecError.commandFailed(
+                exitCode: exitCode, message: message))
             return
         }
-
+        
         cont.resume(returning: text)
     }
 }

@@ -120,14 +120,19 @@ class CommandExecutor {
 
     /// 用单引号包裹自定义路径，避免含空格时被拆成多个 PATH 段。
     /// 例：`/Users/a b/bin` → `export PATH="$PATH:'/Users/a b/bin'"; ...`
+    ///
+    /// 与 `Session` / `PersistentShell` 保持一致：用户关闭注入、或当前 shell 不是 zsh 时，
+    /// `AppSettings.customPathEnabled` 返回 false，此时不追加自定义 PATH。
     private static func wrapWithCustomPath(_ command: String) -> String {
+        guard AppSettings.customPathEnabled else { return command }
+
         let customPath = PathStore.shared.customPathString()
         guard !customPath.isEmpty else { return command }
 
         let escaped = customPath.replacingOccurrences(of: "'", with: "'\\''")
         return "export PATH=\"$PATH:'\(escaped)'\"; \(command)"
     }
-
+    
     // MARK: - 输出收集
 
     private func collectOutput(token: UUID,
@@ -255,7 +260,7 @@ class CommandExecutor {
                 let format = isSudo
                     ? NSLocalizedString("error.timeout.short", comment: "")
                     : NSLocalizedString("error.timeout", comment: "")
-                let message = String(format: format, timeout)
+                let message = String(format: format, Int(timeout))
                 result = .failure(NSError(
                     domain: "RunProcess", code: 15,
                     userInfo: [NSLocalizedDescriptionKey: message]))
@@ -276,7 +281,7 @@ class CommandExecutor {
                 } else {
                     let format = NSLocalizedString("error.exit.code", comment: "")
                     let message = trimmed.isEmpty
-                        ? String(format: format, status)
+                        ? String(format: format, Int(status))
                         : trimmed
                     result = .failure(NSError(
                         domain: "RunProcess", code: Int(status),

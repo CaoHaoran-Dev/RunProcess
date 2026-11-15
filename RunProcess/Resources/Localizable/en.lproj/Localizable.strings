@@ -71,8 +71,8 @@
 
 /* ========== Errors ========== */
 "error.interactive.command" = "Interactive commands (vim, python, top, etc.) are not supported. Please run this command in the system terminal.";
-"error.timeout" = "Command execution timed out (exceeded %@ seconds). For long-running commands, please run directly in the terminal.";
-"error.timeout.short" = "Command execution timed out (exceeded %@ seconds)";
+"error.timeout" = "Command execution timed out (exceeded %ld seconds). For long-running commands, please run directly in the terminal.";
+"error.timeout.short" = "Command execution timed out (exceeded %ld seconds)";
 "error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
@@ -271,7 +271,7 @@
 "settings.remote.capability.hint" = "Unchecked capabilities are rejected when requested by a remote client.";
 "settings.remote.blocked.header" = "Blocked Words";
 "settings.remote.blocked.empty" = "No blocked words.";
-"settings.remote.blocked.summary" = "%d words";
+"settings.remote.blocked.summary" = "%ld words";
 "settings.remote.blocked.placeholder" = "Add a word…";
 "settings.remote.blocked.add" = "Add";
 "settings.remote.blocked.hint" = "Remote commands containing any of these words are rejected.";
@@ -307,7 +307,7 @@
 "history.hint.navigate" = "navigate";
 "history.hint.apply" = "apply";
 "history.hint.close" = "close";
-"suggestion.history.count" = "%d×";
+"suggestion.history.count" = "%ld×";
 
 /* ========== Help ========== */
 "help.search" = "Search";

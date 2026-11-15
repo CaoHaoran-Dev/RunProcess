@@ -370,10 +370,11 @@ final class PersistentShell {
             self.pendingTimeoutWork?.cancel()
             self.pendingTimeoutWork = nil
 
+            let format = NSLocalizedString("error.timeout.short", comment: "")
             let error = NSError(
                 domain: "RunProcess", code: 15,
                 userInfo: [NSLocalizedDescriptionKey:
-                    "命令执行超时（超过 \(Int(timeout)) 秒）"])
+                    String(format: format, Int(timeout))])
 
             self.suppressCrashCallback = true
             self.teardownLocked()
