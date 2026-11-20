@@ -116,6 +116,7 @@
 "settings.sudo.subtitle" = "Configure root privilege execution.";
 "settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
 "settings.workflows.subtitle" = "Define multi-line scripts for one-click execution.";
+"settings.remote.unsupported" = "Remote features require macOS 13 or later.";
 "settings.remote.subtitle" = "Manage and pair remote devices.";
 "settings.startup.subtitle" = "Control how RunProcess starts.";
 "settings.updates.subtitle" = "Manage automatic updates and version information.";
@@ -240,6 +241,7 @@
 "settings.remote.pairingCodeIs" = "Please enter this code on the requesting device: %@";
 "settings.remote.allowControl" = "Allow Remote Control";
 "settings.remote.allowControl.hint" = "When enabled, other devices can pair with this Mac and execute commands.";
+"settings.remote.allowControl.reconnect" = "After you enable remote control, the other Mac must reconnect before it can run commands: run the command again in its window, or open a new window there. Connections opened before the change are not refreshed automatically.";
 "settings.remote.empty" = "No remote hosts configured. Click Add Host to pair a device.";
 "settings.remote.add" = "Add Host...";
 "settings.remote.add.title" = "Pair Remote Host";
@@ -269,6 +271,7 @@
 "settings.remote.capability.history" = "Read or clear history";
 "settings.remote.capability.file" = "Access files";
 "settings.remote.capability.hint" = "Unchecked capabilities are rejected when requested by a remote client.";
+"settings.remote.capability.none" = "No remote capability is allowed yet. Remote commands will be rejected until you enable at least one above.";
 "settings.remote.blocked.header" = "Blocked Words";
 "settings.remote.blocked.empty" = "No blocked words.";
 "settings.remote.blocked.summary" = "%ld words";
@@ -427,3 +430,18 @@
 "intent.searchRemoteHistory.parameter.limit" = "Limit";
 
 "error.intent.remote.host.missing" = "The selected remote host no longer exists.";
+
+// MARK: - Help: Remote Execution (Preview)
+
+"help.topic.remote" = "Remote Execution";
+"help.remote.desc" = "Run commands on another Mac from the same command window. Both Macs need the Preview build, and the wire protocol must match, so keep both ends on the same version.";
+"help.remote.host.title" = "Allow remote control";
+"help.remote.host.desc" = "On the Mac you want to control, open Settings > Remote and turn on Allow Remote Control. It starts listening and advertises itself on the local network.";
+"help.remote.pair.title" = "Pair a device";
+"help.remote.pair.desc" = "On the controlling Mac, choose Settings > Remote > Add Host, then enter the address and the 6-digit code shown on the other Mac. The code also arrives as a system notification; if notifications are off, it appears in an alert.";
+"help.remote.run.title" = "Switch hosts";
+"help.remote.run.desc" = "Pick the host from the Remote submenu in the menu bar. The choice applies to every open window and the window title shows the active host; commands, workflows and sudo all run there. A newly opened window starts on the local Mac, so choose the host again after opening one.";
+"help.remote.permissions.title" = "Permissions";
+"help.remote.permissions.desc" = "The host decides what remote clients may do. Nothing is allowed until you enable capabilities in Settings > Remote > Remote Permissions; commands containing a blocked word are rejected.";
+"help.remote.reconnect.title" = "Reconnect after enabling";
+"help.remote.reconnect.desc" = "After remote control is turned on, the other Mac must reconnect before it can run commands: run the command again in its window, or open a new window there. Connections opened before the change are not refreshed automatically.";

@@ -39,6 +39,7 @@ class CommandViewModel: ObservableObject {
 
     private let suggester = CommandSuggester()
     private let history = CommandHistory.shared
+    private let suggestionPanel = SuggestionPanel()
     private var cancellables = Set<AnyCancellable>()
     private weak var textField: NSView?
 
@@ -138,7 +139,7 @@ class CommandViewModel: ObservableObject {
             } else {
                 self.suggestions = results
                 self.selectedIndex = 0
-                SuggestionPanel.shared.show(with: self)
+                suggestionPanel.show(with: self)
             }
         }
     }
@@ -146,13 +147,13 @@ class CommandViewModel: ObservableObject {
     func selectNext() {
         guard !suggestions.isEmpty else { return }
         selectedIndex = (selectedIndex + 1) % suggestions.count
-        SuggestionPanel.shared.updateContent(self)
+        suggestionPanel.updateContent(self)
     }
 
     func selectPrevious() {
         guard !suggestions.isEmpty else { return }
         selectedIndex = (selectedIndex - 1 + suggestions.count) % suggestions.count
-        SuggestionPanel.shared.updateContent(self)
+        suggestionPanel.updateContent(self)
     }
 
     func confirmSelection() {
@@ -163,7 +164,7 @@ class CommandViewModel: ObservableObject {
     func closeSuggestions() {
         suggestions = []
         selectedIndex = 0
-        SuggestionPanel.shared.hide()
+        suggestionPanel.hide()
     }
 
     // MARK: - 历史导航

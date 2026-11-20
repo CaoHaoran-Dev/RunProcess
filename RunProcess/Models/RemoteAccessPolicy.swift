@@ -40,7 +40,9 @@ nonisolated struct RemoteAccessPolicyFile: Codable {
 nonisolated final class RemoteAccessPolicyStore: @unchecked Sendable {
     static let shared = RemoteAccessPolicyStore()
 
-    private(set) var allowedCapabilities: Set<RemoteCapability> = Set(RemoteCapability.allCases)
+    /// 默认什么都不允许：权限必须在设置里显式打开。
+    /// 远程控制一旦开启就等于对外暴露本机 shell，失败时要 fail closed。
+    private(set) var allowedCapabilities: Set<RemoteCapability> = []
     private(set) var blockedWords: [String] = []
 
     private let fileURL: URL

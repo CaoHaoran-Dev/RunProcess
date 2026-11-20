@@ -46,9 +46,11 @@ final class RemoteConnectionManager {
             transform: PassthroughTransform(),
             reconnectPolicy: ReconnectPolicy()
         )
+        #if DEBUG
         transport.onStateChange = { state in
             print("🔐 [Remote] channel state: \(state)")
         }
+        #endif
 
         do {
             try await transport.connect()
@@ -137,9 +139,11 @@ final class RemoteConnectionManager {
             transform: PassthroughTransform(),
             reconnectPolicy: ReconnectPolicy()
         )
+        #if DEBUG
         plainTransport.onStateChange = { state in
             print("🔌 [Remote] plain state: \(state)")
         }
+        #endif
         do {
             try await plainTransport.connect()
         } catch {
@@ -176,7 +180,7 @@ final class RemoteConnectionManager {
         return try await withCheckedThrowingContinuation { continuation in
             transport.onReceive = { data in
                 guard resumed.trySet() else { return }
-                print("📨 [Remote] plain received \(data.count) bytes")
+                print("📨 [Remote] received handshake packet")
                 do {
                     let msg = try MessageCodec.decodeServer(data)
                     guard case .custom(let type, let payload) = msg, type == "server-challenge" else {

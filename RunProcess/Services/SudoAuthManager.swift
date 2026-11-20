@@ -9,11 +9,31 @@ import Foundation
 
 final class SudoAuthManager {
 
-    func revoke() { /* 无缓存凭据，无需操作 */ }
+    /// 当前窗口正在进行的 sudo 执行。每个 Session 一份，
+    /// 取消时只影响自己，不会打断其它窗口的 sudo。
+    private var activeExecution: CommandExecutor.Execution?
+    private let lock = NSLock()
+
+    func revoke() { cancel() }
+
+    /// 取消当前窗口正在进行的 sudo 执行（若有）。
+    func cancel() {
+        lock.lock()
+        let execution = activeExecution
+        activeExecution = nil
+        lock.unlock()
+
+        if let execution {
+            CommandExecutor.shared.cancel(execution)
+        }
+    }
 
     func executeSudo(_ command: String, password: String, timeout: TimeInterval,
                      completion: @escaping (Result<String, Error>) -> Void) {
-        CommandExecutor.shared.executeWithSudo(
+        // 同一窗口内新的 sudo 取代旧的。
+        cancel()
+
+        let execution = CommandExecutor.shared.executeWithSudo(
             command, password: password, timeout: timeout) { result in
                 switch result {
                 case .success:
@@ -32,13 +52,16 @@ final class SudoAuthManager {
                             domain: "RunProcess",
                             code: -2,
                             userInfo: [NSLocalizedDescriptionKey:
-                                NSLocalizedString("error.sudo.wrong.password", comment: "")]
-                        )
+                                NSLocalizedString("error.sudo.wrong.password", comment: "")])
                         completion(.failure(mapped))
                     } else {
                         completion(result)
                     }
                 }
             }
+
+        lock.lock()
+        activeExecution = execution
+        lock.unlock()
     }
 }

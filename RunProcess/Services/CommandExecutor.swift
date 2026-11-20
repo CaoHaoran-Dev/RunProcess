@@ -10,16 +10,20 @@ import Foundation
 class CommandExecutor {
     static let shared = CommandExecutor()
 
-    /// 每次执行的令牌。cancel 只杀匹配 token 的进程，避免
-    /// 并发 execute 时「先杀后建」把新任务误杀或把旧任务变孤儿。
+    /// 单次执行的句柄。调用方拿它来精确取消自己的那一次执行，
+    /// 不会误伤同一时刻其它窗口 / 快捷指令发起的执行。
+    final class Execution {
+        fileprivate let token = UUID()
+    }
+
+    /// 每次执行各自一份状态，按 token 索引。
     private struct State {
-        var token: UUID?
         var task: Process?
         var timeoutWork: DispatchWorkItem?
         var cancelled = false
     }
 
-    private var state = State()
+    private var executions: [UUID: State] = [:]
     private let stateQueue = DispatchQueue(label: "com.runprocess.executor.state", qos: .userInitiated)
     private let maxOutputSize = 10 * 1024 * 1024 // 10MB
 
@@ -27,11 +31,12 @@ class CommandExecutor {
 
     // MARK: - Public
 
+    @discardableResult
     func execute(_ input: String, timeout: TimeInterval = 10.0,
-                 completion: @escaping (Result<String, Error>) -> Void) {
-        cancelCurrentTask()
+                 completion: @escaping (Result<String, Error>) -> Void) -> Execution {
+        let execution = Execution()
+        let token = execution.token
 
-        let token = UUID()
         let task = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -47,9 +52,7 @@ class CommandExecutor {
         task.standardError = errorPipe
 
         stateQueue.sync {
-            self.state.token = token
-            self.state.task = task
-            self.state.cancelled = false
+            self.executions[token] = State(task: task)
         }
 
         do {
@@ -61,19 +64,21 @@ class CommandExecutor {
         } catch {
             finish(token: token)
             DispatchQueue.main.async { completion(.failure(error)) }
-            return
+            return execution
         }
 
         collectOutput(token: token, task: task,
                       outputPipe: outputPipe, errorPipe: errorPipe,
                       timeout: timeout, isSudo: false, completion: completion)
+        return execution
     }
 
+    @discardableResult
     func executeWithSudo(_ command: String, password: String, timeout: TimeInterval = 10.0,
-                         completion: @escaping (Result<String, Error>) -> Void) {
-        cancelCurrentTask()
+                         completion: @escaping (Result<String, Error>) -> Void) -> Execution {
+        let execution = Execution()
+        let token = execution.token
 
-        let token = UUID()
         let task = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -90,9 +95,7 @@ class CommandExecutor {
         task.standardInput = inputPipe
 
         stateQueue.sync {
-            self.state.token = token
-            self.state.task = task
-            self.state.cancelled = false
+            self.executions[token] = State(task: task)
         }
 
         do {
@@ -104,7 +107,7 @@ class CommandExecutor {
         } catch {
             finish(token: token)
             DispatchQueue.main.async { completion(.failure(error)) }
-            return
+            return execution
         }
 
         let passwordData = "\(password)\n".data(using: .utf8)!
@@ -114,6 +117,7 @@ class CommandExecutor {
         collectOutput(token: token, task: task,
                       outputPipe: outputPipe, errorPipe: errorPipe,
                       timeout: timeout, isSudo: true, completion: completion)
+        return execution
     }
 
     // MARK: - PATH 拼接
@@ -132,7 +136,7 @@ class CommandExecutor {
         let escaped = customPath.replacingOccurrences(of: "'", with: "'\\''")
         return "export PATH=\"$PATH:'\(escaped)'\"; \(command)"
     }
-    
+
     // MARK: - 输出收集
 
     private func collectOutput(token: UUID,
@@ -208,10 +212,10 @@ class CommandExecutor {
 
         let timeoutWork = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
-            // 只有仍是当前令牌的执行才允许超时处理，
+            // 只有仍是本次执行的进程才允许超时处理，
             // 防止旧执行的超时任务误杀新进程。
             let isCurrent: Bool = self.stateQueue.sync {
-                self.state.token == token
+                self.executions[token]?.task === task
             }
             guard isCurrent else { return }
 
@@ -225,16 +229,16 @@ class CommandExecutor {
             errorLeave.leave(group)
 
             self.stateQueue.sync {
-                if self.state.token == token {
-                    self.state.timeoutWork = nil
-                    self.state.task = nil
+                if self.executions[token]?.task === task {
+                    self.executions[token]?.timeoutWork = nil
+                    self.executions[token]?.task = nil
                 }
             }
         }
 
         stateQueue.sync {
-            if self.state.token == token {
-                self.state.timeoutWork = timeoutWork
+            if self.executions[token]?.task === task {
+                self.executions[token]?.timeoutWork = timeoutWork
             }
         }
         DispatchQueue.global(qos: .userInitiated)
@@ -249,15 +253,11 @@ class CommandExecutor {
 
             self.waitUntilExit(task, timeout: 3.0)
 
-            let (wasCancelled, stillCurrent): (Bool, Bool) = self.stateQueue.sync {
-                let c = self.state.cancelled
-                let current = self.state.token == token
-                if current {
-                    self.state.task = nil
-                    self.state.timeoutWork = nil
-                    self.state.cancelled = false
-                }
-                return (c, current)
+            // 移出登记表并取回取消标记：只有本次执行的 notify 会走到这里，
+            // 所以无论是否被取消，这次执行的结果都必须回调给调用方。
+            let wasCancelled: Bool = self.stateQueue.sync {
+                let state = self.executions.removeValue(forKey: token)
+                return state?.cancelled ?? false
             }
 
             dataLock.lock()
@@ -303,19 +303,7 @@ class CommandExecutor {
                 }
             }
 
-            // 只有当前令牌的执行才回写 completion，
-            // 旧执行的迟到回调直接丢弃。
-            guard stillCurrent || self.isCompletionStillRelevant(token: token) else { return }
             DispatchQueue.main.async { completion(result) }
-        }
-    }
-
-    private func isCompletionStillRelevant(token: UUID) -> Bool {
-        // 执行已结束（state.token 被清理成 nil）时仍应回调，
-        // 因为 notify 是本执行的唯一结果出口。
-        // 只有「state.token 已被别的执行占用」才丢弃。
-        stateQueue.sync {
-            self.state.token == nil || self.state.token == token
         }
     }
 
@@ -352,25 +340,38 @@ class CommandExecutor {
 
     private func finish(token: UUID) {
         stateQueue.sync {
-            if self.state.token == token {
-                self.state.task = nil
-                self.state.timeoutWork = nil
-                self.state.cancelled = false
-                self.state.token = nil
-            }
+            _ = self.executions.removeValue(forKey: token)
         }
     }
 
-    func cancelCurrentTask() {
+    /// 取消指定的一次执行。若该执行已结束，调用无副作用。
+    func cancel(_ execution: Execution) {
         stateQueue.sync {
-            self.state.cancelled = true
-            self.state.timeoutWork?.cancel()
-            self.state.timeoutWork = nil
-            if let task = self.state.task, task.isRunning {
+            guard var state = self.executions[execution.token] else { return }
+            state.cancelled = true
+            state.timeoutWork?.cancel()
+            state.timeoutWork = nil
+            if let task = state.task, task.isRunning {
                 self.killProcessGroup(task)
             }
-            self.state.task = nil
-            self.state.token = nil
+            state.task = nil
+            self.executions[execution.token] = state
+        }
+    }
+
+    /// 取消所有正在进行的执行（退出 App 等场景使用）。
+    func cancelAll() {
+        stateQueue.sync {
+            for (token, var state) in self.executions {
+                state.cancelled = true
+                state.timeoutWork?.cancel()
+                state.timeoutWork = nil
+                if let task = state.task, task.isRunning {
+                    self.killProcessGroup(task)
+                }
+                state.task = nil
+                self.executions[token] = state
+            }
         }
     }
 }

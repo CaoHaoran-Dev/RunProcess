@@ -110,6 +110,8 @@ final class Session {
             forName: NSWindow.willCloseNotification, object: window, queue: .main
         ) { [weak self] _ in
             guard let self = self, self.hasShown else { return }
+            // 先收起补全面板，断开 panel → viewModel 的引用环，再交给 manager 移除。
+            self.viewModel.closeSuggestions()
             self.onClose?()
         }
 
@@ -247,12 +249,7 @@ final class Session {
                          completion: @escaping (Result<String, Error>) -> Void) {
 
         #if BETA
-        // 💡 强制打印当前状态，看切换主机后这里拿到的是什么
-        let currentHostId = viewModel.activeRemoteHostId
-        print("🚀 [Session.execute] 准备执行命令: \(command)")
-        print("🚀 [Session.execute] 当前 activeRemoteHostId: \(String(describing: currentHostId))")
-
-        if let hostId = currentHostId,
+        if let hostId = viewModel.activeRemoteHostId,
            let host = RemoteHostStore.shared.get(id: hostId) {
             
             print("🌐 [Session.execute] 路由结论：执行【远程主机】 - \(host.name) (\(host.host))")
@@ -424,8 +421,8 @@ final class Session {
             Self.killProcessGroup(task)
         }
 
-        // 2. sudo：走 CommandExecutor 单例。
-        CommandExecutor.shared.cancelCurrentTask()
+        // 2. sudo：只取消本窗口自己的那一次执行。
+        sudoAuth.cancel()
 
         // 3. session 模式：向持久 shell 发中断。
         if usesSessionMode, let shell = persistentShell {

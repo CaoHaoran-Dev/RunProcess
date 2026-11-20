@@ -247,9 +247,9 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
             bindBox.lock.unlock()
             if alreadyBound { return }
 
-            if let matched = self.tryBindPendingSecure(data, transport: transport, clientIP: clientIP) {
+            if self.tryBindPendingSecure(data, transport: transport, clientIP: clientIP) != nil {
                 bindBox.lock.lock(); bindBox.bound = true; bindBox.lock.unlock()
-                print("✅ [Server] secure connection bound (tokenHash \(matched.prefix(8))…)")
+                print("✅ [Server] secure connection bound")
                 return
             }
 
@@ -291,7 +291,7 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
                     }
 
                     guard authorized else {
-                        print("⚠️ [Server] unauthorized tokenHash: \(auth.tokenHash.prefix(8))…")
+                        print("⚠️ [Server] unauthorized client token")
                         connection.cancel()
                         return
                     }
@@ -390,8 +390,9 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
                     }
                     self.dispatch(req, channel: channel)
 
-                case .cancel(let id):
-                    print("Received cancel for \(id)")
+                case .cancel:
+                    // 远程取消暂未实现；不在这里逐条打日志。
+                    break
                 default:
                     break
                 }

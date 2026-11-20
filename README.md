@@ -256,7 +256,7 @@ Update packages are cryptographically signed and verified before installation.
 
 ## Help
 
-Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, and Appearance.
+Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, Appearance, and Remote Execution (Preview only).
 
 ---
 

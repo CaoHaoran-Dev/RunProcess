@@ -116,6 +116,7 @@
 "settings.sudo.subtitle" = "設定 root 權限執行。";
 "settings.aliases.subtitle" = "為常用指令定義快捷方式。";
 "settings.workflows.subtitle" = "為多行指令碼定義一鍵執行的快捷方式。";
+"settings.remote.unsupported" = "遠端功能需要 macOS 13 或更新版本。";
 "settings.remote.subtitle" = "管理和配對你的遠端裝置。";
 "settings.startup.subtitle" = "控制 RunProcess 的啟動方式。";
 "settings.updates.subtitle" = "管理自動更新與版本資訊。";
@@ -240,6 +241,7 @@
 "settings.remote.pairingCodeIs" = "請在請求的裝置上輸入此驗證碼：%@";
 "settings.remote.allowControl" = "允許遠端控制";
 "settings.remote.allowControl.hint" = "開啟後，其他裝置可以與此 Mac 配對並執行指令。";
+"settings.remote.allowControl.reconnect" = "啟用遠端控制後，對端需要重新連線才能執行指令：在它的視窗中重新執行一次，或開啟一個新視窗。之前已經建立的連線不會自動重新整理。";
 "settings.remote.empty" = "還沒有遠端主機。點擊「新增主機」進行配對。";
 "settings.remote.add" = "新增主機...";
 "settings.remote.add.title" = "配對遠端主機";
@@ -269,6 +271,7 @@
 "settings.remote.capability.history" = "讀取或清除記錄";
 "settings.remote.capability.file" = "存取檔案";
 "settings.remote.capability.hint" = "未勾選的功能在遠端用戶端請求時會被拒絕。";
+"settings.remote.capability.none" = "尚未允許任何遠端權限。在勾選至少一項之前，遠端指令會被拒絕。";
 "settings.remote.blocked.header" = "違禁詞";
 "settings.remote.blocked.empty" = "還沒有違禁詞。";
 "settings.remote.blocked.summary" = "%ld 個詞";
@@ -427,3 +430,18 @@
 "intent.searchRemoteHistory.parameter.limit" = "數量上限";
 
 "error.intent.remote.host.missing" = "所選遠端主機已不存在。";
+
+// MARK: - 說明：遠端執行（預覽版）
+
+"help.topic.remote" = "遠端執行";
+"help.remote.desc" = "在同一個指令視窗裡，把指令傳送到另一台 Mac 上執行。兩台 Mac 都需要預覽版，且通訊協定必須一致，請保持兩端版本相同。";
+"help.remote.host.title" = "允許遠端控制";
+"help.remote.host.desc" = "在被控的 Mac 上開啟「設定 > 遠端」，開啟「允許遠端控制」。它隨後開始監聽，並在區域網路上廣播自己。";
+"help.remote.pair.title" = "配對裝置";
+"help.remote.pair.desc" = "在控制端 Mac 上選擇「設定 > 遠端 > 新增主機」，填入對方位址和對方顯示的 6 位配對碼。配對碼也會以系統通知的形式送達；若通知未開啟，則改用應用程式內彈窗。";
+"help.remote.run.title" = "切換主機";
+"help.remote.run.desc" = "在選單列的「遠端」子選單中選擇主機。選擇會同步到所有已開啟的視窗，視窗標題會顯示目前主機；指令、工作流和 sudo 都會在那台 Mac 上執行。新開啟的視窗預設在本機執行，需要在開啟後重新選擇一次。";
+"help.remote.permissions.title" = "權限";
+"help.remote.permissions.desc" = "由被控端決定遠端用戶端能做什麼。預設不允許任何操作，需要在「設定 > 遠端 > 遠端權限」裡逐項開啟；指令中出現禁用詞會被拒絕。";
+"help.remote.reconnect.title" = "啟用後需要重新連線";
+"help.remote.reconnect.desc" = "開啟遠端控制後，對端需要重新連線才能執行指令：在它的視窗中重新執行一次，或開啟一個新視窗。之前已經建立的連線不會自動重新整理。";

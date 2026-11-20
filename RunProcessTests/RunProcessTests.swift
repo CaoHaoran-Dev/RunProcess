@@ -662,9 +662,31 @@ final class RemoteAccessPolicyTests: XCTestCase {
         XCTAssertNil(store.matchedBlockedWord(in: "__rp_rm__ -rf /"))
     }
 
-    func testCapabilityAllowedByDefault() {
-        _ = store.isAllowed(.execCommand)
-        _ = store.isAllowed(.sudoCommand)
+    /// 回归测试：一项能力都不允许时，所有请求都必须被拒绝（fail closed）。
+    func testNoCapabilitiesMeansEverythingRejected() {
+        let previouslyAllowed = RemoteCapability.allCases.filter { store.isAllowed($0) }
+        for capability in RemoteCapability.allCases {
+            store.setAllowed(capability, enabled: false)
+        }
+        defer {
+            for capability in RemoteCapability.allCases {
+                store.setAllowed(capability, enabled: previouslyAllowed.contains(capability))
+            }
+        }
+
+        for capability in RemoteCapability.allCases {
+            XCTAssertNotNil(
+                store.validate(command: "echo hi", capability: capability),
+                "\(capability) must be rejected when no capability is allowed")
+        }
+    }
+
+    func testDisabledCapabilityIsRejected() {
+        let wasAllowed = store.isAllowed(.execCommand)
+        store.setAllowed(.execCommand, enabled: false)
+        defer { store.setAllowed(.execCommand, enabled: wasAllowed) }
+
+        XCTAssertNotNil(store.validate(command: "echo hi", capability: .execCommand))
     }
 }
 #endif

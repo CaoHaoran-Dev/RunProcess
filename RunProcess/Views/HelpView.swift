@@ -17,6 +17,9 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     case sudo
     case aliases
     case appearance
+    #if BETA
+    case remote
+    #endif
 
     var id: String { rawValue }
 
@@ -29,6 +32,9 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .sudo:       return NSLocalizedString("help.topic.sudo", comment: "")
         case .aliases:    return NSLocalizedString("help.topic.aliases", comment: "")
         case .appearance: return NSLocalizedString("help.topic.appearance", comment: "")
+        #if BETA
+        case .remote:     return NSLocalizedString("help.topic.remote", comment: "")
+        #endif
         }
     }
 
@@ -41,6 +47,9 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .sudo:       return "lock.shield"
         case .aliases:    return "wand.and.stars"
         case .appearance: return "paintbrush"
+        #if BETA
+        case .remote:     return "server.rack"
+        #endif
         }
     }
 
@@ -121,6 +130,22 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 "help.appearance.liquid",
                 "help.appearance.note",
             ]
+        #if BETA
+        case .remote:
+            keys = [
+                "help.remote.desc",
+                "help.remote.host.title",
+                "help.remote.host.desc",
+                "help.remote.pair.title",
+                "help.remote.pair.desc",
+                "help.remote.run.title",
+                "help.remote.run.desc",
+                "help.remote.permissions.title",
+                "help.remote.permissions.desc",
+                "help.remote.reconnect.title",
+                "help.remote.reconnect.desc",
+            ]
+        #endif
         }
 
         return keys
@@ -359,6 +384,9 @@ private struct HelpContent: View {
             case .sudo:       SudoSection()
             case .aliases:    AliasesSection()
             case .appearance: AppearanceSection()
+            #if BETA
+            case .remote:     RemoteSection()
+            #endif
             }
         }
     }
@@ -568,3 +596,30 @@ private struct AppearanceSection: View {
         }
     }
 }
+
+// MARK: - 远程执行（仅预览版）
+
+#if BETA
+private struct RemoteSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HelpP(NSLocalizedString("help.remote.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.host.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.host.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.pair.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.pair.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.run.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.run.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.permissions.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.permissions.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.reconnect.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.reconnect.desc", comment: ""))
+        }
+    }
+}
+#endif

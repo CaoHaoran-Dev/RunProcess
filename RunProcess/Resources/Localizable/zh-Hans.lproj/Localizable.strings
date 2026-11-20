@@ -116,6 +116,7 @@
 "settings.sudo.subtitle" = "配置 root 权限执行。";
 "settings.aliases.subtitle" = "为常用命令定义快捷方式。";
 "settings.workflows.subtitle" = "为多行脚本定义一键执行的快捷方式。";
+"settings.remote.unsupported" = "远程功能需要 macOS 13 或更高版本。";
 "settings.remote.subtitle" = "管理和配对你的远程设备。";
 "settings.startup.subtitle" = "控制 RunProcess 的启动方式。";
 "settings.updates.subtitle" = "管理自动更新和版本信息。";
@@ -242,6 +243,7 @@
 "settings.remote.pairingCodeIs" = "请在请求的设备上输入此验证码：%@";
 "settings.remote.allowControl" = "允许远程控制";
 "settings.remote.allowControl.hint" = "开启后，其他设备可以与此 Mac 配对并执行命令。";
+"settings.remote.allowControl.reconnect" = "启用远程控制后，对端需要重新连接才能执行命令：在它的窗口中重新执行一次，或打开一个新窗口。之前已经建立的连接不会自动刷新。";
 "settings.remote.empty" = "还没有远程主机。点击「添加主机」进行配对。";
 "settings.remote.add" = "添加主机...";
 "settings.remote.add.title" = "配对远程主机";
@@ -269,6 +271,7 @@
 "settings.remote.capability.history" = "读取或清除历史";
 "settings.remote.capability.file" = "访问文件";
 "settings.remote.capability.hint" = "未勾选的功能在远程客户端请求时会被拒绝。";
+"settings.remote.capability.none" = "尚未允许任何远程权限。在勾选至少一项之前，远程命令会被拒绝。";
 "settings.remote.blocked.header" = "违禁词";
 "settings.remote.blocked.empty" = "还没有违禁词。";
 "settings.remote.blocked.summary" = "%ld 个词";
@@ -427,3 +430,18 @@
 "intent.searchRemoteHistory.parameter.limit" = "数量上限";
 
 "error.intent.remote.host.missing" = "所选远程主机已不存在。";
+
+// MARK: - 帮助：远程执行（预览版）
+
+"help.topic.remote" = "远程执行";
+"help.remote.desc" = "在同一个命令窗口里，把命令发送到另一台 Mac 上执行。两台 Mac 都需要预览版，且通信协议必须一致，请保持两端版本相同。";
+"help.remote.host.title" = "允许远程控制";
+"help.remote.host.desc" = "在被控的 Mac 上打开「设置 > 远程」，开启「允许远程控制」。它随后开始监听，并在局域网内广播自己。";
+"help.remote.pair.title" = "配对设备";
+"help.remote.pair.desc" = "在控制端 Mac 上选择「设置 > 远程 > 添加主机」，填入对方地址和对方显示的 6 位配对码。配对码也会以系统通知的形式送达；若通知未开启，则改用应用内弹窗。";
+"help.remote.run.title" = "切换主机";
+"help.remote.run.desc" = "在菜单栏的「远程」子菜单中选择主机。选择会同步到所有已打开的窗口，窗口标题会显示当前主机；命令、工作流和 sudo 都会在那台 Mac 上执行。新打开的窗口默认在本机执行，需要在打开后重新选择一次。";
+"help.remote.permissions.title" = "权限";
+"help.remote.permissions.desc" = "由被控端决定远程客户端能做什么。默认不允许任何操作，需要在「设置 > 远程 > 远程权限」里逐项开启；命令中出现违禁词会被拒绝。";
+"help.remote.reconnect.title" = "启用后需要重连";
+"help.remote.reconnect.desc" = "开启远程控制后，对端需要重新连接才能执行命令：在它的窗口中重新执行一次，或打开一个新窗口。之前已经建立的连接不会自动刷新。";

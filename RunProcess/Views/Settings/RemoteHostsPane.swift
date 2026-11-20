@@ -73,6 +73,27 @@ struct RemoteHostsPane: View {
                 Text(NSLocalizedString("settings.remote.allowControl.hint", comment: ""))
                     .font(.system(size: 11))
                     .foregroundColor(.secondary)
+
+                // 打开远程控制后，对端不会自动刷新连接，需要重连或新开窗口。
+                Text(NSLocalizedString("settings.remote.allowControl.reconnect", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                // 默认不放行任何能力：开启远程控制后如果一项都没勾，
+                // 必须在界面上说清楚，否则远程命令会全部被拒。
+                // 远程控制关着的时候不提这件事，避免制造无谓的警告。
+                if allowControl, RemoteAccessPolicyStore.shared.allowedCapabilities.isEmpty {
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 11))
+                        Text(NSLocalizedString("settings.remote.capability.none", comment: ""))
+                            .font(.system(size: 11))
+                            .foregroundColor(.orange)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             } header: {
                 Label(NSLocalizedString("settings.remote.hostMode", comment: ""), systemImage: "macmini")
             }
@@ -240,6 +261,13 @@ private struct RemotePermissionsDetail: View {
             Text(NSLocalizedString("settings.remote.capability.hint", comment: ""))
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
+
+            if allowed.isEmpty {
+                Text(NSLocalizedString("settings.remote.capability.none", comment: ""))
+                    .font(.system(size: 11))
+                    .foregroundColor(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
