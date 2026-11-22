@@ -190,6 +190,14 @@ final class Session {
         window.setFrame(newFrame, display: true)
     }
 
+    /// 改尺寸后立刻让系统重算阴影。
+    /// 透明窗口（isOpaque = false + 清空背景）在 frame 变化时阴影不会自动跟随，
+    /// 会停在旧位置，表现为缩放/高度变化时阴影错位。
+    private func applyFrame(_ frame: NSRect) {
+        window.setFrame(frame, display: true)
+        window.invalidateShadow()
+    }
+
     // MARK: - Window Management
 
     func setContentWidth(_ width: CGFloat) {
@@ -201,7 +209,7 @@ final class Session {
         let delta = width - currentWidth
         frame.size.width += delta
         frame.origin.x -= delta / 2
-        window.setFrame(frame, display: true)
+        applyFrame(frame)
     }
 
     func setContentHeight(_ height: CGFloat) {
@@ -213,7 +221,7 @@ final class Session {
         let delta = height - currentHeight
         frame.size.height += delta
         frame.origin.y -= delta
-        window.setFrame(frame, display: true)
+        applyFrame(frame)
     }
     
     // MARK: - Window Management
@@ -237,6 +245,7 @@ final class Session {
                 window.minSize = NSSize(width: 520, height: 140)
             }
             window.title = self.baseTitle
+            window.invalidateShadow()
         }
     }
 

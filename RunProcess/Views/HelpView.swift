@@ -189,13 +189,16 @@ struct HelpView: View {
     }
 
     var body: some View {
-        Group {
-            if #available(macOS 13.0, *) {
-                modernLayout
-            } else {
-                legacyLayout
+        VStack(spacing: 0) {
+            glassTitleBar
+
+            HStack(spacing: 0) {
+                sidebar.frame(width: 220)
+                Divider()
+                detailPane
             }
         }
+        .ignoresSafeArea(edges: .top)
         .frame(minWidth: 680, idealWidth: 720, minHeight: 400, idealHeight: 480)
         .background(
             AdaptiveWindowBackground(
@@ -205,32 +208,28 @@ struct HelpView: View {
         )
     }
 
-    @available(macOS 13.0, *)
-    private var modernLayout: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            detailPane
-        }
-        .navigationTitle(NSLocalizedString("window.help.title", comment: ""))
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    selected = .overview
-                    searchText = ""
-                } label: {
-                    Image(systemName: "house")
-                }
-                .help(NSLocalizedString("help.home", comment: ""))
-            }
-        }
-    }
-
-    private var legacyLayout: some View {
-        HStack(spacing: 0) {
-            sidebar.frame(width: 220)
-            Divider()
-            detailPane
+    /// 自绘的玻璃标题栏，与设置窗口保持同一套材质。
+    /// 标题栏区域由系统的 titlebar 视图覆盖，不放可点控件。
+    private var glassTitleBar: some View {
+        Text(NSLocalizedString("window.help.title", comment: ""))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+        .background(
+            AdaptiveGlassBackground(
+                style: appearanceStyle,
+                material: .titlebar,
+                // .withinWindow 采样的是窗口内部已有的毛玻璃，叠上去只剩
+                // 一层平的半透明；必须 .behindWindow 才会直接模糊桌面。
+                blendingMode: .behindWindow,
+                cornerRadius: 0
+            )
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(height: 1)
         }
     }
 
@@ -286,16 +285,20 @@ struct HelpView: View {
                                 topic: topic,
                                 isSelected: topic == selected,
                                 snippet: topic.snippet(for: searchText),
-                                onTap: { selected = topic }
+                                onTap: {
+                                    selected = topic
+                                    searchText = ""
+                                }
                             )
                         }
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 6)
                 }
+                // 侧边栏去掉白色滚动槽。
+                .background(ScrollViewStyler())
             }
         }
-        .background(Color.clear)
     }
 
     private var detailPane: some View {
@@ -305,7 +308,7 @@ struct HelpView: View {
                 .frame(maxWidth: 680, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.clear)
+        .background(ScrollViewStyler())
     }
 }
 

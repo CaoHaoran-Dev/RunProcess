@@ -40,6 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var hasBeenActive = false
+    private var windowObservers: [NSObjectProtocol] = []
 
     // MARK: - Bonjour Discovery
     private var bonjourBrowser: BonjourBrowser?
@@ -593,7 +594,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: hosting)
         window.title = NSLocalizedString("window.help.title", comment: "Help window title")
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView]
+        // 系统标题栏透明，露出自绘的玻璃标题条；系统标题文字隐藏以免重复。
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
@@ -610,6 +613,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
 
     @objc func openSettings() {
@@ -635,7 +639,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: hostingController)
         window.title = NSLocalizedString("window.settings.title", comment: "Settings window title")
         window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+        // 系统标题栏透明，露出自绘的玻璃标题条；系统标题文字隐藏以免重复。
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
@@ -652,6 +658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
 
     func reparentAuxiliaryWindows(to parent: NSWindow) {
@@ -669,6 +676,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             help.parent?.removeChildWindow(help)
             parent.addChildWindow(help, ordered: .above)
         }
+    }
+
+    /// 辅助窗口（设置/帮助/关于）是透明且挂在主窗口下的子窗口，
+    /// 拖动改变尺寸时阴影容易停在旧位置，这里在每次尺寸变化后重算。
+    private func setupWindowShadowObserver(for window: NSWindow) {
+        let token = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification,
+            object: window,
+            queue: .main
+        ) { note in
+            (note.object as? NSWindow)?.invalidateShadow()
+        }
+        windowObservers.append(token)
     }
 
     private func setupWindowCloseObserver(for window: NSWindow) {
@@ -731,6 +751,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
 
     @objc func checkForUpdates() {

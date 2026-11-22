@@ -7,6 +7,7 @@
 
 import XCTest
 import AppKit
+import SwiftUI
 
 #if BETA
 @testable import RunProcess_Preview
@@ -725,4 +726,66 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(AppSettings.Keys.sessionModeEnabled.hasPrefix("test."))
     }
     #endif
+}
+
+// MARK: - ScrollViewStyler
+
+final class ScrollViewStylerTests: XCTestCase {
+
+    private func allScrollViews(in view: NSView) -> [NSScrollView] {
+        var result: [NSScrollView] = []
+        if let scroll = view as? NSScrollView { result.append(scroll) }
+        for sub in view.subviews { result += allScrollViews(in: sub) }
+        return result
+    }
+
+    /// 窗口里嵌套的滚动视图（包括不直接用父链相连的）都要被修正。
+    func testStylesEveryScrollViewInWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+        let outer = NSScrollView(frame: NSRect(x: 0, y: 0, width: 150, height: 150))
+        outer.drawsBackground = true
+        let inner = NSScrollView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        inner.drawsBackground = true
+        outer.documentView = inner
+        root.addSubview(outer)
+        window.contentView = root
+
+        ScrollViewStyler.styleAll(in: window)
+
+        let found = allScrollViews(in: root)
+        XCTAssertEqual(found.count, 2)
+        for scroll in found {
+            XCTAssertFalse(scroll.drawsBackground)
+            XCTAssertFalse(scroll.contentView.drawsBackground)
+            XCTAssertEqual(scroll.scrollerStyle, .overlay)
+            XCTAssertTrue(scroll.autohidesScrollers)
+        }
+    }
+
+    /// SwiftUI 的 ScrollView 也要能被找到并修正。
+    func testStylesSwiftUIScrollView() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        let hosting = NSHostingView(
+            rootView: ScrollView { Color.clear.frame(height: 1000) }
+                .frame(width: 200, height: 150))
+        window.contentView = hosting
+        hosting.layoutSubtreeIfNeeded()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+
+        let scrolls = allScrollViews(in: hosting)
+        XCTAssertFalse(scrolls.isEmpty, "SwiftUI ScrollView 应产生 NSScrollView")
+
+        ScrollViewStyler.styleAll(in: window)
+
+        for scroll in allScrollViews(in: hosting) {
+            XCTAssertFalse(scroll.drawsBackground)
+            XCTAssertEqual(scroll.scrollerStyle, .overlay)
+        }
+    }
 }
