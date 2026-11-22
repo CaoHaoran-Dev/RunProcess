@@ -1,7 +1,5 @@
 # RunProcess 3.6.0 RC.1
 
-> English · [简体中文](zh-Hans/Release-Notes-3.6.0-RC.1.zh-Hans.md) · [繁體中文](zh-Hant/Release-Notes-3.6.0-RC.1.zh-Hant.md)
-
 Release candidate for the Preview channel. The stable build stays on 3.5.0; this build is `RunProcess Preview.app` and uses its own data directory.
 
 ---

@@ -1,6 +1,6 @@
 # RunProcess 3.6.0
 
-> [English](../en/Release-Notes-3.6.0.md) · 简体中文 · [繁體中文](../zh-Hant/Release-Notes-3.6.0.zh-Hant.md)
+> [English](../../../en/Releases-Notes/Stable/Release-Notes-3.6.0.md) · 简体中文 · [繁體中文](../../../zh-Hant/Releases-Notes/Stable/Release-Notes-3.6.0.zh-Hant.md)
 
 ## 新增
 

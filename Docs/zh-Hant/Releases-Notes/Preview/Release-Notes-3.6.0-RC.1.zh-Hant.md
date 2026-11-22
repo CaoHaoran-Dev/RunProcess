@@ -1,7 +1,5 @@
 # RunProcess 3.6.0 RC.1
 
-> [English](../en/Release-Notes-3.6.0-RC.1.md) · [简体中文](../zh-Hans/Release-Notes-3.6.0-RC.1.zh-Hans.md) · 繁體中文
-
 預覽通道的候選版本。正式版仍停留在 3.5.0；本次建置是 `RunProcess Preview.app`，使用獨立的資料目錄。
 
 ---
