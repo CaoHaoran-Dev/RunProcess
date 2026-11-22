@@ -15,6 +15,15 @@ final class PersistentShell {
         let cwd: String
     }
 
+    // MARK: - 定界符
+
+    /// 每次执行前，先发这一行告诉 shell 本轮 marker 是什么。
+    private static let markerSetPrefix = "__RP_MARKER_SET__ "
+    /// 命令段开始。
+    private static let beginDelimiter = "__RP_BEGIN__"
+    /// 命令段结束。
+    private static let endDelimiter = "__RP_END__"
+
     // MARK: - State
 
     private var process: Process?
@@ -47,7 +56,15 @@ final class PersistentShell {
     deinit {
         stdoutPipe?.fileHandleForReading.readabilityHandler = nil
         stderrPipe?.fileHandleForReading.readabilityHandler = nil
-        if let p = process, p.isRunning { p.terminate() }
+        if let p = process, p.isRunning {
+            // 杀掉整个进程组，防止 shell 里启动的后台任务变成孤儿进程
+            let pid = p.processIdentifier
+            if pid > 0 {
+                kill(-pid, SIGKILL)
+            } else {
+                p.terminate()
+            }
+        }
     }
 
     // MARK: - Start / Stop
@@ -114,6 +131,12 @@ final class PersistentShell {
             self.queue.async {
                 if self.outputBuffer.count + data.count <= self.maxOutputSize {
                     self.outputBuffer.append(data)
+                } else {
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: self.outputBuffer.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        self.outputBuffer.append(Data(warningStr.utf8))
+                    }
                 }
                 self.tryExtractResultLocked()
             }
@@ -126,10 +149,16 @@ final class PersistentShell {
             self.queue.async {
                 if self.errorBuffer.count + data.count <= self.maxOutputSize {
                     self.errorBuffer.append(data)
+                } else {
+                    let warningStr = "\n[⚠️ 输出过长，已截断]"
+                    let tailStr = String(decoding: self.errorBuffer.suffix(100), as: UTF8.self)
+                    if !tailStr.contains(warningStr) {
+                        self.errorBuffer.append(Data(warningStr.utf8))
+                    }
                 }
             }
         }
-
+        
         task.terminationHandler = { [weak self] _ in
             guard let self = self else { return }
             self.queue.async {
@@ -244,13 +273,17 @@ final class PersistentShell {
             self.outputBuffer.removeAll()
             self.errorBuffer.removeAll()
 
-            let wrapped = """
+            // 整段命令用定界符包起来，由 bootstrap 读到 __RP_END__ 后一次性 eval，
+            // 从而支持 for / if / case / heredoc 等跨行结构。
+            let payload = """
+            \(Self.markerSetPrefix)\(marker)
+            \(Self.beginDelimiter)
             \(command)
-            __rp_exit=$?
-            printf '\\n\(marker):%d:%s\\n' "$__rp_exit" "$(pwd)"
+            \(Self.endDelimiter)
+
             """
 
-            guard let data = (wrapped + "\n").data(using: .utf8) else {
+            guard let data = payload.data(using: .utf8) else {
                 self.pendingCompletion = nil
                 self.pendingMarker = nil
                 DispatchQueue.main.async {
@@ -275,6 +308,18 @@ final class PersistentShell {
             }
             self.pendingTimeoutWork = timeoutWork
             self.queue.asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
+        }
+    }
+
+    /// 中断当前正在执行的命令（发送 Ctrl-C）。
+    /// 与 `handleTimeout` 不同：不会杀掉并重建 shell，只打断前台命令。
+    /// 若没有正在执行的任务，调用无副作用。
+    func interruptCurrentCommand() {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            guard self.pendingCompletion != nil else { return }
+            guard let stdin = self.stdinPipe?.fileHandleForWriting else { return }
+            try? stdin.write(contentsOf: Data([0x03]))
         }
     }
 
@@ -345,10 +390,11 @@ final class PersistentShell {
             self.pendingTimeoutWork?.cancel()
             self.pendingTimeoutWork = nil
 
+            let format = NSLocalizedString("error.timeout.short", comment: "")
             let error = NSError(
                 domain: "RunProcess", code: 15,
                 userInfo: [NSLocalizedDescriptionKey:
-                    "命令执行超时（超过 \(Int(timeout)) 秒）"])
+                    String(format: format, Int(timeout))])
 
             self.suppressCrashCallback = true
             self.teardownLocked()
@@ -379,8 +425,24 @@ final class PersistentShell {
     unsetopt INC_APPEND_HISTORY 2>/dev/null
     unsetopt SHARE_HISTORY 2>/dev/null
     setopt NO_HIST_VERIFY 2>/dev/null
+
+    __rp_marker=''
     while IFS= read -r __rp_line; do
-        eval "$__rp_line"
+        case "$__rp_line" in
+            __RP_MARKER_SET__*)
+                __rp_marker="${__rp_line#__RP_MARKER_SET__ }"
+                ;;
+            __RP_BEGIN__)
+                __rp_script=''
+                while IFS= read -r __rp_line; do
+                    [ "$__rp_line" = "__RP_END__" ] && break
+                    __rp_script+="$__rp_line"$'\\n'
+                done
+                eval "$__rp_script"
+                __rp_exit=$?
+                printf '\\n%s:%d:%s\\n' "$__rp_marker" "$__rp_exit" "$(pwd)"
+                ;;
+        esac
     done
     """
 }

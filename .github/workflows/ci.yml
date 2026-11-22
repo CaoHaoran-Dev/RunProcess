@@ -40,36 +40,33 @@ jobs:
     - name: Select Xcode 26
       run: sudo xcode-select -s "/Applications/Xcode_26.5.app"
 
-    # ================= ARM 或是 x86 都会先走这里 =================
-    - name: Build & Test (Release)
+    # Release 配置必须真的构建一次：发版产物是 Release，
+    # 而 Debug 构建不会走 -O 的 SIL 优化管线，release-only 的问题只有这里能抓到。
+    - name: Build (Release)
       run: |
-        set -o pipefail
-        
-        echo "==> Building Release for ${{ matrix.arch }}..."
-        xcodebuild build \
-          -project "RunProcess.xcodeproj" \
-          -scheme "RunProcess" \
-          -destination "platform=macOS,arch=${{ matrix.arch }}" \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
+        set -euo pipefail
+        for scheme in "RunProcess" "RunProcess Preview"; do
+          echo "==> Building $scheme (Release) for ${{ matrix.arch }}..."
+          xcodebuild build \
+            -project "RunProcess.xcodeproj" \
+            -scheme "$scheme" \
+            -configuration Release \
+            -destination "platform=macOS,arch=${{ matrix.arch }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+        done
 
-        echo "==> Testing Release for ${{ matrix.arch }}..."
-        xcodebuild test \
-          -project "RunProcess.xcodeproj" \
-          -scheme "RunProcess" \
-          -destination "platform=macOS,arch=${{ matrix.arch }}" \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
-
-    # ================= 跑完 Release 后再跑 Preview =================
-    - name: Test (Preview/Beta)
+    # 测试保持 Debug：@testable import 需要 -enable-testing，Release 不带。
+    - name: Test (Debug)
       run: |
-        set -o pipefail
-        
-        echo "==> Testing Preview for ${{ matrix.arch }}..."
-        xcodebuild test \
-          -project "RunProcess.xcodeproj" \
-          -scheme "RunProcess Preview" \
-          -destination "platform=macOS,arch=${{ matrix.arch }}" \
-          CODE_SIGNING_ALLOWED=NO \
-          | xcbeautify --renderer github-actions
+        set -euo pipefail
+        for scheme in "RunProcess" "RunProcess Preview"; do
+          echo "==> Testing $scheme (Debug) for ${{ matrix.arch }}..."
+          xcodebuild test \
+            -project "RunProcess.xcodeproj" \
+            -scheme "$scheme" \
+            -configuration Debug \
+            -destination "platform=macOS,arch=${{ matrix.arch }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions
+        done

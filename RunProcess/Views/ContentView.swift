@@ -41,17 +41,8 @@ struct ContentView: View {
         .frame(height: contentHeight)
         .background(
             uiMode == .classic
-                ? AnyView(AdaptiveWindowBackground(style: appearanceStyle, material: .underWindowBackground, blendingMode: .behindWindow).ignoresSafeArea())
+                ? AnyView(AdaptiveWindowBackground(style: appearanceStyle).ignoresSafeArea())
                 : AnyView(Color.clear)
-        )
-        // 👈 隐藏按钮拦截 Cmd + R 用于重新执行
-        .background(
-            Button("") {
-                executeLastCommand()
-            }
-            .keyboardShortcut("r", modifiers: .command)
-            .opacity(0)
-            .frame(width: 0, height: 0)
         )
         .onExitCommand {
             if viewModel.isRunning {
@@ -85,6 +76,11 @@ struct ContentView: View {
             useSudo = true
             viewModel.pendingSudoRequest = false
         }
+        // 👈 「默认以 root 执行」开关变化时，同步已开窗口的 useSudo，
+        //    避免 Toggle 显示锁定但实际不 sudo（或反之）。
+        .onChange(of: defaultSudo) { newValue in
+            useSudo = newValue
+        }
         // 👇 修复 Sheet 关闭后无法输入
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didEndSheetNotification)) { _ in
             restoreInputFocus()
@@ -92,6 +88,17 @@ struct ContentView: View {
         .onChange(of: contentHeight) { newHeight in
             guard uiMode == .lite else { return }
             viewModel.session?.setContentHeight(newHeight)
+        }
+        // 👇 新增：监听菜单栏切换远程主机的广播
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RemoteHostDidChange"))) { notification in
+            if let hostId = notification.userInfo?["hostId"] as? String? {
+                viewModel.activeRemoteHostId = hostId
+                viewModel.session?.updateWindowTitle()
+            }
+        }
+        // 👇 新增：动态切换 Classic / Lite 窗口样式
+        .onChange(of: uiMode) { _ in
+            viewModel.session?.updateUIMode()
         }
     }
 
@@ -168,8 +175,8 @@ struct ContentView: View {
                     .foregroundColor(.secondary.opacity(0.4))
                     .font(.system(size: 16))
                     .frame(width: 44, height: 44)
-                    .help("Option + Return 以 root 执行")
-
+                    .help(NSLocalizedString("hint.option.enter.sudo", comment: ""))
+                
                 inputField.frame(maxWidth: .infinity)
 
                 if viewModel.isRunning {
@@ -254,19 +261,22 @@ struct ContentView: View {
 
     private var optionsRow: some View {
         HStack {
-            Toggle(isOn: $useSudo) {
+            Toggle(isOn: Binding(
+                get: { defaultSudo || useSudo },
+                set: { useSudo = $0 }
+            )) {
                 HStack(spacing: 4) {
                     Image(systemName: defaultSudo ? "lock.fill" : "lock.shield")
                         .font(.system(size: 12))
-                        .foregroundColor(useSudo ? .orange : .secondary)
+                        .foregroundColor((defaultSudo || useSudo) ? .orange : .secondary)
                     Text(NSLocalizedString("sudo.toggle.label", comment: ""))
                         .font(.system(size: 12))
-                        .foregroundColor(useSudo ? .orange : .secondary)
+                        .foregroundColor((defaultSudo || useSudo) ? .orange : .secondary)
                 }
             }
             .toggleStyle(.checkbox)
             .disabled(defaultSudo)
-
+            
             Spacer()
 
             if !viewModel.outputText.isEmpty {

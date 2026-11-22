@@ -31,12 +31,9 @@ class CommandSuggester {
         let words = input.split(separator: " ", omittingEmptySubsequences: false)
         guard let lastWord = words.last.map(String.init), !lastWord.isEmpty else { return [] }
 
-        let isFirstWord = words.count <= 1
+        // 补全只针对最后一个词：路径以 / ~ . 开头就列目录，否则列命令名。
         if lastWord.hasPrefix("/") || lastWord.hasPrefix("~") || lastWord.hasPrefix(".") {
             return suggestPaths(for: lastWord)
-        }
-        if isFirstWord {
-            return suggestCommandsHistoryAliases(for: lastWord)
         }
         return suggestCommandsHistoryAliases(for: lastWord)
     }
@@ -47,6 +44,19 @@ class CommandSuggester {
         guard !prefix.isEmpty else { return [] }
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
+
+        // 0. Workflow
+        for workflow in WorkflowStore.shared.match(prefix: prefix) {
+            if seen.insert(workflow.name).inserted {
+                suggestions.append(Suggestion(
+                    text: workflow.name,
+                    type: .workflow,
+                    subtitle: workflow.description.isEmpty
+                        ? NSLocalizedString("suggestion.workflow.subtitle", comment: "")
+                        : workflow.description
+                ))
+            }
+        }
 
         // 1. 别名：一条补全，大标题是展开内容，副标题是别名
         for alias in AliasStore.shared.match(prefix: prefix) {

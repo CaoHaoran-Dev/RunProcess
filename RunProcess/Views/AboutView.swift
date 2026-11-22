@@ -75,8 +75,6 @@ struct AboutView: View {
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
-                material: .hudWindow,
-                blendingMode: .behindWindow
             )
         )
     }

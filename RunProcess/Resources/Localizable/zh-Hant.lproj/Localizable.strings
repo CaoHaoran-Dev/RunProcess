@@ -21,6 +21,8 @@
 "button.copy" = "拷貝";
 "button.selectAll" = "全選";
 "button.copy.output" = "複製輸出";
+"button.remove" = "移除";
+"button.back" = "返回";
 
 /* ========== Menu ========== */
 "menu.new.window" = "新增視窗";
@@ -32,6 +34,16 @@
 "menu.check.updates" = "檢查更新…";
 "menu.about" = "關於 RunProcess";
 "menu.quit" = "結束";
+"menu.remote.title" = "遠端連線";
+"menu.remote.local" = "本機";
+"menu.remote.discovered" = "發現的新裝置";
+"menu.remote.searching" = "正在搜尋附近裝置…";
+"menu.remote.retry" = "未找到裝置，重新搜尋";
+
+/* ========== Notifications ========== */
+"notification.pairing.title" = "配對請求";
+"notification.pairing.body" = "請在請求的裝置上輸入此驗證碼：%@";
+"notification.pairing.open" = "開啟設定";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "已清除";
@@ -43,6 +55,7 @@
 "hint.history.navigation" = "上下鍵記錄";
 "hint.hide.window" = "Cmd+W 隱藏";
 "hint.shift.enter" = "Shift+Enter 換行";
+"hint.option.enter.sudo" = "Option + Return 以 root 執行";
 
 /* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "需要管理者權限";
@@ -58,11 +71,15 @@
 
 /* ========== Errors ========== */
 "error.interactive.command" = "不支援互動式指令（vim、python、top 等），請在系統終端機中執行。";
-"error.timeout" = "指令執行逾時（超過 %@ 秒）。長時間執行的指令請直接在終端機中執行。";
-"error.timeout.short" = "指令執行逾時（超過 %@ 秒）";
+"error.timeout" = "指令執行逾時（超過 %ld 秒）。長時間執行的指令請直接在終端機中執行。";
+"error.timeout.short" = "指令執行逾時（超過 %ld 秒）";
 "error.sudo.wrong.password" = "密碼錯誤，請檢查後重試。";
 "error.sudo.missing.password" = "sudo 指令需要密碼。";
 "error.exit.code" = "指令執行失敗（結束碼：%ld）";
+"error.remote.missing.token" = "本機未找到配對憑證 (Token)。";
+"error.remote.timeout" = "遠端執行逾時";
+"error.remote.capability.denied" = "主機已停用該功能。";
+"error.remote.blocked.word" = "指令被拒絕：包含違禁詞「%@」。";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 解釋：找不到指令 '%@'。請檢查拼寫，或確保工具已安裝並包含在 PATH 中。";
@@ -86,6 +103,8 @@
 "settings.category.paths" = "路徑";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "別名";
+"settings.category.workflows" = "工作流";
+"settings.category.remote" = "遠端";
 "settings.category.startup" = "啟動";
 "settings.category.updates" = "更新";
 
@@ -96,6 +115,9 @@
 "settings.paths.subtitle" = "設定預設工作目錄與自訂可執行檔搜尋路徑。";
 "settings.sudo.subtitle" = "設定 root 權限執行。";
 "settings.aliases.subtitle" = "為常用指令定義快捷方式。";
+"settings.workflows.subtitle" = "為多行指令碼定義一鍵執行的快捷方式。";
+"settings.remote.unsupported" = "遠端功能需要 macOS 13 或更新版本。";
+"settings.remote.subtitle" = "管理和配對你的遠端裝置。";
 "settings.startup.subtitle" = "控制 RunProcess 的啟動方式。";
 "settings.updates.subtitle" = "管理自動更新與版本資訊。";
 
@@ -116,7 +138,7 @@
 "appearance.frostedGlass" = "毛玻璃";
 "appearance.liquidGlass" = "液態玻璃";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "主介面樣式";
 "settings.appearance.uiMode.header" = "介面模式";
 "settings.appearance.uiMode.restartHint" = "新開啟的視窗才會生效。";
@@ -144,7 +166,7 @@
 "settings.session.new.window.hint" = "僅影響新開啟的視窗。";
 "settings.session.requiresZsh" = "工作階段模式需要 zsh。";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "新增自訂 Shell...";
@@ -191,6 +213,72 @@
 "settings.aliases.error.space" = "短名稱不能包含空格。";
 "settings.aliases.error.duplicate" = "已存在同名的別名。";
 
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "還沒有工作流。點擊下方按鈕新增一個。";
+"settings.workflows.add" = "新增工作流...";
+"settings.workflows.hint" = "工作流包含多行指令，在輸入框輸入其觸發詞即可直接執行。";
+"settings.workflows.delete.title" = "刪除工作流？";
+"settings.workflows.delete.message" = "確定刪除 \"%@\" 嗎？此操作無法復原。";
+
+"settings.workflows.add.title" = "新增工作流";
+"settings.workflows.edit.title" = "編輯工作流";
+"settings.workflows.field.name" = "觸發詞";
+"settings.workflows.field.description" = "描述 (可選)";
+"settings.workflows.field.description.placeholder" = "部署到生產環境";
+"settings.workflows.field.commands" = "執行指令碼";
+"settings.workflows.editor.hint" = "在主輸入框輸入觸發詞，會直接執行這段多行指令碼。";
+
+"settings.workflows.error.empty" = "不能為空。";
+"settings.workflows.error.space" = "觸發詞不能包含空格。";
+"settings.workflows.error.duplicate" = "已存在同名的工作流。";
+
+/* ========== Settings — Remote (Beta) ========== */
+"settings.remote.hostMode" = "主機模式";
+"settings.remote.clients" = "已配對的用戶端";
+"settings.remote.noClients" = "暫無用戶端連線。";
+"settings.remote.paired" = "已配對";
+"settings.remote.pairingRequest" = "配對請求";
+"settings.remote.pairingCodeIs" = "請在請求的裝置上輸入此驗證碼：%@";
+"settings.remote.allowControl" = "允許遠端控制";
+"settings.remote.allowControl.hint" = "開啟後，其他裝置可以與此 Mac 配對並執行指令。";
+"settings.remote.allowControl.reconnect" = "啟用遠端控制後，對端需要重新連線才能執行指令：在它的視窗中重新執行一次，或開啟一個新視窗。之前已經建立的連線不會自動重新整理。";
+"settings.remote.empty" = "還沒有遠端主機。點擊「新增主機」進行配對。";
+"settings.remote.add" = "新增主機...";
+"settings.remote.add.title" = "配對遠端主機";
+"settings.remote.field.name" = "名稱 (可選)";
+"settings.remote.field.host" = "IP 位址";
+"settings.remote.field.code" = "6 位元配對碼";
+"settings.remote.pair" = "配對";
+"settings.remote.pairing" = "配對中...";
+"settings.remote.error.port" = "連接埠格式錯誤。";
+"settings.remote.devices" = "已配對的主機";
+"settings.remote.requestPairing" = "請求配對";
+"settings.remote.portNote" = "配對時將在背景自動使用 52732 連接埠。";
+"settings.remote.codeHint" = "目標裝置上已彈出 6 位驗證碼，請在下方輸入。";
+"settings.remote.discovered.title" = "發現新裝置";
+"settings.remote.discovered.message" = "在 %@ 發現了一台開啟遠端控制的裝置，是否前往設定配對？";
+"settings.remote.discovered.action" = "前往設定";
+"settings.remote.field.port" = "連接埠";
+"settings.remote.error.host.invalid" = "請輸入合法的 IPv4/IPv6 位址或主機名稱。";
+
+/* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
+"settings.remote.capability.header" = "遠端權限";
+"settings.remote.capability.subtitle" = "選擇允許遠端用戶端執行的操作。";
+"settings.remote.capability.exec" = "執行指令";
+"settings.remote.capability.workflow" = "執行工作流";
+"settings.remote.capability.sudo" = "以 root 執行";
+"settings.remote.capability.aliases" = "修改別名";
+"settings.remote.capability.history" = "讀取或清除記錄";
+"settings.remote.capability.file" = "存取檔案";
+"settings.remote.capability.hint" = "未勾選的功能在遠端用戶端請求時會被拒絕。";
+"settings.remote.capability.none" = "尚未允許任何遠端權限。在勾選至少一項之前，遠端指令會被拒絕。";
+"settings.remote.blocked.header" = "違禁詞";
+"settings.remote.blocked.empty" = "還沒有違禁詞。";
+"settings.remote.blocked.summary" = "%ld 個詞";
+"settings.remote.blocked.placeholder" = "新增違禁詞…";
+"settings.remote.blocked.add" = "新增";
+"settings.remote.blocked.hint" = "遠端指令中命中任一違禁詞即拒絕執行。";
+
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "開機自動啟動";
 "settings.startup.launchAtLogin.hint" = "登入時自動啟動 RunProcess。";
@@ -222,6 +310,7 @@
 "history.hint.navigate" = "選擇";
 "history.hint.apply" = "套用";
 "history.hint.close" = "關閉";
+"suggestion.history.count" = "%ld次";
 
 /* ========== Help ========== */
 "help.search" = "搜尋";
@@ -254,7 +343,7 @@
 "help.shortcut.enter" = "執行指令";
 "help.shortcut.newline" = "插入換行（多行輸入）";
 "help.shortcut.complete" = "呼出補全浮窗";
-"help.shortcut.navigate" = "依 frecency 瀏覽記錄";
+"help.shortcut.navigate" = "瀏覽記錄（常用優先）";
 
 "help.tip.drag.title" = "從 Finder 拖入檔案";
 "help.tip.drag.desc" = "把任意檔案拖進輸入框，路徑會自動轉義並插入，可直接作為參數使用。";
@@ -281,7 +370,7 @@
 "help.aliases.desc" = "別名讓你為常用指令定義短名稱。它們在補全浮窗裡排在最前。";
 "help.aliases.defaults" = "內建範例";
 "help.aliases.custom" = "自訂別名";
-"help.aliases.custom.desc" = "編輯這個 YAML 檔案來增刪別名。重新啟動應用程式後生效。";
+"help.aliases.custom.desc" = "可以在這裡新增別名，也可以直接編輯這個 YAML 檔案。此處改動立即生效；手動修改檔案後需重新啟動應用程式才會重新載入。";
 
 "help.appearance.desc" = "設定 → 外觀裡有三種外觀模式：";
 "help.appearance.none" = "無 —— 系統視窗純色背景。";
@@ -324,3 +413,40 @@
 "error.intent.sudo.not.authorized" = "以 root 執行需要授權。";
 "error.intent.execution.failed" = "指令執行失敗。";
 "error.intent.alias.name.invalid" = "別名不能包含空格。";
+
+/* ========== App Intents — Remote (Preview) ========== */
+"intent.runRemoteCommand.title" = "執行遠端指令";
+"intent.runRemoteCommand.description" = "在已配對的遠端主機上執行 shell 指令並傳回輸出。";
+"intent.runRemoteCommand.shortTitle" = "執行遠端指令";
+"intent.runRemoteCommand.parameter.host" = "遠端主機";
+"intent.runRemoteCommand.parameter.command" = "指令";
+"intent.runRemoteCommand.parameter.throwOnFailure" = "失敗時拋出錯誤";
+
+"intent.searchRemoteHistory.title" = "搜尋遠端指令記錄";
+"intent.searchRemoteHistory.description" = "尋找已配對遠端主機上執行過的指令。";
+"intent.searchRemoteHistory.shortTitle" = "搜尋遠端記錄";
+"intent.searchRemoteHistory.parameter.host" = "遠端主機";
+"intent.searchRemoteHistory.parameter.query" = "查詢";
+"intent.searchRemoteHistory.parameter.limit" = "數量上限";
+
+"error.intent.remote.host.missing" = "所選遠端主機已不存在。";
+
+// MARK: - 說明：遠端執行（預覽版）
+
+"help.topic.remote" = "遠端執行";
+"help.remote.desc" = "在同一個指令視窗裡，把指令傳送到另一台 Mac 上執行。兩台 Mac 都需要預覽版，且通訊協定必須一致，請保持兩端版本相同。";
+"help.remote.host.title" = "允許遠端控制";
+"help.remote.host.desc" = "在被控的 Mac 上開啟「設定 > 遠端」，開啟「允許遠端控制」。它隨後開始監聽，並在區域網路上廣播自己。";
+"help.remote.pair.title" = "配對裝置";
+"help.remote.pair.desc" = "在控制端 Mac 上選擇「設定 > 遠端 > 新增主機」，填入對方位址和對方顯示的 6 位配對碼。配對碼也會以系統通知的形式送達；若通知未開啟，則改用應用程式內彈窗。";
+"help.remote.run.title" = "切換主機";
+"help.remote.run.desc" = "在選單列的「遠端」子選單中選擇主機。選擇會同步到所有已開啟的視窗，視窗標題會顯示目前主機；指令、工作流和 sudo 都會在那台 Mac 上執行。新開啟的視窗預設在本機執行，需要在開啟後重新選擇一次。";
+"help.remote.permissions.title" = "權限";
+"help.remote.permissions.desc" = "由被控端決定遠端用戶端能做什麼。預設不允許任何操作，需要在「設定 > 遠端 > 遠端權限」裡逐項開啟；指令中出現禁用詞會被拒絕。";
+"help.remote.reconnect.title" = "啟用後需要重新連線";
+"help.remote.reconnect.desc" = "開啟遠端控制後，對端需要重新連線才能執行指令：在它的視窗中重新執行一次，或開啟一個新視窗。之前已經建立的連線不會自動重新整理。";
+
+// MARK: - Remote (merged into the release build)
+
+"suggestion.workflow.subtitle" = "多行工作流程";
+"error.remote.unexpected.handshake" = "收到了無法辨識的握手封包。";

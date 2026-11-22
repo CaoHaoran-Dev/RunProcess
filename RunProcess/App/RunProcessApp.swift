@@ -8,6 +8,9 @@
 import SwiftUI
 import KeyboardShortcuts
 import Sparkle
+import Network
+import RemoteLinkKit
+import UserNotifications
 
 @main
 struct RunProcessApp: App {
@@ -37,9 +40,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var hasBeenActive = false
+    private var windowObservers: [NSObjectProtocol] = []
+
+    // MARK: - Bonjour Discovery
+    private var bonjourBrowser: BonjourBrowser?
+    private var discoveredHosts: [String: NWEndpoint] = [:]
+    private var remoteSubmenu: NSMenu?
+    private var isRemoteMenuOpen = false
+
+    /// 是否已超时（10 秒内未发现任何设备）
+    private var discoveryTimedOut = false
+    /// 超时计时器
+    private var discoveryTimeoutWork: DispatchWorkItem?
+    private static let discoveryTimeout: TimeInterval = 10
 
     // MARK: - Menu
-    private lazy var statusMenu: NSMenu = {
+    // 动态生成菜单，每次点击都会重新构建，确保能实时看到 Bonjour 发现的设备
+    private var statusMenu: NSMenu {
         let menu = NSMenu()
 
         let newWindowItem = NSMenuItem(
@@ -60,6 +77,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(toggleItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        let remoteMenu = NSMenu(title: NSLocalizedString("menu.remote.title", comment: ""))
+        remoteMenu.autoenablesItems = false
+        remoteMenu.delegate = self
+        self.remoteSubmenu = remoteMenu
+
+        let remoteSubItem = NSMenuItem(
+            title: NSLocalizedString("menu.remote.title", comment: ""),
+            action: nil,
+            keyEquivalent: ""
+        )
+        if let img = NSImage(systemSymbolName: "network", accessibilityDescription: nil) {
+            remoteSubItem.image = img
+        }
+        remoteSubItem.submenu = remoteMenu
+
+        if let settingsIndex = menu.items.firstIndex(where: { $0.action == #selector(openSettings) }) {
+            menu.insertItem(remoteSubItem, at: settingsIndex)
+            menu.insertItem(NSMenuItem.separator(), at: settingsIndex + 1)
+        } else {
+            menu.addItem(remoteSubItem)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
@@ -127,7 +167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
 
         return menu
-    }()
+    }
 
     // MARK: - Lifecycle
 
@@ -146,6 +186,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupGlobalHotkey()
         setupKeyMonitor()
         setupAppActiveObserver()
+
+        // 先注册类别、设 delegate，再请求权限。
+        // 避免启动早期收到的通知走默认展示行为。
+        RemotePairingNotifier.registerCategoryIfNeeded()
+        UNUserNotificationCenter.current().delegate = self
+
+        startDiscovery()
+
+        if AppSettings.allowRemoteControl {
+            // 只有本来就开了远程控制的用户才需要在启动时补授权；
+            // 不要在首次启动就向所有正式版用户索取通知权限。
+            RemotePairingNotifier.requestAuthorizationIfNeeded()
+            RemoteServerManager.shared.start()
+        }
 
         if AppSettings.hideWindowOnLaunch {
             _ = sessionManager.newSessionWithoutShowing()
@@ -181,8 +235,79 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             keyMonitor = nil
         }
 
+        discoveryTimeoutWork?.cancel()
+        discoveryTimeoutWork = nil
+        bonjourBrowser?.stop()
+        RemoteServerManager.shared.stop()
+
         sessionManager.removeAll()
         print("🛑 RunProcess is exiting")
+    }
+
+    // MARK: - Bonjour Browser
+
+    private func startDiscovery() {
+        discoveryTimeoutWork?.cancel()
+        discoveryTimeoutWork = nil
+
+        discoveryTimedOut = false
+
+        bonjourBrowser?.stop()
+        bonjourBrowser = BonjourBrowser()
+        bonjourBrowser?.onFound = { [weak self] service in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                // 已超时：后台仍可发现，但不刷新 UI，等待用户点重新搜索
+                guard !self.discoveryTimedOut else { return }
+
+                let wasEmpty = self.discoveredHosts.isEmpty
+                self.discoveredHosts[service.name] = service.endpoint
+
+                // 首次发现设备，取消超时
+                if !self.discoveredHosts.isEmpty {
+                    self.discoveryTimeoutWork?.cancel()
+                    self.discoveryTimeoutWork = nil
+                }
+
+                if wasEmpty,
+                   self.isRemoteMenuOpen,
+                   let sub = self.remoteSubmenu {
+                    self.rebuildRemoteSubmenu(sub)
+                }
+            }
+        }
+        bonjourBrowser?.onLost = { [weak self] service in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                guard !self.discoveryTimedOut else { return }
+                self.discoveredHosts.removeValue(forKey: service.name)
+                if self.discoveredHosts.isEmpty,
+                   self.isRemoteMenuOpen,
+                   let sub = self.remoteSubmenu {
+                    self.rebuildRemoteSubmenu(sub)
+                }
+            }
+        }
+        bonjourBrowser?.start()
+
+        let work = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            guard self.discoveredHosts.isEmpty else { return }
+            self.discoveryTimedOut = true
+            if self.isRemoteMenuOpen, let sub = self.remoteSubmenu {
+                self.rebuildRemoteSubmenu(sub)
+            }
+        }
+        discoveryTimeoutWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.discoveryTimeout, execute: work)
+    }
+
+    @objc private func retryDiscovery() {
+        discoveredHosts.removeAll()
+        startDiscovery()
+        if isRemoteMenuOpen, let sub = remoteSubmenu {
+            rebuildRemoteSubmenu(sub)
+        }
     }
 
     // MARK: - Status Bar
@@ -245,21 +370,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 self.openHistory()
                 return nil
             }
-            
+
+            if flags == .command,
+               event.charactersIgnoringModifiers?.lowercased() == "r" {
+                self.reRunLastCommand()
+                return nil
+            }
+
             if flags == .command,
                event.charactersIgnoringModifiers == "/" {
                 self.openHelp()
                 return nil
             }
-
-            if flags == .command,
-               event.charactersIgnoringModifiers?.lowercased() == "u" {
-                self.checkForUpdates()
-                return nil
-            }
-
-            // ✅ ⌘U 检查更新（不依赖 NSMenuItem.keyEquivalent，
-            //    因为 statusItem.menu 是临时赋值的，菜单关闭后 keyEquivalent 失效）
+            
             if flags == .command,
                event.charactersIgnoringModifiers?.lowercased() == "u" {
                 self.checkForUpdates()
@@ -300,8 +423,66 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Actions
 
     @objc func toggleMenu() {
+        // 每次点击时，把最新的动态菜单赋给 statusItem
         statusItem?.menu = statusMenu
         statusItem?.button?.performClick(nil)
+    }
+
+@objc func selectRemoteHost(_ sender: NSMenuItem) {
+    let hostId = sender.representedObject as? String
+    
+    // 强制同步给所有存活的 Session
+    for session in sessionManager.allSessions {
+        session.viewModel.activeRemoteHostId = hostId
+        session.updateWindowTitle()
+    }
+}
+
+    @objc func connectToDiscoveredHost(_ sender: NSMenuItem) {
+        guard let endpoint = sender.representedObject as? NWEndpoint else { return }
+
+        Task {
+            do {
+                let (host, _) = try await BonjourBrowser.resolve(endpoint)
+                let normalized = HostAddress.stripPort(host)
+
+                DispatchQueue.main.async {
+                    let alert = NSAlert()
+                    alert.messageText = NSLocalizedString("settings.remote.discovered.title", comment: "")
+                    alert.informativeText = String(format: NSLocalizedString("settings.remote.discovered.message", comment: ""), normalized)
+                    alert.addButton(withTitle: NSLocalizedString("settings.remote.discovered.action", comment: ""))
+                    alert.addButton(withTitle: NSLocalizedString("button.cancel", comment: ""))
+
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        self.openSettings()
+                        NotificationCenter.default.post(name: NSNotification.Name("PreFillRemoteHost"), object: normalized)
+                    }
+                }
+            } catch {
+                print("Failed to resolve Bonjour endpoint: \(error)")
+            }
+        }
+    }
+
+    /// 没有系统通知权限时的兜底：直接把验证码弹出来。
+    /// 不依赖设置页是否打开，也不依赖 SwiftUI 视图是否已挂载。
+    func presentPairingCodeInApp(_ code: String) {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = NSLocalizedString("notification.pairing.title", comment: "")
+        alert.informativeText = String(
+            format: NSLocalizedString("settings.remote.pairingCodeIs", comment: ""),
+            code
+        )
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: NSLocalizedString("button.ok", comment: ""))
+
+        if let window = sessionManager.activeSession()?.window, window.isVisible {
+            alert.beginSheetModal(for: window)
+        } else {
+            alert.runModal()
+        }
     }
 
     @objc func newWindow() {
@@ -344,7 +525,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if session.isVisible() {
             session.hide()
         } else {
-            session.show()
+            session.show(isWake: true)
             NSApp.activate(ignoringOtherApps: true)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -366,13 +547,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         helpWindow?.orderOut(nil)
     }
 
-    // MARK: - History
+    @objc func reRunLastCommand() {
+        guard let session = sessionManager.activeSession() else { return }
+        guard !session.viewModel.isRunning else { return }
 
+        // 与 ContentView 的「重跑上一条」逻辑保持一致：
+        // 从历史里取最近一条，写回输入框并执行。
+        let entries = CommandHistory.shared.getAll()
+        guard let last = entries.sorted(by: { $0.lastUsed > $1.lastUsed }).first else {
+            return
+        }
+        session.viewModel.inputText = last.command
+        session.viewModel.executeCommand(useSudo: false, password: nil) { _ in
+            session.viewModel.closeSuggestions()
+        }
+    }
+    
     @objc func openHistory() {
         let session = sessionManager.activeSession() ?? sessionManager.newSession()
 
         if !session.isVisible() {
-            session.show()
+            session.show(isWake: true)
             NSApp.activate(ignoringOtherApps: true)
         }
 
@@ -380,8 +575,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             session.viewModel.showHistoryPanel = true
         }
     }
-
-    // MARK: - Help
 
     @objc func openHelp() {
         NSApp.activate(ignoringOtherApps: true)
@@ -401,7 +594,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: hosting)
         window.title = NSLocalizedString("window.help.title", comment: "Help window title")
         window.styleMask = [.titled, .closable, .resizable, .miniaturizable, .fullSizeContentView]
+        // 系统标题栏透明，露出自绘的玻璃标题条；系统标题文字隐藏以免重复。
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
@@ -418,9 +613,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
-
-    // MARK: - Settings
 
     @objc func openSettings() {
         NSApp.activate(ignoringOtherApps: true)
@@ -445,7 +639,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let window = NSWindow(contentViewController: hostingController)
         window.title = NSLocalizedString("window.settings.title", comment: "Settings window title")
         window.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+        // 系统标题栏透明，露出自绘的玻璃标题条；系统标题文字隐藏以免重复。
         window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.isOpaque = false
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
@@ -462,6 +658,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.makeKeyAndOrderFront(nil)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
 
     func reparentAuxiliaryWindows(to parent: NSWindow) {
@@ -481,7 +678,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // 👇 新增：监听子窗口关闭，强制主窗口夺回焦点
+    /// 辅助窗口（设置/帮助/关于）是透明且挂在主窗口下的子窗口，
+    /// 拖动改变尺寸时阴影容易停在旧位置，这里在每次尺寸变化后重算。
+    private func setupWindowShadowObserver(for window: NSWindow) {
+        let token = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification,
+            object: window,
+            queue: .main
+        ) { note in
+            (note.object as? NSWindow)?.invalidateShadow()
+        }
+        windowObservers.append(token)
+    }
+
     private func setupWindowCloseObserver(for window: NSWindow) {
         NotificationCenter.default.addObserver(
             forName: NSWindow.willCloseNotification,
@@ -490,16 +699,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             guard let self = self else { return }
             guard let activeSession = self.sessionManager.activeSession() else { return }
-            
-            // 延迟一点点，等子窗口彻底从层级中移除
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 activeSession.window.makeKey()
                 activeSession.viewModel.forceRestoreInputFocus()
             }
         }
     }
-
-    // MARK: - Clear History
 
     @objc func clearHistory() {
         CommandHistory.shared.clearAll()
@@ -511,8 +716,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         alert.addButton(withTitle: NSLocalizedString("button.ok", comment: "OK button"))
         alert.runModal()
     }
-
-    // MARK: - About
 
     @objc func openAbout() {
         if let existing = aboutWindow {
@@ -548,15 +751,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         setupWindowCloseObserver(for: window)
+        setupWindowShadowObserver(for: window)
     }
 
-    // MARK: - Updates
-
-    /// 菜单栏「检查更新」。绑定 ⌘U。
-    ///
-    /// 菜单栏应用（.accessory）点击菜单项时，Sparkle 的独立窗口可能不会弹出。
-    /// 参考 Sparkle 官方文档：需要临时切换到 .regular，让更新窗口能正常显示。
-    /// https://sparkle-project.org/documentation/gentle-reminders/
     @objc func checkForUpdates() {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -591,8 +788,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(AppSettings.customUpdateURL, forKey: "SUFeedURL")
         }
     }
-
-    // MARK: - Quit
 
     @objc func quitApp() {
         NSApp.terminate(nil)
@@ -629,5 +824,205 @@ extension AppDelegate: SPUStandardUserDriverDelegate {
         andInImmediateFocus immediateFocus: Bool
     ) -> Bool {
         return immediateFocus
+    }
+}
+
+// MARK: - UNUserNotificationCenterDelegate
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        if let code = userInfo["pairingCode"] as? String {
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+                // 这个原本报错的方法，现在也确保包裹在 BETA 里
+                self.presentPairingCodeInApp(code)
+            }
+        }
+        completionHandler()
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
+    }
+}
+
+// MARK: - Remote Submenu (BETA)
+
+extension AppDelegate: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        guard menu === remoteSubmenu else { return }
+        isRemoteMenuOpen = true
+        rebuildRemoteSubmenu(menu)
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === remoteSubmenu else { return }
+        isRemoteMenuOpen = false
+    }
+
+    private func rebuildRemoteSubmenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+
+        // 1. 本地
+        let localItem = NSMenuItem(
+            title: NSLocalizedString("menu.remote.local", comment: ""),
+            action: #selector(selectRemoteHost(_:)),
+            keyEquivalent: ""
+        )
+        localItem.target = self
+        localItem.representedObject = nil
+        if let img = NSImage(systemSymbolName: "desktopcomputer", accessibilityDescription: nil) {
+            localItem.image = img
+        }
+        menu.addItem(localItem)
+
+        // 2. 已配对主机
+        let hosts = RemoteHostStore.shared.hosts
+        if !hosts.isEmpty {
+            menu.addItem(NSMenuItem.separator())
+            for host in hosts {
+                let item = NSMenuItem(
+                    title: host.name,
+                    action: #selector(selectRemoteHost(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = host.id
+                if let img = NSImage(systemSymbolName: "server.rack", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                menu.addItem(item)
+            }
+        }
+
+        // 3. Bonjour 发现
+        menu.addItem(NSMenuItem.separator())
+
+        if !discoveredHosts.isEmpty {
+            let headerItem = NSMenuItem(
+                title: NSLocalizedString("menu.remote.discovered", comment: "Discovered Devices"),
+                action: nil,
+                keyEquivalent: ""
+            )
+            headerItem.isEnabled = false
+            menu.addItem(headerItem)
+
+            for name in discoveredHosts.keys.sorted() {
+                guard let endpoint = discoveredHosts[name] else { continue }
+                let item = NSMenuItem(
+                    title: name,
+                    action: #selector(connectToDiscoveredHost(_:)),
+                    keyEquivalent: ""
+                )
+                item.target = self
+                item.representedObject = endpoint
+                if let img = NSImage(systemSymbolName: "wifi", accessibilityDescription: nil) {
+                    item.image = img
+                }
+                menu.addItem(item)
+            }
+        } else if discoveryTimedOut {
+            menu.addItem(makeRetryMenuItem())
+        } else {
+            menu.addItem(makeSearchingMenuItem())
+        }
+    }
+
+    /// view-backed 菜单项：点击后不关闭菜单，直接触发重试。
+    private func makeRetryMenuItem() -> NSMenuItem {
+        let item = NSMenuItem()
+        item.isEnabled = true
+
+        let rowHeight: CGFloat = 26
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 240, height: rowHeight))
+
+        let icon = NSImageView(frame: NSRect(x: 10, y: (rowHeight - 16) / 2, width: 16, height: 16))
+        icon.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: nil)
+        icon.contentTintColor = .secondaryLabelColor
+        container.addSubview(icon)
+
+        let label = NSTextField(labelWithString: NSLocalizedString("menu.remote.retry", comment: ""))
+        label.font = NSFont.systemFont(ofSize: 13)
+        label.textColor = .labelColor
+        label.lineBreakMode = .byTruncatingTail
+        label.frame = NSRect(
+            x: 32,
+            y: (rowHeight - 18) / 2,
+            width: container.frame.width - 32 - 10,
+            height: 18
+        )
+        container.addSubview(label)
+
+        let button = NSButton(frame: container.bounds)
+        button.isBordered = false
+        button.title = ""
+        button.target = self
+        button.action = #selector(retryDiscovery)
+        button.autoresizingMask = [.width, .height]
+        container.addSubview(button)
+
+        item.view = container
+        return item
+    }
+
+    private func makeSearchingMenuItem() -> NSMenuItem {
+        let item = NSMenuItem()
+        item.isEnabled = false
+
+        let spinner = NSProgressIndicator()
+        spinner.style = .spinning
+        spinner.controlSize = .small
+        spinner.isIndeterminate = true
+        spinner.isDisplayedWhenStopped = true
+        spinner.frame = NSRect(x: 0, y: 0, width: 14, height: 14)
+        spinner.startAnimation(nil)
+
+        let label = NSTextField(labelWithString: NSLocalizedString("menu.remote.searching", comment: ""))
+        label.font = NSFont.systemFont(ofSize: 12)
+        label.textColor = .secondaryLabelColor
+        label.lineBreakMode = .byTruncatingTail
+        label.sizeToFit()
+
+        let spacing: CGFloat = 8
+        let leftInset: CGFloat = 10
+        let rightInset: CGFloat = 10
+        let topInset: CGFloat = 4
+        let bottomInset: CGFloat = 4
+
+        let labelSize = label.frame.size
+        let contentHeight = max(14, labelSize.height)
+        let containerWidth = max(200, leftInset + 14 + spacing + labelSize.width + rightInset)
+        let containerHeight = contentHeight + topInset + bottomInset
+
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: containerWidth, height: containerHeight))
+
+        spinner.frame = NSRect(
+            x: leftInset,
+            y: topInset + (contentHeight - 14) / 2,
+            width: 14,
+            height: 14
+        )
+        label.frame = NSRect(
+            x: leftInset + 14 + spacing,
+            y: topInset + (contentHeight - labelSize.height) / 2,
+            width: labelSize.width,
+            height: labelSize.height
+        )
+
+        container.addSubview(spinner)
+        container.addSubview(label)
+        container.autoresizingMask = [.width]
+
+        item.view = container
+        return item
     }
 }

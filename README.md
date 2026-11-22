@@ -1,8 +1,12 @@
 # RunProcess
 
 > A Spotlight-style command launcher for macOS with a translucent interface and menu bar integration.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="Images/RunProcessDemo-Light.png">
+</picture>
 
-> [English](README.md) · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
+> English · [简体中文](Docs/zh-Hans/README.zh-Hans.md) · [繁體中文](Docs/zh-Hant/README.zh-Hant.md)
 
 ---
 
@@ -38,6 +42,8 @@ RunProcess is a lightweight macOS application that provides a quick command exec
 - **Automatic Hide on Deactivate** — Windows hide automatically when the application loses focus
 - **In-app Help** — Sidebar-based help window, styled like macOS Help Viewer
 - **App Intents** — Supports macOS Shortcuts, Siri, and Spotlight for running commands, searching history, and adding aliases
+- **Remote Execution** — Pair another Mac and run commands, workflows, and sudo there; the host enforces per-capability permissions and blocked words
+- **Workflows** — Multi-line scripts stored in `workflows.yml`, triggered by a short name
 - **Localization** — English, Simplified Chinese, Traditional Chinese
 
 ---
@@ -92,8 +98,8 @@ Three appearance modes are available in **Settings → Appearance**:
 
 | Mode | Description | Availability |
 | :--- | :--- | :--- |
-| None | Solid system window background | macOS 12.4 and later |
-| Frosted Glass | `NSVisualEffectView` blur | macOS 12.4 and later |
+| None | Solid system window background | macOS 13.0 and later |
+| Frosted Glass | `NSVisualEffectView` blur | macOS 13.0 and later |
 | Liquid Glass | Native Liquid Glass material | macOS 26 and later |
 
 The default is Frosted Glass on macOS 15 and earlier, and Liquid Glass on macOS 26 and later. The Liquid Glass option is hidden on systems that do not support it.
@@ -252,7 +258,7 @@ Update packages are cryptographically signed and verified before installation.
 
 ## Help
 
-Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, and Appearance.
+Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, Appearance, and Remote Execution.
 
 ---
 
@@ -264,7 +270,7 @@ RunProcess supports English, Simplified Chinese, and Traditional Chinese. To use
 
 ## Requirements
 
-- macOS 12.4 or later
+- macOS 13.0 or later
 - Apple Silicon or Intel
 
 ---
@@ -285,6 +291,13 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 
 > **Note:** The application is not notarized, so macOS may display a security warning on first launch (go to **System Settings → Privacy & Security** and click **Open Anyway**). The Preview version stores user data in `~/Library/Application Support/RunProcess-Beta/`.
 
+### Preview Build
+
+A Preview build ships alongside the stable release and carries the same feature set; upcoming changes land there first. It uses a separate data directory (`RunProcess-Beta`) and update feed, so it can be installed next to the stable release.
+
+- **Download**: [RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **Details**: [About Preview Version](Docs/en/About-Preview-Version.md)
+
 ### Homebrew
 
 ```bash
@@ -298,10 +311,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-Requires Xcode 16.0 or later.
+The built app is at `build/Build/Products/Release/RunProcess.app`. To build the Preview version, replace `-scheme RunProcess` with `-scheme "RunProcess Preview"`. Requires Xcode 16.0 or later.
 
 ### Try It Online
 
@@ -318,9 +337,13 @@ RunProcess stores user data in:
 *(For the Beta/Preview version, the folder is `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # command aliases
-├── history.yml      # command history (max 500 entries)
-└── paths.yml        # custom executable search paths
+├── aliases.yml         # command aliases
+├── history.yml         # command history (max 500 entries)
+├── paths.yml           # custom executable search paths
+├── workflows.yml       # multi-line workflows
+├── remote_hosts.yml    # remote hosts this Mac can control
+├── paired_clients.yml  # devices allowed to control this Mac
+└── remote_access.yml   # remote capabilities and blocked words
 ```
 
 ### Migration

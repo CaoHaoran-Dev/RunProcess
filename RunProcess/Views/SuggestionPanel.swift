@@ -7,14 +7,15 @@
 
 import SwiftUI
 
+/// 每个窗口一个实例，由 `CommandViewModel` 持有。
+/// 之前是全局单例，多窗口时面板会跟着最后一次请求的窗口跑。
 class SuggestionPanel {
-    static let shared = SuggestionPanel()
 
     private var panel: NSPanel?
     private var hostingController: NSHostingController<SuggestionPanelContent>?
     private weak var parentWindow: NSWindow?
 
-    private init() {}
+    init() {}
 
     func show(with viewModel: CommandViewModel) {
         guard let positioningView = viewModel.positioningView,
@@ -61,6 +62,10 @@ class SuggestionPanel {
         guard let panel = panel else { return }
         panel.parent?.removeChildWindow(panel)
         panel.orderOut(nil)
+        // 断开引用：hostingController → rootView → viewModel → panel 是环，
+        // 不清掉的话窗口关掉后 ViewModel 也不会释放。
+        self.panel = nil
+        self.hostingController = nil
         parentWindow = nil
     }
 

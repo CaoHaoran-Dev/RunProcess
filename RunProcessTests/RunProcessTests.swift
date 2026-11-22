@@ -6,8 +6,9 @@
 //
 
 import XCTest
+import AppKit
+import SwiftUI
 
-// 根据编译条件，动态决定测试哪个 Target
 #if BETA
 @testable import RunProcess_Preview
 #else
@@ -297,6 +298,13 @@ final class SuggestionTests: XCTestCase {
         XCTAssertGreaterThan(history.priority, command.priority)
         XCTAssertGreaterThan(command.priority, path.priority)
     }
+    
+    func testWorkflowHasHighestPriority() {
+        let workflow = Suggestion(text: "deploy", type: .workflow)
+        let alias = Suggestion(text: "deploy", type: .alias)
+        
+        XCTAssertGreaterThan(workflow.priority, alias.priority)
+    }
 
     func testHistoryCountClampedInPriority() {
         let low = Suggestion(text: "x", type: .history, historyCount: -5)
@@ -311,6 +319,8 @@ final class SuggestionTests: XCTestCase {
         XCTAssertEqual(Suggestion.SuggestionType.history.iconName, "clock.arrow.circlepath")
         XCTAssertEqual(Suggestion.SuggestionType.command.iconName, "terminal")
         XCTAssertEqual(Suggestion.SuggestionType.path.iconName, "folder")
+        
+        XCTAssertEqual(Suggestion.SuggestionType.workflow.iconName, "doc.text.fill")
     }
 }
 
@@ -437,7 +447,246 @@ final class AliasExpansionTests: XCTestCase {
     }
 }
 
-// MARK: - 版本特定测试 (条件编译)
+// MARK: - SessionFrame（弱断言，只校验返回尺寸合理、不崩溃）
+
+final class SessionFrameTests: XCTestCase {
+
+    func testCalculateSafeFrameKeepsWindowSize() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertEqual(frame.width, 600, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 140, accuracy: 0.5)
+        XCTAssertTrue(frame.origin.x.isFinite)
+        XCTAssertTrue(frame.origin.y.isFinite)
+    }
+
+    func testCalculateSafeFrameCentersOnWideScreen() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertEqual(frame.midX, screen.midX, accuracy: 1.0)
+    }
+
+    func testCalculateSafeFrameDoesNotCrashOnNarrowScreen() {
+        let screen = NSRect(x: 0, y: 0, width: 400, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertTrue(frame.origin.x.isFinite)
+        XCTAssertTrue(frame.origin.y.isFinite)
+        XCTAssertEqual(frame.width, 600, accuracy: 0.5)
+        XCTAssertEqual(frame.height, 140, accuracy: 0.5)
+    }
+
+    func testCalculateSafeFrameStaysInsideVerticalBounds() {
+        let screen = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let frame = Session.calculateSafeFrame(screenRect: screen,
+                                               windowWidth: 600,
+                                               windowHeight: 140)
+        XCTAssertGreaterThanOrEqual(frame.minY, screen.minY + 20 - 0.5)
+        XCTAssertLessThanOrEqual(frame.maxY, screen.maxY - 40 + 0.5)
+    }
+}
+
+// MARK: - HostAddress
+
+final class HostAddressTests: XCTestCase {
+
+    func testStripPortFromIPv4() {
+        XCTAssertEqual(HostAddress.stripPort("192.168.1.10:52731"), "192.168.1.10")
+    }
+
+    func testStripPortFromBracketedIPv6() {
+        XCTAssertEqual(HostAddress.stripPort("[fe80::1]:52731"), "fe80::1")
+    }
+
+    func testStripPortLeavesBareIPv6() {
+        XCTAssertEqual(HostAddress.stripPort("fe80::1"), "fe80::1")
+        XCTAssertEqual(HostAddress.stripPort("::1"), "::1")
+    }
+
+    func testStripPortLeavesHostname() {
+        XCTAssertEqual(HostAddress.stripPort("mac.local"), "mac.local")
+        XCTAssertEqual(HostAddress.stripPort("mac.local:52731"), "mac.local")
+    }
+
+    func testIsIPv4() {
+        XCTAssertTrue(HostAddress.isIPv4("127.0.0.1"))
+        XCTAssertTrue(HostAddress.isIPv4("192.168.1.10"))
+        XCTAssertFalse(HostAddress.isIPv4("256.1.1.1"))
+        XCTAssertFalse(HostAddress.isIPv4("fe80::1"))
+    }
+
+    func testIsIPv6() {
+        XCTAssertTrue(HostAddress.isIPv6("::1"))
+        XCTAssertTrue(HostAddress.isIPv6("fe80::1"))
+        XCTAssertFalse(HostAddress.isIPv6("127.0.0.1"))
+        XCTAssertFalse(HostAddress.isIPv6("[::1]"))
+    }
+
+    func testIsHostname() {
+        XCTAssertTrue(HostAddress.isHostname("mac.local"))
+        XCTAssertTrue(HostAddress.isHostname("example.com"))
+        XCTAssertFalse(HostAddress.isHostname(""))
+        XCTAssertFalse(HostAddress.isHostname("-bad.local"))
+    }
+
+    func testIsValidAcceptsIPv4IPv6Hostname() {
+        XCTAssertTrue(HostAddress.isValid("127.0.0.1"))
+        XCTAssertTrue(HostAddress.isValid("::1"))
+        XCTAssertTrue(HostAddress.isValid("mac.local"))
+        XCTAssertFalse(HostAddress.isValid("bad host"))
+    }
+
+    func testFormattedForURLWrapsIPv6() {
+        XCTAssertEqual(HostAddress.formattedForURL("::1"), "[::1]")
+        XCTAssertEqual(HostAddress.formattedForURL("127.0.0.1"), "127.0.0.1")
+        XCTAssertEqual(HostAddress.formattedForURL("mac.local"), "mac.local")
+    }
+
+    func testBareHostRemovesBrackets() {
+        XCTAssertEqual(HostAddress.bareHost("[::1]"), "::1")
+        XCTAssertEqual(HostAddress.bareHost("[fe80::1]:52731"), "fe80::1")
+    }
+}
+
+// MARK: - RemoteHost
+
+final class RemoteHostTests: XCTestCase {
+
+    func testIdUsesHashSeparator() {
+        let host = RemoteHost(name: "Mac", host: "192.168.1.10", port: 52731)
+        XCTAssertEqual(host.id, "192.168.1.10#52731")
+    }
+
+    func testIdForIPv6HasNoBrackets() {
+        let host = RemoteHost(name: "Mac", host: "[fe80::1]:52731", port: 52731)
+        XCTAssertEqual(host.host, "fe80::1")
+        XCTAssertEqual(host.id, "fe80::1#52731")
+    }
+
+    func testInitStripsPortFromHost() {
+        let host = RemoteHost(name: "Mac", host: "192.168.1.10:9999", port: 52731)
+        XCTAssertEqual(host.host, "192.168.1.10")
+        XCTAssertEqual(host.port, 52731)
+    }
+}
+
+// MARK: - RemoteExecPayload
+
+final class RemoteExecPayloadTests: XCTestCase {
+
+    func testExecKindRoundTrip() throws {
+        for kind in [RemoteExecPayload.Kind.command,
+                     .sudo, .workflow, .alias, .history, .file] {
+            let payload = RemoteExecPayload(
+                id: "1",
+                cmd: "echo hi",
+                kind: kind.rawValue,
+                timeout: 10
+            )
+            let data = try JSONEncoder().encode(payload)
+            let decoded = try JSONDecoder().decode(RemoteExecPayload.self, from: data)
+            XCTAssertEqual(decoded.execKind, kind)
+            XCTAssertEqual(decoded.id, "1")
+            XCTAssertEqual(decoded.cmd, "echo hi")
+        }
+    }
+
+    func testUnknownKindFallsBackToCommand() throws {
+        let payload = RemoteExecPayload(id: "1", cmd: "ls", kind: "nope", timeout: 10)
+        let data = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(RemoteExecPayload.self, from: data)
+        XCTAssertEqual(decoded.execKind, .command)
+    }
+}
+
+// MARK: - RemoteAccessPolicy（token 匹配）
+
+final class RemoteAccessPolicyTests: XCTestCase {
+
+    private let store = RemoteAccessPolicyStore.shared
+    private let testWords = [
+        "__rp_rm__",
+        "__rp_RM__",
+        "__rp_shutdown__"
+    ]
+
+    override func setUp() {
+        super.setUp()
+        for word in testWords {
+            store.removeBlockedWord(word)
+        }
+    }
+
+    override func tearDown() {
+        for word in testWords {
+            store.removeBlockedWord(word)
+        }
+        super.tearDown()
+    }
+
+    func testExactTokenMatch() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "__rp_rm__ -rf /"), "__rp_rm__")
+    }
+
+    func testTokenInsideCommandSubstitution() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "echo $(__rp_rm__ -rf /)"), "__rp_rm__")
+    }
+
+    func testPathSuffixMatches() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "/bin/__rp_rm__ -rf /"), "__rp_rm__")
+    }
+
+    func testSubstringIsNotMatched() {
+        store.addBlockedWord("__rp_rm__")
+        XCTAssertNil(store.matchedBlockedWord(in: "__rp_rm__extra foo"))
+    }
+
+    func testCaseInsensitive() {
+        store.addBlockedWord("__rp_RM__")
+        XCTAssertEqual(store.matchedBlockedWord(in: "__rp_rm__ -rf /"), "__rp_RM__")
+    }
+
+    func testNoWordsReturnsNil() {
+        XCTAssertNil(store.matchedBlockedWord(in: "__rp_rm__ -rf /"))
+    }
+
+    /// 回归测试：一项能力都不允许时，所有请求都必须被拒绝（fail closed）。
+    func testNoCapabilitiesMeansEverythingRejected() {
+        let previouslyAllowed = RemoteCapability.allCases.filter { store.isAllowed($0) }
+        for capability in RemoteCapability.allCases {
+            store.setAllowed(capability, enabled: false)
+        }
+        defer {
+            for capability in RemoteCapability.allCases {
+                store.setAllowed(capability, enabled: previouslyAllowed.contains(capability))
+            }
+        }
+
+        for capability in RemoteCapability.allCases {
+            XCTAssertNotNil(
+                store.validate(command: "echo hi", capability: capability),
+                "\(capability) must be rejected when no capability is allowed")
+        }
+    }
+
+    func testDisabledCapabilityIsRejected() {
+        let wasAllowed = store.isAllowed(.execCommand)
+        store.setAllowed(.execCommand, enabled: false)
+        defer { store.setAllowed(.execCommand, enabled: wasAllowed) }
+
+        XCTAssertNotNil(store.validate(command: "echo hi", capability: .execCommand))
+    }
+}
+
+// MARK: - 版本特定测试
 
 final class AppEnvironmentTests: XCTestCase {
     #if BETA
@@ -450,7 +699,7 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     func testPreviewCustomPathEnabledDefaultsTrue() {
-        UserDefaults.standard.removeObject(forKey: "paths.customEnabled")
+        UserDefaults.standard.removeObject(forKey: AppSettings.Keys.customPathEnabled)
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #else
@@ -466,10 +715,77 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(AppSettings.customPathEnabled)
     }
     #endif
-    
-    // 两个版本共用的断言
+
     func testShellDefaultsToZsh() {
         XCTAssertEqual(AppSettings.resolvedShellPath, "/bin/zsh")
         XCTAssertTrue(AppSettings.isZshShell)
+    }
+
+    #if RUNPROCESS_TEST
+    func testTestKeyPrefixIsIsolated() {
+        XCTAssertTrue(AppSettings.Keys.sessionModeEnabled.hasPrefix("test."))
+    }
+    #endif
+}
+
+// MARK: - ScrollViewStyler
+
+final class ScrollViewStylerTests: XCTestCase {
+
+    private func allScrollViews(in view: NSView) -> [NSScrollView] {
+        var result: [NSScrollView] = []
+        if let scroll = view as? NSScrollView { result.append(scroll) }
+        for sub in view.subviews { result += allScrollViews(in: sub) }
+        return result
+    }
+
+    /// 窗口里嵌套的滚动视图（包括不直接用父链相连的）都要被修正。
+    func testStylesEveryScrollViewInWindow() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+
+        let root = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 200))
+        let outer = NSScrollView(frame: NSRect(x: 0, y: 0, width: 150, height: 150))
+        outer.drawsBackground = true
+        let inner = NSScrollView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        inner.drawsBackground = true
+        outer.documentView = inner
+        root.addSubview(outer)
+        window.contentView = root
+
+        ScrollViewStyler.styleAll(in: window)
+
+        let found = allScrollViews(in: root)
+        XCTAssertEqual(found.count, 2)
+        for scroll in found {
+            XCTAssertFalse(scroll.drawsBackground)
+            XCTAssertFalse(scroll.contentView.drawsBackground)
+            XCTAssertEqual(scroll.scrollerStyle, .overlay)
+            XCTAssertTrue(scroll.autohidesScrollers)
+        }
+    }
+
+    /// SwiftUI 的 ScrollView 也要能被找到并修正。
+    func testStylesSwiftUIScrollView() {
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 300, height: 200),
+            styleMask: [.titled], backing: .buffered, defer: false)
+        let hosting = NSHostingView(
+            rootView: ScrollView { Color.clear.frame(height: 1000) }
+                .frame(width: 200, height: 150))
+        window.contentView = hosting
+        hosting.layoutSubtreeIfNeeded()
+        RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+
+        let scrolls = allScrollViews(in: hosting)
+        XCTAssertFalse(scrolls.isEmpty, "SwiftUI ScrollView 应产生 NSScrollView")
+
+        ScrollViewStyler.styleAll(in: window)
+
+        for scroll in allScrollViews(in: hosting) {
+            XCTAssertFalse(scroll.drawsBackground)
+            XCTAssertEqual(scroll.scrollerStyle, .overlay)
+        }
     }
 }

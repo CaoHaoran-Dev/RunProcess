@@ -49,5 +49,8 @@ struct StartupPane: View {
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }
+        .onAppear {
+            launchAtLogin = LaunchAtLogin.isEnabled
+        }
     }
 }

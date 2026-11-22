@@ -7,7 +7,6 @@
 
 internal import AppKit
 import SwiftUI
-import QuartzCore
 
 class BorderlessWindow: NSWindow {
     override var canBecomeKey: Bool { true }
@@ -29,11 +28,14 @@ final class Session {
     private var didBecomeKeyObserver: NSObjectProtocol?
     private var hasShown = false
 
+    /// 本地非 session 执行时持有的进程，用于取消。
+    private var activeTask: Process?
+    private let activeTaskLock = NSLock()
+
     var onClose: (() -> Void)?
     var onBecomeKey: (() -> Void)?
 
     init(usesSessionMode: Bool) {
-        // 非 zsh 强制关闭会话模式
         let effectiveSessionMode = usesSessionMode && AppSettings.isZshShell
 
         self.usesSessionMode = effectiveSessionMode
@@ -52,8 +54,9 @@ final class Session {
         let contentView = ContentView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
 
+        let initialHeight: CGFloat = (AppSettings.mainUIMode == .lite) ? 56 : 140
         let window = BorderlessWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 140),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: initialHeight),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -65,27 +68,11 @@ final class Session {
         if AppSettings.mainUIMode == .lite {
             window.styleMask = [.borderless, .fullSizeContentView, .resizable]
             window.isMovableByWindowBackground = true
-            window.setContentSize(NSSize(width: 600, height: 56))
             window.minSize = NSSize(width: 400, height: 56)
-
-            if let screen = NSScreen.main {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.midX - 300
-                let y = screenRect.maxY - (screenRect.height / 4)
-                window.setFrameOrigin(NSPoint(x: x, y: y))
-            }
         } else {
             window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true
-            window.setContentSize(NSSize(width: 600, height: 140))
             window.minSize = NSSize(width: 520, height: 140)
-
-            if let screen = NSScreen.main {
-                let screenRect = screen.visibleFrame
-                let x = screenRect.midX - 300
-                let y = screenRect.maxY - (screenRect.height / 4)
-                window.setFrameOrigin(NSPoint(x: x, y: y))
-            }
         }
 
         window.isMovableByWindowBackground = true
@@ -108,8 +95,12 @@ final class Session {
             shell.start()
         }
 
-        viewModel.executeHandler = { [weak self] command, useSudo, password, completion in
-            self?.execute(command: command, useSudo: useSudo, password: password, completion: completion)
+        viewModel.executeHandler = { [weak self] command, isWorkflow, useSudo, password, completion in
+            self?.execute(command: command,
+                          isWorkflow: isWorkflow,
+                          useSudo: useSudo,
+                          password: password,
+                          completion: completion)
         }
         viewModel.cancelHandler = { [weak self] in self?.cancelExecution() }
     }
@@ -119,6 +110,8 @@ final class Session {
             forName: NSWindow.willCloseNotification, object: window, queue: .main
         ) { [weak self] _ in
             guard let self = self, self.hasShown else { return }
+            // 先收起补全面板，断开 panel → viewModel 的引用环，再交给 manager 移除。
+            self.viewModel.closeSuggestions()
             self.onClose?()
         }
 
@@ -139,9 +132,75 @@ final class Session {
         if let token = didBecomeKeyObserver { NotificationCenter.default.removeObserver(token) }
         persistentShell?.teardown()
         sudoAuth.revoke()
+        activeTaskLock.lock()
+        if let task = activeTask, task.isRunning {
+            Self.killProcessGroup(task)
+        }
+        activeTask = nil
+        activeTaskLock.unlock()
     }
 
-    func setContentWidth(_ width: CGFloat, animated: Bool = true) {
+    // MARK: - Frame Calculation (Multi-Display Support)
+
+    static func calculateSafeFrame(screenRect: NSRect, windowWidth: CGFloat, windowHeight: CGFloat) -> NSRect {
+        var safeX = screenRect.midX - (windowWidth / 2)
+        var safeY = screenRect.maxY - (screenRect.height / 4) - (windowHeight / 2)
+        safeX = max(screenRect.minX + 20, min(safeX, screenRect.maxX - windowWidth - 20))
+        if safeY + windowHeight > screenRect.maxY - 40 { safeY = screenRect.maxY - 40 - windowHeight }
+        if safeY < screenRect.minY + 20 { safeY = screenRect.minY + 20 }
+        return NSRect(x: safeX, y: safeY, width: windowWidth, height: windowHeight)
+    }
+
+    static func screenUnderMouse() -> NSScreen? {
+        NSScreen.screens.first {
+            NSMouseInRect(NSEvent.mouseLocation, $0.frame, false)
+        } ?? NSScreen.main
+    }
+
+    private func placeWindow(on screen: NSScreen?) {
+        guard let screen = screen else { return }
+        let screenRect = screen.visibleFrame
+        let height = window.frame.height > 0
+            ? window.frame.height
+            : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        let newFrame = Session.calculateSafeFrame(
+            screenRect: screenRect,
+            windowWidth: 600,
+            windowHeight: height
+        )
+        window.setFrame(newFrame, display: false)
+    }
+
+    private func placeOnFocusScreenOnCreate() {
+        placeWindow(on: Session.screenUnderMouse())
+    }
+
+    private func moveToFocusScreenOnWake() {
+        guard let screen = Session.screenUnderMouse() else { return }
+        if screen.visibleFrame.contains(window.frame) { return }
+        let screenRect = screen.visibleFrame
+        let height = window.frame.height > 0
+            ? window.frame.height
+            : ((AppSettings.mainUIMode == .lite) ? 56 : 140)
+        let newFrame = Session.calculateSafeFrame(
+            screenRect: screenRect,
+            windowWidth: 600,
+            windowHeight: height
+        )
+        window.setFrame(newFrame, display: true)
+    }
+
+    /// 改尺寸后立刻让系统重算阴影。
+    /// 透明窗口（isOpaque = false + 清空背景）在 frame 变化时阴影不会自动跟随，
+    /// 会停在旧位置，表现为缩放/高度变化时阴影错位。
+    private func applyFrame(_ frame: NSRect) {
+        window.setFrame(frame, display: true)
+        window.invalidateShadow()
+    }
+
+    // MARK: - Window Management
+
+    func setContentWidth(_ width: CGFloat) {
         guard let contentView = window.contentView else { return }
         let currentWidth = contentView.frame.width
         guard abs(currentWidth - width) > 1 else { return }
@@ -150,19 +209,10 @@ final class Session {
         let delta = width - currentWidth
         frame.size.width += delta
         frame.origin.x -= delta / 2
-
-        if animated {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.18
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                window.animator().setFrame(frame, display: true)
-            }
-        } else {
-            window.setFrame(frame, display: true)
-        }
+        applyFrame(frame)
     }
 
-    func setContentHeight(_ height: CGFloat, animated: Bool = true) {
+    func setContentHeight(_ height: CGFloat) {
         guard let contentView = window.contentView else { return }
         let currentHeight = contentView.frame.height
         guard abs(currentHeight - height) > 1 else { return }
@@ -171,20 +221,70 @@ final class Session {
         let delta = height - currentHeight
         frame.size.height += delta
         frame.origin.y -= delta
+        applyFrame(frame)
+    }
+    
+    // MARK: - Window Management
 
-        if animated {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.18
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
-                window.animator().setFrame(frame, display: true)
+    // 👇 新增：动态切换 Classic / Lite 窗口样式
+    func updateUIMode() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            let window = self.window
+            let mode = AppSettings.mainUIMode
+
+            if mode == .lite {
+                // 切换到 Lite：无边框
+                window.styleMask = [.borderless, .fullSizeContentView, .resizable]
+                window.isMovableByWindowBackground = true
+                window.minSize = NSSize(width: 400, height: 56)
+            } else {
+                // 切换到 Classic：带标题栏
+                window.styleMask = [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView]
+                window.titlebarAppearsTransparent = true
+                window.minSize = NSSize(width: 520, height: 140)
             }
-        } else {
-            window.setFrame(frame, display: true)
+            window.title = self.baseTitle
+            window.invalidateShadow()
         }
     }
 
-    private func execute(command: String, useSudo: Bool, password: String?,
+    // MARK: - Execute (路由中心)
+
+    private func execute(command: String,
+                         isWorkflow: Bool,
+                         useSudo: Bool,
+                         password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
+
+        if let hostId = viewModel.activeRemoteHostId,
+           let host = RemoteHostStore.shared.get(id: hostId) {
+            
+            print("🌐 [Session.execute] 路由结论：执行【远程主机】 - \(host.name) (\(host.host))")
+
+            let kind: RemoteExecPayload.Kind
+            if useSudo {
+                kind = .sudo
+            } else if isWorkflow {
+                kind = .workflow
+            } else {
+                kind = .command
+            }
+
+            Task {
+                do {
+                    let executor = RemoteExecutor()
+                    let output = try await executor.execute(command: command, on: host, kind: kind)
+                    DispatchQueue.main.async { completion(.success(output)) }
+                } catch {
+                    DispatchQueue.main.async { completion(.failure(error)) }
+                }
+            }
+            return
+        } else {
+            print("💻 [Session.execute] 路由结论：执行【本地】")
+        }
+
         if useSudo {
             guard let password = password else {
                 completion(.failure(NSError(domain: "RunProcess", code: -1, userInfo: [NSLocalizedDescriptionKey: NSLocalizedString("error.sudo.missing.password", comment: "")])))
@@ -203,7 +303,6 @@ final class Session {
         }
     }
 
-    /// 用当前选中的 shell 执行（非会话模式路径）
     private func executeWithSelectedShell(_ command: String, timeout: TimeInterval,
                                           completion: @escaping (Result<String, Error>) -> Void) {
         let shellPath = AppSettings.resolvedShellPath
@@ -216,18 +315,16 @@ final class Session {
         task.executableURL = URL(fileURLWithPath: shellPath)
         task.currentDirectoryURL = URL(fileURLWithPath: cwd)
 
-        // 仅 zsh 且开关开启时，在脚本里追加自定义 PATH。
-        // 用单引号包裹，并转义内部的 '，避免路径里的特殊字符被 shell 解释。
+        // 用单引号包裹自定义路径，避免含空格时被拆成多个 PATH 段。
         var script = command
         if AppSettings.isZshShell && AppSettings.customPathEnabled {
             let extra = PathStore.shared.customPathString()
             if !extra.isEmpty {
-                let quoted = extra.replacingOccurrences(of: "'", with: "'\\''")
-                script = "export PATH=\"$PATH:'\(quoted)'\"; \(command)"
+                let escaped = extra.replacingOccurrences(of: "'", with: "'\\''")
+                script = "export PATH=\"$PATH:'\(escaped)'\"; \(command)"
             }
         }
 
-        // 不设置 task.environment，继承父环境；用 -l 让 shell 加载用户配置补全 PATH
         task.arguments = ["-l", "-c", script]
         task.standardOutput = outPipe
         task.standardError = errPipe
@@ -252,13 +349,23 @@ final class Session {
             bufferLock.unlock()
         }
 
-        let timeoutWork = DispatchWorkItem {
-            if task.isRunning { task.terminate() }
+        // 超时：杀整个进程组，而不是只杀主进程。
+        let timeoutWork = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            Self.killProcessGroup(task)
+            _ = self // 保持 self 捕获语义明确
         }
         DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + timeout, execute: timeoutWork)
 
+        // 持有当前 task，供 cancelExecution 取消。
+        activeTaskLock.lock()
+        activeTask = task
+        activeTaskLock.unlock()
+
         task.terminationHandler = { proc in
             timeoutWork.cancel()
+
+            // 先摘 handler，再读尾巴，避免双重读取竞争。
             outPipe.fileHandleForReading.readabilityHandler = nil
             errPipe.fileHandleForReading.readabilityHandler = nil
 
@@ -296,16 +403,50 @@ final class Session {
 
         do {
             try task.run()
+            let pid = task.processIdentifier
+            if pid > 0 {
+                _ = setpgid(pid, pid)
+            }
         } catch {
             outPipe.fileHandleForReading.readabilityHandler = nil
             errPipe.fileHandleForReading.readabilityHandler = nil
             timeoutWork.cancel()
+            activeTaskLock.lock()
+            if activeTask === task { activeTask = nil }
+            activeTaskLock.unlock()
             completion(.failure(error))
         }
     }
 
     private func cancelExecution() {
-        CommandExecutor.shared.cancelCurrentTask()
+        // 1. 本地非 session：杀自己持有的进程组。
+        activeTaskLock.lock()
+        let task = activeTask
+        activeTask = nil
+        activeTaskLock.unlock()
+        if let task = task, task.isRunning {
+            Self.killProcessGroup(task)
+        }
+
+        // 2. sudo：只取消本窗口自己的那一次执行。
+        sudoAuth.cancel()
+
+        // 3. session 模式：向持久 shell 发中断。
+        if usesSessionMode, let shell = persistentShell {
+            shell.interruptCurrentCommand()
+        }
+    }
+
+    private static func killProcessGroup(_ task: Process) {
+        let pid = task.processIdentifier
+        if pid > 0 {
+            kill(-pid, SIGTERM)
+            DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) {
+                kill(-pid, SIGKILL)
+            }
+        } else if task.isRunning {
+            task.terminate()
+        }
     }
 
     private func handleShellCrash() {
@@ -326,14 +467,32 @@ final class Session {
         }
     }
 
-    private func updateWindowTitle() {
-        guard usesSessionMode else { window.title = baseTitle; return }
-        let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
-        window.title = "\(baseTitle) — \(displayCWD)"
+    func updateWindowTitle() {
+        var titleParts: [String] = [baseTitle]
+
+        if let hostId = viewModel.activeRemoteHostId,
+           let host = RemoteHostStore.shared.get(id: hostId) {
+            titleParts.append("🌐 \(host.name)")
+        }
+
+        if usesSessionMode {
+            let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath
+            titleParts.append("— \(displayCWD)")
+        }
+
+        window.title = titleParts.joined(separator: " ")
     }
 
-    func show() {
+    func show(isWake: Bool = false) {
+        let wasShown = hasShown
         hasShown = true
+
+        if !wasShown {
+            placeOnFocusScreenOnCreate()
+        } else if isWake {
+            moveToFocusScreenOnWake()
+        }
+
         window.makeKeyAndOrderFront(nil)
     }
 

@@ -36,6 +36,8 @@ struct AliasesPane: View {
                             Image(systemName: "pencil")
                         }
                         .buttonStyle(.borderless)
+                        .help(NSLocalizedString("settings.aliases.edit", comment: ""))
+
                         Button {
                             pendingDelete = alias
                             showDeleteConfirm = true
@@ -44,6 +46,7 @@ struct AliasesPane: View {
                                 .foregroundColor(.red)
                         }
                         .buttonStyle(.borderless)
+                        .help(NSLocalizedString("settings.aliases.delete", comment: ""))
                     }
                 }
             }

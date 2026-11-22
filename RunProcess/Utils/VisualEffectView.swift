@@ -78,8 +78,6 @@ struct AdaptiveGlassBackground: View {
 /// 无圆角版本（用于全窗口背景）
 struct AdaptiveWindowBackground: View {
     let style: AppearanceStyle
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
 
     var body: some View {
         switch style {

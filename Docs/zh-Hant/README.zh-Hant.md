@@ -1,8 +1,12 @@
 # RunProcess
 
 > 一款具備半透明介面與選單列整合的 Spotlight 風格 macOS 指令啟動器。
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../Images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="../../Images/RunProcessDemo-Light.png">
+</picture>
 
-> [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · [繁體中文](README.zh-Hant.md)
+> [English](../../README.md) · [简体中文](../zh-Hans/README.zh-Hans.md) · 繁體中文
 
 ---
 
@@ -38,6 +42,8 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 - **失焦時自動隱藏** – 應用程式失去焦點時，視窗會自動隱藏
 - **內建輔助說明** – 側邊欄式輔助說明視窗，風格仿照 macOS 輔助說明檢視器
 - **快捷指令 (App Intents)** – 支援透過 Siri 或 macOS 快捷指令執行指令、搜尋歷史、新增別名
+- **遠端執行** – 配對另一台 Mac，在上面執行指令、工作流和 sudo；被控端依能力逐項授權並支援禁用詞
+- **工作流** – 存放在 `workflows.yml` 裡的多行腳本，用短名稱觸發
 - **在地化** – 英文、簡體中文、繁體中文
 
 ---
@@ -92,8 +98,8 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 
 | 模式 | 說明 | 支援情況 |
 | :--- | :--- | :--- |
-| 無 | 純色系統視窗背景 | macOS 12.4 及以上 |
-| 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 12.4 及以上 |
+| 無 | 純色系統視窗背景 | macOS 13.0 及以上 |
+| 毛玻璃 | `NSVisualEffectView` 模糊效果 | macOS 13.0 及以上 |
 | 液態玻璃 | 原生 Liquid Glass 材質 | macOS 26 及以上 |
 
 在 macOS 15 及更早版本中，預設為毛玻璃；在 macOS 26 及以上版本中，預設為液態玻璃。不支援的系統上會隱藏液態玻璃選項。
@@ -252,7 +258,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 
 ## 輔助說明
 
-按下 **`⌘/`** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀。
+按下 **`⌘/`** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀，以及遠端執行。
 
 側邊欄包含搜尋欄位，可依標題篩選主題。
 
@@ -266,7 +272,7 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 ## 系統需求
 
-- macOS 12.4 或以上版本
+- macOS 13.0 或以上版本
 - Apple Silicon 或 Intel 處理器
 
 ---
@@ -287,8 +293,12 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 > 此應用程式未經過公證，因此 macOS 在首次啟動時可能會顯示安全性警告（請前往 **系統設定 → 隱私權與安全性** 並點擊 **仍要開啟**）。此外，預覽版會將使用者資料存放在 `~/Library/Application Support/RunProcess-Beta/` 目錄下，與正式版互不影響。
 
-### Homebrew
-...
+### 預覽版
+
+預覽版和正式版並行發佈，功能集相同，後續變更會先在預覽版出現。它使用獨立的資料目錄（`RunProcess-Beta`）和更新來源，可以與正式版並存。
+
+- **下載**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **詳細說明**：[關於預覽版](About-Preview-Version.zh-Hant.md)
 
 ### Homebrew
 
@@ -303,10 +313,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-需要 Xcode 16.0 或以上版本。
+產物在 `build/Build/Products/Release/RunProcess.app`。要建置預覽版，把 `-scheme RunProcess` 換成 `-scheme "RunProcess Preview"`。需要 Xcode 16.0 或以上版本。
 
 ### 線上體驗
 
@@ -323,9 +339,13 @@ RunProcess 將使用者資料儲存於：
 *(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # 指令別名
-├── history.yml      # 指令歷史（最多 500 筆）
-└── paths.yml        # 自訂執行檔搜尋路徑
+├── aliases.yml         # 指令別名
+├── history.yml         # 指令歷史（最多 500 筆）
+├── paths.yml           # 自訂執行檔搜尋路徑
+├── workflows.yml       # 多行工作流
+├── remote_hosts.yml    # 本機可以控制的遠端主機
+├── paired_clients.yml  # 允許控制本機的裝置
+└── remote_access.yml   # 遠端權限與禁用詞
 ```
 
 ### 移轉

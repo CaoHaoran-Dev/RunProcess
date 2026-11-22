@@ -21,6 +21,8 @@
 "button.copy" = "Copy";
 "button.selectAll" = "Select All";
 "button.copy.output" = "Copy Output";
+"button.remove" = "Remove";
+"button.back" = "Back";
 
 /* ========== Menu ========== */
 "menu.new.window" = "New Window";
@@ -32,6 +34,16 @@
 "menu.check.updates" = "Check for Updates…";
 "menu.about" = "About RunProcess";
 "menu.quit" = "Quit";
+"menu.remote.title" = "Remote Connection";
+"menu.remote.local" = "Local";
+"menu.remote.discovered" = "Discovered Devices";
+"menu.remote.searching" = "Searching for nearby devices…";
+"menu.remote.retry" = "No devices found. Search Again";
+
+/* ========== Notifications ========== */
+"notification.pairing.title" = "Pairing Request";
+"notification.pairing.body" = "Enter this code on the requesting device: %@";
+"notification.pairing.open" = "Open Settings";
 
 /* ========== Alert ========== */
 "alert.history.cleared.title" = "Cleared";
@@ -43,6 +55,7 @@
 "hint.history.navigation" = "Up/Down History";
 "hint.hide.window" = "Cmd+W Hide";
 "hint.shift.enter" = "Shift+Enter Newline";
+"hint.option.enter.sudo" = "Option + Return to run as root";
 
 /* ========== Sudo Dialog ========== */
 "sudo.dialog.title" = "Administrator Privileges Required";
@@ -58,11 +71,15 @@
 
 /* ========== Errors ========== */
 "error.interactive.command" = "Interactive commands (vim, python, top, etc.) are not supported. Please run this command in the system terminal.";
-"error.timeout" = "Command execution timed out (exceeded %@ seconds). For long-running commands, please run directly in the terminal.";
-"error.timeout.short" = "Command execution timed out (exceeded %@ seconds)";
+"error.timeout" = "Command execution timed out (exceeded %ld seconds). For long-running commands, please run directly in the terminal.";
+"error.timeout.short" = "Command execution timed out (exceeded %ld seconds)";
 "error.sudo.wrong.password" = "Wrong password. Please check your password and try again.";
 "error.sudo.missing.password" = "Password is required for sudo commands.";
 "error.exit.code" = "Command execution failed (exit code: %ld)";
+"error.remote.missing.token" = "Pairing token not found locally.";
+"error.remote.timeout" = "Remote execution timed out.";
+"error.remote.capability.denied" = "This capability is disabled on the host.";
+"error.remote.blocked.word" = "Command rejected: contains blocked word \"%@\".";
 
 /* ========== Error Explanations ========== */
 "error.explain.not.found" = "\n\n💡 Explanation: The command '%@' was not found. Check for typos, or make sure the tool is installed and in your PATH.";
@@ -86,6 +103,8 @@
 "settings.category.paths" = "Paths";
 "settings.category.sudo" = "Sudo";
 "settings.category.aliases" = "Aliases";
+"settings.category.workflows" = "Workflows";
+"settings.category.remote" = "Remote";
 "settings.category.startup" = "Startup";
 "settings.category.updates" = "Updates";
 
@@ -96,6 +115,9 @@
 "settings.paths.subtitle" = "Set the default working directory and custom executable search paths.";
 "settings.sudo.subtitle" = "Configure root privilege execution.";
 "settings.aliases.subtitle" = "Define shortcuts for frequently used commands.";
+"settings.workflows.subtitle" = "Define multi-line scripts for one-click execution.";
+"settings.remote.unsupported" = "Remote features require macOS 13 or later.";
+"settings.remote.subtitle" = "Manage and pair remote devices.";
 "settings.startup.subtitle" = "Control how RunProcess starts.";
 "settings.updates.subtitle" = "Manage automatic updates and version information.";
 
@@ -116,7 +138,7 @@
 "appearance.frostedGlass" = "Frosted Glass";
 "appearance.liquidGlass" = "Liquid Glass";
 
-/* ========== Settings — Interface Mode (Beta) ========== */
+/* ========== Settings — Interface Mode ========== */
 "settings.appearance.uiMode" = "Main Interface Style";
 "settings.appearance.uiMode.header" = "Interface Mode";
 "settings.appearance.uiMode.restartHint" = "Changes take effect in newly opened windows.";
@@ -144,7 +166,7 @@
 "settings.session.new.window.hint" = "Only affects newly opened windows.";
 "settings.session.requiresZsh" = "Session mode requires zsh.";
 
-/* ========== Settings — Shell (Beta) ========== */
+/* ========== Settings — Shell ========== */
 "settings.shell.header" = "Shell";
 "settings.shell.select" = "Shell";
 "settings.shell.add" = "Add Custom Shell...";
@@ -191,6 +213,72 @@
 "settings.aliases.error.space" = "Short name cannot contain spaces.";
 "settings.aliases.error.duplicate" = "An alias with this name already exists.";
 
+/* ========== Settings — Workflows (Beta) ========== */
+"settings.workflows.empty" = "No workflows yet. Click Add Workflow to create one.";
+"settings.workflows.add" = "Add Workflow...";
+"settings.workflows.hint" = "Workflows contain multi-line commands. Type the trigger name in the input field to execute the script instantly.";
+"settings.workflows.delete.title" = "Delete Workflow?";
+"settings.workflows.delete.message" = "Delete \"%@\"? This cannot be undone.";
+
+"settings.workflows.add.title" = "New Workflow";
+"settings.workflows.edit.title" = "Edit Workflow";
+"settings.workflows.field.name" = "Trigger";
+"settings.workflows.field.description" = "Description (Optional)";
+"settings.workflows.field.description.placeholder" = "Deploy to production";
+"settings.workflows.field.commands" = "Execution Script";
+"settings.workflows.editor.hint" = "Type the trigger in the main window to execute this script.";
+
+"settings.workflows.error.empty" = "Cannot be empty.";
+"settings.workflows.error.space" = "Trigger cannot contain spaces.";
+"settings.workflows.error.duplicate" = "A workflow with this trigger already exists.";
+
+/* ========== Settings — Remote (Beta) ========== */
+"settings.remote.hostMode" = "Host Mode";
+"settings.remote.clients" = "Paired Clients";
+"settings.remote.noClients" = "No clients connected.";
+"settings.remote.paired" = "Paired";
+"settings.remote.pairingRequest" = "Pairing Request";
+"settings.remote.pairingCodeIs" = "Please enter this code on the requesting device: %@";
+"settings.remote.allowControl" = "Allow Remote Control";
+"settings.remote.allowControl.hint" = "When enabled, other devices can pair with this Mac and execute commands.";
+"settings.remote.allowControl.reconnect" = "After you enable remote control, the other Mac must reconnect before it can run commands: run the command again in its window, or open a new window there. Connections opened before the change are not refreshed automatically.";
+"settings.remote.empty" = "No remote hosts configured. Click Add Host to pair a device.";
+"settings.remote.add" = "Add Host...";
+"settings.remote.add.title" = "Pair Remote Host";
+"settings.remote.field.name" = "Name (Optional)";
+"settings.remote.field.host" = "IP Address";
+"settings.remote.field.code" = "6-digit Pairing Code";
+"settings.remote.pair" = "Pair";
+"settings.remote.pairing" = "Pairing...";
+"settings.remote.error.port" = "Invalid port format.";
+"settings.remote.devices" = "Paired Servers";
+"settings.remote.requestPairing" = "Request Pairing";
+"settings.remote.portNote" = "The pairing port (52732) is used automatically.";
+"settings.remote.codeHint" = "A 6-digit code should appear on the target device. Please enter it below.";
+"settings.remote.discovered.title" = "New Device Found";
+"settings.remote.discovered.message" = "Found device at %@. Go to settings to pair?";
+"settings.remote.discovered.action" = "Open Settings";
+"settings.remote.field.port" = "Port";
+"settings.remote.error.host.invalid" = "Enter a valid IPv4/IPv6 address or hostname.";
+
+/* ========== Settings — Remote Permissions & Blocked Words (Beta) ========== */
+"settings.remote.capability.header" = "Remote Permissions";
+"settings.remote.capability.subtitle" = "Choose which actions remote clients may perform.";
+"settings.remote.capability.exec" = "Execute commands";
+"settings.remote.capability.workflow" = "Run workflows";
+"settings.remote.capability.sudo" = "Run as root";
+"settings.remote.capability.aliases" = "Modify aliases";
+"settings.remote.capability.history" = "Read or clear history";
+"settings.remote.capability.file" = "Access files";
+"settings.remote.capability.hint" = "Unchecked capabilities are rejected when requested by a remote client.";
+"settings.remote.capability.none" = "No remote capability is allowed yet. Remote commands will be rejected until you enable at least one above.";
+"settings.remote.blocked.header" = "Blocked Words";
+"settings.remote.blocked.empty" = "No blocked words.";
+"settings.remote.blocked.summary" = "%ld words";
+"settings.remote.blocked.placeholder" = "Add a word…";
+"settings.remote.blocked.add" = "Add";
+"settings.remote.blocked.hint" = "Remote commands containing any of these words are rejected.";
+
 /* ========== Settings — Startup ========== */
 "settings.startup.launchAtLogin" = "Launch at Login";
 "settings.startup.launchAtLogin.hint" = "RunProcess starts automatically when you log in.";
@@ -222,6 +310,7 @@
 "history.hint.navigate" = "navigate";
 "history.hint.apply" = "apply";
 "history.hint.close" = "close";
+"suggestion.history.count" = "%ld×";
 
 /* ========== Help ========== */
 "help.search" = "Search";
@@ -254,7 +343,7 @@
 "help.shortcut.enter" = "Execute command";
 "help.shortcut.newline" = "Insert newline (multi-line input)";
 "help.shortcut.complete" = "Trigger completion popup";
-"help.shortcut.navigate" = "Navigate history by frecency";
+"help.shortcut.navigate" = "Navigate history (most used first)";
 
 "help.tip.drag.title" = "Drag files from Finder";
 "help.tip.drag.desc" = "Drag any file into the input field. The path is inserted with proper escaping, ready to use as an argument.";
@@ -281,7 +370,7 @@
 "help.aliases.desc" = "Aliases let you define short names for frequently used commands. They appear first in the completion popup.";
 "help.aliases.defaults" = "Built-in examples";
 "help.aliases.custom" = "Custom aliases";
-"help.aliases.custom.desc" = "Edit this YAML file to add or change aliases. Restart the app to apply changes.";
+"help.aliases.custom.desc" = "You can add aliases here, or edit this YAML file directly. Changes made here apply immediately; if you edit the file by hand, restart the app to reload.";
 
 "help.appearance.desc" = "Three appearance modes are available in Settings → Appearance:";
 "help.appearance.none" = "None — solid system window background.";
@@ -324,3 +413,40 @@
 "error.intent.sudo.not.authorized" = "Root execution requires authorization.";
 "error.intent.execution.failed" = "Command execution failed.";
 "error.intent.alias.name.invalid" = "Alias name cannot contain spaces.";
+
+/* ========== App Intents — Remote (Preview) ========== */
+"intent.runRemoteCommand.title" = "Run Remote Command";
+"intent.runRemoteCommand.description" = "Execute a shell command on a paired remote host and return its output.";
+"intent.runRemoteCommand.shortTitle" = "Run Remote Command";
+"intent.runRemoteCommand.parameter.host" = "Remote Host";
+"intent.runRemoteCommand.parameter.command" = "Command";
+"intent.runRemoteCommand.parameter.throwOnFailure" = "Throw on failure";
+
+"intent.searchRemoteHistory.title" = "Search Remote Command History";
+"intent.searchRemoteHistory.description" = "Find previously executed commands on a paired remote host.";
+"intent.searchRemoteHistory.shortTitle" = "Search Remote History";
+"intent.searchRemoteHistory.parameter.host" = "Remote Host";
+"intent.searchRemoteHistory.parameter.query" = "Query";
+"intent.searchRemoteHistory.parameter.limit" = "Limit";
+
+"error.intent.remote.host.missing" = "The selected remote host no longer exists.";
+
+// MARK: - Help: Remote Execution (Preview)
+
+"help.topic.remote" = "Remote Execution";
+"help.remote.desc" = "Run commands on another Mac from the same command window. Both Macs need the Preview build, and the wire protocol must match, so keep both ends on the same version.";
+"help.remote.host.title" = "Allow remote control";
+"help.remote.host.desc" = "On the Mac you want to control, open Settings > Remote and turn on Allow Remote Control. It starts listening and advertises itself on the local network.";
+"help.remote.pair.title" = "Pair a device";
+"help.remote.pair.desc" = "On the controlling Mac, choose Settings > Remote > Add Host, then enter the address and the 6-digit code shown on the other Mac. The code also arrives as a system notification; if notifications are off, it appears in an alert.";
+"help.remote.run.title" = "Switch hosts";
+"help.remote.run.desc" = "Pick the host from the Remote submenu in the menu bar. The choice applies to every open window and the window title shows the active host; commands, workflows and sudo all run there. A newly opened window starts on the local Mac, so choose the host again after opening one.";
+"help.remote.permissions.title" = "Permissions";
+"help.remote.permissions.desc" = "The host decides what remote clients may do. Nothing is allowed until you enable capabilities in Settings > Remote > Remote Permissions; commands containing a blocked word are rejected.";
+"help.remote.reconnect.title" = "Reconnect after enabling";
+"help.remote.reconnect.desc" = "After remote control is turned on, the other Mac must reconnect before it can run commands: run the command again in its window, or open a new window there. Connections opened before the change are not refreshed automatically.";
+
+// MARK: - Remote (merged into the release build)
+
+"suggestion.workflow.subtitle" = "Multi-line workflow";
+"error.remote.unexpected.handshake" = "Received an unexpected handshake packet.";

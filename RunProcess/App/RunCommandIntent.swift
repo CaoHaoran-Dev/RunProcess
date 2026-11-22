@@ -81,7 +81,7 @@ struct RunCommandIntent: AppIntent {
         } else {
             let result: Result<String, IntentExecutionError> = await withCheckedContinuation { continuation in
                 // 👇 改为执行展开后的 processedCommand
-                CommandExecutor.shared.execute(processedCommand, timeout: 10.0) { result in
+                _ = CommandExecutor.shared.execute(processedCommand, timeout: 10.0) { result in
                     switch result {
                     case .success(let output):
                         continuation.resume(returning: .success(output))

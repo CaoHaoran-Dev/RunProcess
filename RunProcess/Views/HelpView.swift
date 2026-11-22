@@ -17,6 +17,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
     case sudo
     case aliases
     case appearance
+    case remote
 
     var id: String { rawValue }
 
@@ -29,6 +30,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .sudo:       return NSLocalizedString("help.topic.sudo", comment: "")
         case .aliases:    return NSLocalizedString("help.topic.aliases", comment: "")
         case .appearance: return NSLocalizedString("help.topic.appearance", comment: "")
+        case .remote:     return NSLocalizedString("help.topic.remote", comment: "")
         }
     }
 
@@ -41,6 +43,7 @@ enum HelpTopic: String, CaseIterable, Identifiable {
         case .sudo:       return "lock.shield"
         case .aliases:    return "wand.and.stars"
         case .appearance: return "paintbrush"
+        case .remote:     return "server.rack"
         }
     }
 
@@ -121,6 +124,20 @@ enum HelpTopic: String, CaseIterable, Identifiable {
                 "help.appearance.liquid",
                 "help.appearance.note",
             ]
+        case .remote:
+            keys = [
+                "help.remote.desc",
+                "help.remote.host.title",
+                "help.remote.host.desc",
+                "help.remote.pair.title",
+                "help.remote.pair.desc",
+                "help.remote.run.title",
+                "help.remote.run.desc",
+                "help.remote.permissions.title",
+                "help.remote.permissions.desc",
+                "help.remote.reconnect.title",
+                "help.remote.reconnect.desc",
+            ]
         }
 
         return keys
@@ -172,50 +189,47 @@ struct HelpView: View {
     }
 
     var body: some View {
-        Group {
-            if #available(macOS 13.0, *) {
-                modernLayout
-            } else {
-                legacyLayout
+        VStack(spacing: 0) {
+            glassTitleBar
+
+            HStack(spacing: 0) {
+                sidebar.frame(width: 220)
+                Divider()
+                detailPane
             }
         }
+        .ignoresSafeArea(edges: .top)
         .frame(minWidth: 680, idealWidth: 720, minHeight: 400, idealHeight: 480)
         .background(
             AdaptiveWindowBackground(
                 style: appearanceStyle,
-                material: .sidebar,
-                blendingMode: .behindWindow
             )
             .ignoresSafeArea()
         )
     }
 
-    @available(macOS 13.0, *)
-    private var modernLayout: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            detailPane
-        }
-        .navigationTitle(NSLocalizedString("window.help.title", comment: ""))
-        .toolbar {
-            ToolbarItem(placement: .navigation) {
-                Button {
-                    selected = .overview
-                    searchText = ""
-                } label: {
-                    Image(systemName: "house")
-                }
-                .help(NSLocalizedString("help.home", comment: ""))
-            }
-        }
-    }
-
-    private var legacyLayout: some View {
-        HStack(spacing: 0) {
-            sidebar.frame(width: 220)
-            Divider()
-            detailPane
+    /// 自绘的玻璃标题栏，与设置窗口保持同一套材质。
+    /// 标题栏区域由系统的 titlebar 视图覆盖，不放可点控件。
+    private var glassTitleBar: some View {
+        Text(NSLocalizedString("window.help.title", comment: ""))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundColor(.secondary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 28)
+        .background(
+            AdaptiveGlassBackground(
+                style: appearanceStyle,
+                material: .titlebar,
+                // .withinWindow 采样的是窗口内部已有的毛玻璃，叠上去只剩
+                // 一层平的半透明；必须 .behindWindow 才会直接模糊桌面。
+                blendingMode: .behindWindow,
+                cornerRadius: 0
+            )
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Color.primary.opacity(0.08))
+                .frame(height: 1)
         }
     }
 
@@ -271,16 +285,20 @@ struct HelpView: View {
                                 topic: topic,
                                 isSelected: topic == selected,
                                 snippet: topic.snippet(for: searchText),
-                                onTap: { selected = topic }
+                                onTap: {
+                                    selected = topic
+                                    searchText = ""
+                                }
                             )
                         }
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 6)
                 }
+                // 侧边栏去掉白色滚动槽。
+                .background(ScrollViewStyler())
             }
         }
-        .background(Color.clear)
     }
 
     private var detailPane: some View {
@@ -290,7 +308,7 @@ struct HelpView: View {
                 .frame(maxWidth: 680, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.clear)
+        .background(ScrollViewStyler())
     }
 }
 
@@ -361,6 +379,7 @@ private struct HelpContent: View {
             case .sudo:       SudoSection()
             case .aliases:    AliasesSection()
             case .appearance: AppearanceSection()
+            case .remote:     RemoteSection()
             }
         }
     }
@@ -567,6 +586,31 @@ private struct AppearanceSection: View {
             HelpBullet(NSLocalizedString("help.appearance.frosted", comment: ""))
             HelpBullet(NSLocalizedString("help.appearance.liquid", comment: ""))
             HelpP(NSLocalizedString("help.appearance.note", comment: ""))
+        }
+    }
+}
+
+// MARK: - 远程执行（仅预览版）
+
+private struct RemoteSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HelpP(NSLocalizedString("help.remote.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.host.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.host.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.pair.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.pair.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.run.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.run.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.permissions.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.permissions.desc", comment: ""))
+
+            HelpH2(NSLocalizedString("help.remote.reconnect.title", comment: ""))
+            HelpP(NSLocalizedString("help.remote.reconnect.desc", comment: ""))
         }
     }
 }

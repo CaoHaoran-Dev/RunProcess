@@ -1,8 +1,12 @@
 # RunProcess
 
 > 给 macOS 做的“伪 Windows 运行框” —— 能跑真命令，有玻璃质感，常驻菜单栏
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../../Images/RunProcessDemo-Dark.png">
+  <img alt="RunProcess Image" src="../../Images/RunProcessDemo-Light.png">
+</picture>
 
-> [English](../../README.md) · [简体中文](README.zh-Hans.md) · [繁體中文](../zh-Hant/README.zh-Hant.md)
+> [English](../../README.md) · 简体中文 · [繁體中文](../zh-Hant/README.zh-Hant.md)
 
 ---
 
@@ -40,6 +44,8 @@ B 站看多了“我修复了 Linux 运行框”的视频，手痒在 macOS 上�
 - **失去焦点时自动隐藏**
 - **快捷指令 (App Intents)** —— 支持通过 Siri 或 macOS 快捷指令运行命令、搜索历史、添加别名
 - **应用内帮助** —— 仿 macOS Help Viewer 的侧边栏式帮助窗口
+- **远程执行** —— 配对另一台 Mac，在上面执行命令、工作流和 sudo；被控端按能力逐项授权并支持违禁词
+- **工作流** —— 存放在 `workflows.yml` 里的多行脚本，用短名称触发
 - **本地化** —— 英文、简体中文、繁体中文
 
 ---
@@ -94,8 +100,8 @@ B 站看多了“我修复了 Linux 运行框”的视频，手痒在 macOS 上�
 
 | 模式 | 说明 | 支持系统 |
 | :--- | :--- | :--- |
-| 无 | 系统窗口纯色背景 | macOS 12.4+ |
-| 毛玻璃 | `NSVisualEffectView` 模糊 | macOS 12.4+ |
+| 无 | 系统窗口纯色背景 | macOS 13.0+ |
+| 毛玻璃 | `NSVisualEffectView` 模糊 | macOS 13.0+ |
 | 液态玻璃 | 原生 Liquid Glass 材质 | macOS 26+ |
 
 macOS 15 及以下默认毛玻璃，macOS 26 及以上默认液态玻璃。不支持的系统上“液态玻璃”选项会被隐藏。
@@ -254,7 +260,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
 
 ## 帮助
 
-按 **`⌘/`** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：概述、键盘快捷键、命令技巧、会话模式、以 root 执行、别名、外观。
+按 **`⌘/`** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：概述、键盘快捷键、命令技巧、会话模式、以 root 执行、别名、外观，以及远程执行。
 
 侧边栏顶部有搜索框，可按标题过滤主题。
 
@@ -268,7 +274,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
 
 ## 系统要求
 
-macOS 12.4+，Apple Silicon / Intel 都行
+macOS 13.0+，Apple Silicon / Intel 都行
 
 ---
 
@@ -288,6 +294,13 @@ macOS 12.4+，Apple Silicon / Intel 都行
 
 > 应用没公证，第一次打开 macOS 会提示不安全，去设置里的隐私与安全性点仍要打开，不骗你。另外，预览版 会把用户数据存放在 `~/Library/Application Support/RunProcess-Beta/` 目录下，和正式版互不影响。
 
+### 预览版
+
+预览版和正式版并行发布，功能集相同，后续变更会先在预览版出现。它使用独立的数据目录（`RunProcess-Beta`）和更新源，可与正式版并存。
+
+- **下载**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
+- **详细说明**：[关于预览版](About-Preview-Version.zh-Hans.md)
+
 ### Homebrew
 
 ```bash
@@ -301,10 +314,16 @@ brew install runprocess
 ```bash
 git clone https://github.com/CaoHaoran-Dev/RunProcess.git
 cd RunProcess
-open RunProcess.xcodeproj
+xcodebuild -project RunProcess.xcodeproj \
+  -scheme RunProcess \
+  -configuration Release \
+  -destination "platform=macOS" \
+  -derivedDataPath build \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 
-需要 Xcode 16.0+。
+产物在 `build/Build/Products/Release/RunProcess.app`。要编译预览版，把 `-scheme RunProcess` 换成 `-scheme "RunProcess Preview"`。需要 Xcode 16.0+。
 
 ### 在线体验
 
@@ -321,9 +340,13 @@ RunProcess 把用户数据存在：
 *(注：Preview/Beta 版的数据目录为 `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # 命令别名
-├── history.yml      # 命令历史（最多 500 条）
-└── paths.yml        # 自定义可执行文件搜索路径
+├── aliases.yml         # 命令别名
+├── history.yml         # 命令历史（最多 500 条）
+├── paths.yml           # 自定义可执行文件搜索路径
+├── workflows.yml       # 多行工作流
+├── remote_hosts.yml    # 本机可以控制的远程主机
+├── paired_clients.yml  # 允许控制本机的设备
+└── remote_access.yml   # 远程权限与违禁词
 ```
 
 ### 迁移
