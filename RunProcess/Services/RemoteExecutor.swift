@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/7.
 //
 
-#if BETA
 
 import Foundation
 import RemoteLinkKit
@@ -238,4 +237,3 @@ private nonisolated final class OutputBuffer: @unchecked Sendable {
     }
 }
 
-#endif

@@ -445,3 +445,8 @@
 "help.remote.permissions.desc" = "由被控端決定遠端用戶端能做什麼。預設不允許任何操作，需要在「設定 > 遠端 > 遠端權限」裡逐項開啟；指令中出現禁用詞會被拒絕。";
 "help.remote.reconnect.title" = "啟用後需要重新連線";
 "help.remote.reconnect.desc" = "開啟遠端控制後，對端需要重新連線才能執行指令：在它的視窗中重新執行一次，或開啟一個新視窗。之前已經建立的連線不會自動重新整理。";
+
+// MARK: - Remote (merged into the release build)
+
+"suggestion.workflow.subtitle" = "多行工作流程";
+"error.remote.unexpected.handshake" = "收到了無法辨識的握手封包。";

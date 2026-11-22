@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/7.
 //
 
-#if BETA
 
 import Foundation
 import RemoteLinkKit
@@ -184,7 +183,8 @@ final class RemoteConnectionManager {
                 do {
                     let msg = try MessageCodec.decodeServer(data)
                     guard case .custom(let type, let payload) = msg, type == "server-challenge" else {
-                        throw RemoteExecError.connection("收到未知的握手包")
+                        throw RemoteExecError.connection(
+                            NSLocalizedString("error.remote.unexpected.handshake", comment: ""))
                     }
                     struct ChallengePayload: Codable {
                         let serverNonce: String
@@ -246,4 +246,3 @@ private nonisolated final class ResumedFlag: @unchecked Sendable {
     }
 }
 
-#endif

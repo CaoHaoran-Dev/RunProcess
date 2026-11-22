@@ -3,7 +3,6 @@
 //  RunProcess
 //
 
-#if BETA
 
 import SwiftUI
 
@@ -218,4 +217,3 @@ struct WorkflowEditorSheet: View {
     }
 }
 
-#endif

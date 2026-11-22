@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/14.
 //
 
-#if BETA
 
 import AppIntents
 import Foundation
@@ -159,4 +158,3 @@ struct SearchRemoteHistoryIntent: AppIntent {
     }
 }
 
-#endif

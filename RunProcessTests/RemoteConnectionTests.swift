@@ -9,10 +9,7 @@ import XCTest
 import RemoteLinkKit
 import RemoteProcessProtocol
 
-#if BETA
-
-@testable import RunProcess_Preview
-
+// 只依赖 RemoteLinkKit 的公开类型，两个 target 都能跑。
 final class RemoteConnectionTests: XCTestCase {
 
     // 纯内存的回环传输，完全不依赖真实网络
@@ -100,4 +97,3 @@ final class RemoteConnectionTests: XCTestCase {
         await fulfillment(of: [serverExpectation, clientExpectation], timeout: 5.0)
     }
 }
-#endif

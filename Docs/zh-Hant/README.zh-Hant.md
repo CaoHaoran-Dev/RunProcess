@@ -42,6 +42,8 @@ RunProcess 是一款輕量的 macOS 應用程式，提供受 Windows「執行」
 - **失焦時自動隱藏** – 應用程式失去焦點時，視窗會自動隱藏
 - **內建輔助說明** – 側邊欄式輔助說明視窗，風格仿照 macOS 輔助說明檢視器
 - **快捷指令 (App Intents)** – 支援透過 Siri 或 macOS 快捷指令執行指令、搜尋歷史、新增別名
+- **遠端執行** – 配對另一台 Mac，在上面執行指令、工作流和 sudo；被控端依能力逐項授權並支援禁用詞
+- **工作流** – 存放在 `workflows.yml` 裡的多行腳本，用短名稱觸發
 - **在地化** – 英文、簡體中文、繁體中文
 
 ---
@@ -256,7 +258,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 提供更新。
 
 ## 輔助說明
 
-按下 **`⌘/`** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀，以及遠端執行（僅預覽版）。
+按下 **`⌘/`** 或從選單列選擇 **RunProcess 輔助說明**。輔助說明視窗左側包含主題側邊欄：總覽、鍵盤快速鍵、指令技巧、工作階段模式、以 root 身分執行、別名、外觀，以及遠端執行。
 
 側邊欄包含搜尋欄位，可依標題篩選主題。
 
@@ -293,7 +295,7 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 
 ### 預覽版
 
-預覽版和正式版並行發佈。它使用獨立的資料目錄（`RunProcess-Beta`）和更新來源，額外包含遠端執行、工作流和遠端權限。預覽版功能仍在測試中，可能隨時變動。
+預覽版和正式版並行發佈，功能集相同，後續變更會先在預覽版出現。它使用獨立的資料目錄（`RunProcess-Beta`）和更新來源，可以與正式版並存。
 
 - **下載**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **詳細說明**：[關於預覽版](About-Preview-Version.zh-Hant.md)
@@ -337,9 +339,13 @@ RunProcess 將使用者資料儲存於：
 *(注：Preview/Beta 版的資料目錄為 `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # 指令別名
-├── history.yml      # 指令歷史（最多 500 筆）
-└── paths.yml        # 自訂執行檔搜尋路徑
+├── aliases.yml         # 指令別名
+├── history.yml         # 指令歷史（最多 500 筆）
+├── paths.yml           # 自訂執行檔搜尋路徑
+├── workflows.yml       # 多行工作流
+├── remote_hosts.yml    # 本機可以控制的遠端主機
+├── paired_clients.yml  # 允許控制本機的裝置
+└── remote_access.yml   # 遠端權限與禁用詞
 ```
 
 ### 移轉

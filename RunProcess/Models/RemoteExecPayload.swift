@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/11.
 //
 
-#if BETA
 
 import Foundation
 
@@ -31,4 +30,3 @@ nonisolated struct RemoteExecPayload: Codable {
     }
 }
 
-#endif

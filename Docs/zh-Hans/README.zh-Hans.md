@@ -44,6 +44,8 @@ B 站看多了“我修复了 Linux 运行框”的视频，手痒在 macOS 上�
 - **失去焦点时自动隐藏**
 - **快捷指令 (App Intents)** —— 支持通过 Siri 或 macOS 快捷指令运行命令、搜索历史、添加别名
 - **应用内帮助** —— 仿 macOS Help Viewer 的侧边栏式帮助窗口
+- **远程执行** —— 配对另一台 Mac，在上面执行命令、工作流和 sudo；被控端按能力逐项授权并支持违禁词
+- **工作流** —— 存放在 `workflows.yml` 里的多行脚本，用短名称触发
 - **本地化** —— 英文、简体中文、繁体中文
 
 ---
@@ -258,7 +260,7 @@ RunProcess 使用 [Sparkle](https://sparkle-project.org) 分发更新。
 
 ## 帮助
 
-按 **`⌘/`** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：概述、键盘快捷键、命令技巧、会话模式、以 root 执行、别名、外观，以及远程执行（仅预览版）。
+按 **`⌘/`** 或从菜单栏选 **RunProcess 帮助**。帮助窗口左侧是主题列表：概述、键盘快捷键、命令技巧、会话模式、以 root 执行、别名、外观，以及远程执行。
 
 侧边栏顶部有搜索框，可按标题过滤主题。
 
@@ -294,7 +296,7 @@ macOS 13.0+，Apple Silicon / Intel 都行
 
 ### 预览版
 
-预览版和正式版并行发布。它使用独立的数据目录（`RunProcess-Beta`）和更新源，额外包含远程执行、工作流和远程权限。预览版功能仍在测试中，可能随时改动。
+预览版和正式版并行发布，功能集相同，后续变更会先在预览版出现。它使用独立的数据目录（`RunProcess-Beta`）和更新源，可与正式版并存。
 
 - **下载**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **详细说明**：[关于预览版](About-Preview-Version.zh-Hans.md)
@@ -338,9 +340,13 @@ RunProcess 把用户数据存在：
 *(注：Preview/Beta 版的数据目录为 `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # 命令别名
-├── history.yml      # 命令历史（最多 500 条）
-└── paths.yml        # 自定义可执行文件搜索路径
+├── aliases.yml         # 命令别名
+├── history.yml         # 命令历史（最多 500 条）
+├── paths.yml           # 自定义可执行文件搜索路径
+├── workflows.yml       # 多行工作流
+├── remote_hosts.yml    # 本机可以控制的远程主机
+├── paired_clients.yml  # 允许控制本机的设备
+└── remote_access.yml   # 远程权限与违禁词
 ```
 
 ### 迁移

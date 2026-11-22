@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/7.
 //
 
-#if BETA
 
 import Foundation
 import Network
@@ -676,4 +675,3 @@ nonisolated final class RemoteServerManager: @unchecked Sendable {
     }
 }
 
-#endif

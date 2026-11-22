@@ -96,9 +96,7 @@ enum AppSettings {
         static var customPathEnabled: String       { keyPrefix + "paths.customEnabled" }
 
         // 远程控制
-        #if BETA
         static var allowRemoteControl: String      { keyPrefix + "remote.allowControl" }
-        #endif
     }
 
     private static let defaults = UserDefaults.standard
@@ -320,7 +318,6 @@ enum AppSettings {
 
     // MARK: - 远程控制
 
-    #if BETA
     static var allowRemoteControl: Bool {
         get {
             if defaults.object(forKey: Keys.allowRemoteControl) == nil {
@@ -331,11 +328,12 @@ enum AppSettings {
         set {
             defaults.set(newValue, forKey: Keys.allowRemoteControl)
             if newValue {
+                // 配对码通过系统通知送达，权限等用户真正开启远程控制时再要。
+                RemotePairingNotifier.requestAuthorizationIfNeeded()
                 RemoteServerManager.shared.start()
             } else {
                 RemoteServerManager.shared.stop()
             }
         }
     }
-    #endif
 }

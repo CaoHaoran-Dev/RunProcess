@@ -90,14 +90,12 @@ struct ContentView: View {
             viewModel.session?.setContentHeight(newHeight)
         }
         // 👇 新增：监听菜单栏切换远程主机的广播
-        #if BETA
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("RemoteHostDidChange"))) { notification in
             if let hostId = notification.userInfo?["hostId"] as? String? {
                 viewModel.activeRemoteHostId = hostId
                 viewModel.session?.updateWindowTitle()
             }
         }
-        #endif
         // 👇 新增：动态切换 Classic / Lite 窗口样式
         .onChange(of: uiMode) { _ in
             viewModel.session?.updateUIMode()

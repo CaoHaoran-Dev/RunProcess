@@ -3,7 +3,6 @@
 //  RunProcess
 //
 
-#if BETA
 
 import Foundation
 import Yams
@@ -109,4 +108,3 @@ final class RemoteHostStore {
     }
 }
 
-#endif

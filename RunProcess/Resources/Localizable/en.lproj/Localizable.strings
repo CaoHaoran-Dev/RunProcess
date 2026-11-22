@@ -445,3 +445,8 @@
 "help.remote.permissions.desc" = "The host decides what remote clients may do. Nothing is allowed until you enable capabilities in Settings > Remote > Remote Permissions; commands containing a blocked word are rejected.";
 "help.remote.reconnect.title" = "Reconnect after enabling";
 "help.remote.reconnect.desc" = "After remote control is turned on, the other Mac must reconnect before it can run commands: run the command again in its window, or open a new window there. Connections opened before the change are not refreshed automatically.";
+
+// MARK: - Remote (merged into the release build)
+
+"suggestion.workflow.subtitle" = "Multi-line workflow";
+"error.remote.unexpected.handshake" = "Received an unexpected handshake packet.";

@@ -45,18 +45,18 @@ class CommandSuggester {
         var suggestions: [Suggestion] = []
         var seen = Set<String>()
 
-        #if BETA
         // 0. Workflow
         for workflow in WorkflowStore.shared.match(prefix: prefix) {
             if seen.insert(workflow.name).inserted {
                 suggestions.append(Suggestion(
                     text: workflow.name,
                     type: .workflow,
-                    subtitle: workflow.description.isEmpty ? "多行工作流" : workflow.description
+                    subtitle: workflow.description.isEmpty
+                        ? NSLocalizedString("suggestion.workflow.subtitle", comment: "")
+                        : workflow.description
                 ))
             }
         }
-        #endif
 
         // 1. 别名：一条补全，大标题是展开内容，副标题是别名
         for alias in AliasStore.shared.match(prefix: prefix) {

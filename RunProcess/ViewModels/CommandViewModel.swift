@@ -21,10 +21,8 @@ class CommandViewModel: ObservableObject {
 
     @Published var pendingSudoRequest: Bool = false
 
-    #if BETA
     /// 当前窗口绑定的远程主机 ID。nil 代表本地。
     @Published var activeRemoteHostId: String? = nil
-    #endif
 
     var usesSessionMode: Bool = false
     weak var session: Session?
@@ -221,11 +219,9 @@ class CommandViewModel: ObservableObject {
 
         var isWorkflow = false
 
-        #if BETA
         let beforeWorkflow = processedCommand
         processedCommand = WorkflowStore.shared.expandWorkflow(in: processedCommand)
         isWorkflow = processedCommand != beforeWorkflow
-        #endif
 
         processedCommand = AliasStore.shared.expandAlias(in: processedCommand)
 

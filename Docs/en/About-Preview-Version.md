@@ -2,7 +2,7 @@
 
 > English · [简体中文](zh-Hans/About-Preview-Version.zh-Hans.md) · [繁體中文](zh-Hant/About-Preview-Version.zh-Hant.md)
 
-RunProcess ships a **Preview** build alongside the stable release. It contains features that are still being tested and may change or be removed. This page explains what is different, how to install it, and what to include when reporting issues.
+RunProcess ships a **Preview** build alongside the stable release. Both builds carry the same feature set; the Preview build is where upcoming changes land first, so it can be unstable. This page explains what is different, how to install it, and what to include when reporting issues.
 
 ---
 
@@ -11,12 +11,10 @@ RunProcess ships a **Preview** build alongside the stable release. It contains f
 | | Stable | Preview |
 | :--- | :--- | :--- |
 | Data directory | `~/Library/Application Support/RunProcess/` | `~/Library/Application Support/RunProcess-Beta/` |
+| UserDefaults keys | no prefix | `beta.` prefix |
 | Update feed | `appcast.xml` | `appcast-beta.xml` |
-| Remote connection | — | Pairing, Bonjour discovery, remote execution |
-| Workflows | — | Multi-line scripts triggered by a short name |
-| Remote access policy | — | Per-capability permissions and blocked words |
-| Pairing notifications | — | System notifications with the 6-digit code |
-| App Intents (Shortcuts) | Local execution | Local + Remote execution |
+| Features | — | same as stable, plus work in progress |
+| Wire protocol | stable within a release | may change between Preview builds |
 
 The Preview build uses a separate data directory and a separate UserDefaults key prefix, so it can be installed next to the stable release without conflicts.
 
@@ -36,7 +34,7 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 
 ## Notes
 
-- Preview features are gated behind the `BETA` compile flag. They are not present in the stable build.
+- The Preview build comes from the same sources; the `BETA` compile flag only selects the data directory, the UserDefaults prefix and the update feed.
 - Remote features require the same version on both ends. The wire protocol is not stable across Preview versions.
 - Data written by the Preview build is not automatically migrated to the stable build.
 - The Preview build is not notarized, same as the stable release.

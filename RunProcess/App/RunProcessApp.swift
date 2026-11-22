@@ -42,7 +42,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var hasBeenActive = false
 
     // MARK: - Bonjour Discovery
-    #if BETA
     private var bonjourBrowser: BonjourBrowser?
     private var discoveredHosts: [String: NWEndpoint] = [:]
     private var remoteSubmenu: NSMenu?
@@ -53,7 +52,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// 超时计时器
     private var discoveryTimeoutWork: DispatchWorkItem?
     private static let discoveryTimeout: TimeInterval = 10
-    #endif
 
     // MARK: - Menu
     // 动态生成菜单，每次点击都会重新构建，确保能实时看到 Bonjour 发现的设备
@@ -79,7 +77,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         menu.addItem(NSMenuItem.separator())
 
-        #if BETA
         let remoteMenu = NSMenu(title: NSLocalizedString("menu.remote.title", comment: ""))
         remoteMenu.autoenablesItems = false
         remoteMenu.delegate = self
@@ -102,7 +99,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             menu.addItem(remoteSubItem)
             menu.addItem(NSMenuItem.separator())
         }
-        #endif
 
         let historyItem = NSMenuItem(
             title: NSLocalizedString("menu.history", comment: "Command history menu item"),
@@ -190,19 +186,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         setupKeyMonitor()
         setupAppActiveObserver()
 
-        #if BETA
         // 先注册类别、设 delegate，再请求权限。
         // 避免启动早期收到的通知走默认展示行为。
         RemotePairingNotifier.registerCategoryIfNeeded()
         UNUserNotificationCenter.current().delegate = self
-        RemotePairingNotifier.requestAuthorizationIfNeeded()
 
         startDiscovery()
 
         if AppSettings.allowRemoteControl {
+            // 只有本来就开了远程控制的用户才需要在启动时补授权；
+            // 不要在首次启动就向所有正式版用户索取通知权限。
+            RemotePairingNotifier.requestAuthorizationIfNeeded()
             RemoteServerManager.shared.start()
         }
-        #endif
 
         if AppSettings.hideWindowOnLaunch {
             _ = sessionManager.newSessionWithoutShowing()
@@ -238,12 +234,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             keyMonitor = nil
         }
 
-        #if BETA
         discoveryTimeoutWork?.cancel()
         discoveryTimeoutWork = nil
         bonjourBrowser?.stop()
         RemoteServerManager.shared.stop()
-        #endif
 
         sessionManager.removeAll()
         print("🛑 RunProcess is exiting")
@@ -251,7 +245,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Bonjour Browser
 
-    #if BETA
     private func startDiscovery() {
         discoveryTimeoutWork?.cancel()
         discoveryTimeoutWork = nil
@@ -315,7 +308,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             rebuildRemoteSubmenu(sub)
         }
     }
-    #endif
 
     // MARK: - Status Bar
 
@@ -435,7 +427,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.performClick(nil)
     }
 
-#if BETA
 @objc func selectRemoteHost(_ sender: NSMenuItem) {
     let hostId = sender.representedObject as? String
     
@@ -492,7 +483,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             alert.runModal()
         }
     }
-    #endif
 
     @objc func newWindow() {
         _ = sessionManager.newSession()
@@ -818,7 +808,6 @@ extension AppDelegate: SPUStandardUserDriverDelegate {
 
 // MARK: - UNUserNotificationCenterDelegate
 
-#if BETA
 extension AppDelegate: UNUserNotificationCenterDelegate {
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -844,11 +833,9 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         completionHandler([.banner, .sound])
     }
 }
-#endif
 
 // MARK: - Remote Submenu (BETA)
 
-#if BETA
 extension AppDelegate: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         guard menu === remoteSubmenu else { return }
@@ -1018,4 +1005,3 @@ extension AppDelegate: NSMenuDelegate {
         return item
     }
 }
-#endif

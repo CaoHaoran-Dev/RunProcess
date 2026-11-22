@@ -5,7 +5,6 @@
 //  Created by Haoran on 2026/11/7.
 //
 
-#if BETA
 
 import Foundation
 import Yams
@@ -95,4 +94,3 @@ final class PairedClientStore {
     }
 }
 
-#endif

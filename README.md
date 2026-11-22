@@ -42,6 +42,8 @@ RunProcess is a lightweight macOS application that provides a quick command exec
 - **Automatic Hide on Deactivate** — Windows hide automatically when the application loses focus
 - **In-app Help** — Sidebar-based help window, styled like macOS Help Viewer
 - **App Intents** — Supports macOS Shortcuts, Siri, and Spotlight for running commands, searching history, and adding aliases
+- **Remote Execution** — Pair another Mac and run commands, workflows, and sudo there; the host enforces per-capability permissions and blocked words
+- **Workflows** — Multi-line scripts stored in `workflows.yml`, triggered by a short name
 - **Localization** — English, Simplified Chinese, Traditional Chinese
 
 ---
@@ -256,7 +258,7 @@ Update packages are cryptographically signed and verified before installation.
 
 ## Help
 
-Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, Appearance, and Remote Execution (Preview only).
+Press `⌘/` or choose **RunProcess Help** from the menu bar. The help window has a sidebar of topics covering Overview, Keyboard Shortcuts, Command Tips, Session Mode, Running as Root, Aliases, Appearance, and Remote Execution.
 
 ---
 
@@ -291,7 +293,7 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 
 ### Preview Build
 
-A Preview build ships alongside the stable release. It uses a separate data directory (`RunProcess-Beta`) and update feed, and adds remote execution, workflows, and remote access policy. Preview features are still under testing and may change.
+A Preview build ships alongside the stable release and carries the same feature set; upcoming changes land there first. It uses a separate data directory (`RunProcess-Beta`) and update feed, so it can be installed next to the stable release.
 
 - **Download**: [RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **Details**: [About Preview Version](Docs/en/About-Preview-Version.md)
@@ -335,9 +337,13 @@ RunProcess stores user data in:
 *(For the Beta/Preview version, the folder is `RunProcess-Beta`)*
 
 ```
-├── aliases.yml      # command aliases
-├── history.yml      # command history (max 500 entries)
-└── paths.yml        # custom executable search paths
+├── aliases.yml         # command aliases
+├── history.yml         # command history (max 500 entries)
+├── paths.yml           # custom executable search paths
+├── workflows.yml       # multi-line workflows
+├── remote_hosts.yml    # remote hosts this Mac can control
+├── paired_clients.yml  # devices allowed to control this Mac
+└── remote_access.yml   # remote capabilities and blocked words
 ```
 
 ### Migration

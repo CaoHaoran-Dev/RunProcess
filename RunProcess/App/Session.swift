@@ -248,7 +248,6 @@ final class Session {
                          password: String?,
                          completion: @escaping (Result<String, Error>) -> Void) {
 
-        #if BETA
         if let hostId = viewModel.activeRemoteHostId,
            let host = RemoteHostStore.shared.get(id: hostId) {
             
@@ -276,7 +275,6 @@ final class Session {
         } else {
             print("💻 [Session.execute] 路由结论：执行【本地】")
         }
-        #endif
 
         if useSudo {
             guard let password = password else {
@@ -463,12 +461,10 @@ final class Session {
     func updateWindowTitle() {
         var titleParts: [String] = [baseTitle]
 
-        #if BETA
         if let hostId = viewModel.activeRemoteHostId,
            let host = RemoteHostStore.shared.get(id: hostId) {
             titleParts.append("🌐 \(host.name)")
         }
-        #endif
 
         if usesSessionMode {
             let displayCWD = (currentWorkingDirectory as NSString).abbreviatingWithTildeInPath

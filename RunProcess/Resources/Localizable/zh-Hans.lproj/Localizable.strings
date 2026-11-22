@@ -445,3 +445,8 @@
 "help.remote.permissions.desc" = "由被控端决定远程客户端能做什么。默认不允许任何操作，需要在「设置 > 远程 > 远程权限」里逐项开启；命令中出现违禁词会被拒绝。";
 "help.remote.reconnect.title" = "启用后需要重连";
 "help.remote.reconnect.desc" = "开启远程控制后，对端需要重新连接才能执行命令：在它的窗口中重新执行一次，或打开一个新窗口。之前已经建立的连接不会自动刷新。";
+
+// MARK: - Remote (merged into the release build)
+
+"suggestion.workflow.subtitle" = "多行工作流";
+"error.remote.unexpected.handshake" = "收到了无法识别的握手包。";

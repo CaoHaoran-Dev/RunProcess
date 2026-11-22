@@ -298,14 +298,12 @@ final class SuggestionTests: XCTestCase {
         XCTAssertGreaterThan(command.priority, path.priority)
     }
     
-    #if BETA
     func testWorkflowHasHighestPriority() {
         let workflow = Suggestion(text: "deploy", type: .workflow)
         let alias = Suggestion(text: "deploy", type: .alias)
         
         XCTAssertGreaterThan(workflow.priority, alias.priority)
     }
-    #endif
 
     func testHistoryCountClampedInPriority() {
         let low = Suggestion(text: "x", type: .history, historyCount: -5)
@@ -321,9 +319,7 @@ final class SuggestionTests: XCTestCase {
         XCTAssertEqual(Suggestion.SuggestionType.command.iconName, "terminal")
         XCTAssertEqual(Suggestion.SuggestionType.path.iconName, "folder")
         
-        #if BETA
         XCTAssertEqual(Suggestion.SuggestionType.workflow.iconName, "doc.text.fill")
-        #endif
     }
 }
 
@@ -558,7 +554,6 @@ final class HostAddressTests: XCTestCase {
 
 // MARK: - RemoteHost
 
-#if BETA
 final class RemoteHostTests: XCTestCase {
 
     func testIdUsesHashSeparator() {
@@ -689,7 +684,6 @@ final class RemoteAccessPolicyTests: XCTestCase {
         XCTAssertNotNil(store.validate(command: "echo hi", capability: .execCommand))
     }
 }
-#endif
 
 // MARK: - 版本特定测试
 
