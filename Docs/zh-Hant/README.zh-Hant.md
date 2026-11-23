@@ -300,6 +300,10 @@ RunProcess 支援英文、簡體中文與繁體中文。若要僅針對 RunProce
 - **下載**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **詳細說明**：[關於預覽版](About-Preview-Version.zh-Hant.md)
 
+### 每夜建置
+
+預覽版也會由 [Night Build 工作流](https://github.com/CaoHaoran-Dev/RunProcess/actions/workflows/nightly.yml) 打包：北京時間每晚 22:00 定時觸發，也可手動執行；每次執行會把 `RunProcess-Preview.YYYY.MM.DD.zip`（日期取北京時間）上傳到該次執行的 **Artifacts**，下載需登入 GitHub。
+
 ### Homebrew
 
 ```bash
