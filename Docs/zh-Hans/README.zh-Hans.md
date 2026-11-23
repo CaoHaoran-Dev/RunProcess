@@ -301,6 +301,10 @@ macOS 13.0+，Apple Silicon / Intel 都行
 - **下载**：[RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **详细说明**：[关于预览版](About-Preview-Version.zh-Hans.md)
 
+### 每夜构建
+
+预览版还会由 [Night Build 工作流](https://github.com/CaoHaoran-Dev/RunProcess/actions/workflows/nightly.yml) 打包：北京时间每晚 22:00 定时触发，也可手动运行；每次运行会把 `RunProcess-Preview.YYYY.MM.DD.zip`（日期取北京时间）上传到该次运行的 **Artifacts**，下载需要登录 GitHub。
+
 ### Homebrew
 
 ```bash

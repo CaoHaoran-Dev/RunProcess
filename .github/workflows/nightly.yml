@@ -1,0 +1,147 @@
+# Night Build — RunProcess Preview
+#
+# 每晚 22:00（北京时间）从 dev 分支构建 Preview 版本：
+#   - 不签名（CODE_SIGNING_ALLOWED=NO），不公证、不做 DMG，仅产出 ZIP；
+#   - 双架构（arm64 + x86_64），产物为 universal binary；
+#   - ZIP 文件名：RunProcess-Preview.YYYY.MM.DD.zip（日期取北京时间）。
+#
+# 当前用法：在 Actions 页面手动 Run workflow（"Use workflow from" 选 dev）。
+# 手动触发不受「默认分支」限制，workflow 文件在 dev 上就能从 dev 跑。
+#
+# schedule 事件只会从「默认分支」上的工作流文件触发（GitHub 平台限制）。
+# 本仓库默认分支是 main，因此这段 cron 目前不会自动运行；
+# 等 main 上也有本文件（把 dev 合并进 main），或在仓库设置里把默认分支
+# 改为 dev 之后，就会自动每晚 22:00 打包，无需再改任何东西。
+
+name: Night Build (Preview)
+
+run-name: "Night Build (Preview) · ${{ github.ref_name }}"
+
+on:
+  schedule:
+    # 北京时间 22:00 == UTC 14:00（Asia/Shanghai 无夏令时）
+    # 仅当本文件位于默认分支时才会自动触发，当前以手动触发为主
+    - cron: "0 14 * * *"
+  # 手动触发（当前主要用法）：Actions 页选 dev 分支 Run workflow
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "要打包的分支或标签"
+        required: false
+        default: "dev"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: night-build-preview
+  cancel-in-progress: false
+
+jobs:
+  package-preview:
+    name: Package Preview (arm64 + x86_64, unsigned)
+    runs-on: macos-26
+    timeout-minutes: 90
+    env:
+      PROJECT: RunProcess.xcodeproj
+      SCHEME: RunProcess Preview
+      APP: RunProcess Preview
+      XCODE_APP: /Applications/Xcode_26.5.app
+
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'dev' }}
+          fetch-depth: 1
+
+      - name: Select Xcode 26.5
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s "$XCODE_APP"
+          xcodebuild -version
+
+      - name: Ensure xcbeautify
+        run: |
+          set -euo pipefail
+          if ! command -v xcbeautify >/dev/null 2>&1; then
+            brew install xcbeautify
+          fi
+
+      - name: Resolve Swift packages
+        run: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies \
+            -project "$PROJECT" \
+            -scheme "$SCHEME"
+
+      - name: Build Preview (Release, universal, unsigned)
+        run: |
+          set -euo pipefail
+          xcodebuild build \
+            -project "$PROJECT" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -destination "generic/platform=macOS" \
+            -derivedDataPath build \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcbeautify --renderer github-actions
+
+      - name: Verify universal binary
+        run: |
+          set -euo pipefail
+          APP_PATH="build/Build/Products/Release/${APP}.app"
+          test -d "$APP_PATH"
+
+          FOUND="$(lipo -archs "$APP_PATH/Contents/MacOS/${APP}")"
+          echo "Built architectures: ${FOUND}"
+
+          case " ${FOUND} " in
+            *" arm64 "*) ;;
+            *) echo "::error::Missing arm64 architecture"; exit 1 ;;
+          esac
+          case " ${FOUND} " in
+            *" x86_64 "*) ;;
+            *) echo "::error::Missing x86_64 architecture"; exit 1 ;;
+          esac
+
+          plutil -p "$APP_PATH/Contents/Info.plist" \
+            | grep -E "CFBundleShortVersionString|CFBundleVersion" || true
+
+      - name: Package ZIP
+        id: package
+        run: |
+          set -euo pipefail
+          APP_PATH="build/Build/Products/Release/${APP}.app"
+          DATE="$(TZ='Asia/Shanghai' date +'%Y.%m.%d')"
+          ZIP="RunProcess-Preview.${DATE}.zip"
+
+          # 清掉本地扩展属性，避免 zip 里夹带 quarantine/资源叉
+          xattr -cr "$APP_PATH"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP"
+
+          ls -lh "$ZIP"
+          echo "date=$DATE" >> "$GITHUB_OUTPUT"
+          echo "zip=$ZIP" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Night Build · RunProcess Preview"
+            echo ""
+            echo "- Branch: \`${{ inputs.ref || 'dev' }}\`"
+            echo "- Commit: \`$(git rev-parse --short HEAD)\`"
+            echo "- Beijing date: ${DATE}"
+            echo "- Artifact: \`${ZIP}\`"
+            echo "- Signing: none (unsigned)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RunProcess-Preview-${{ steps.package.outputs.date }}
+          path: ${{ steps.package.outputs.zip }}
+          if-no-files-found: error
+          retention-days: 30

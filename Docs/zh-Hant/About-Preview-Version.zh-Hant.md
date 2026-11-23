@@ -32,6 +32,12 @@ RunProcess 除了正式版，還提供 **預覽版**。兩版功能集相同，�
 
 ---
 
+## 每夜建置
+
+預覽版也會由 [Night Build 工作流](https://github.com/CaoHaoran-Dev/RunProcess/actions/workflows/nightly.yml) 打包：建置 `dev` 分支並上傳 `RunProcess-Preview.YYYY.MM.DD.zip`（日期取北京時間），在最近一次執行的 **Artifacts** 裡下載即可（需登入 GitHub）。
+
+---
+
 ## 說明
 
 - 預覽版與正式版來自同一份原始碼，`BETA` 編譯標記只決定資料目錄、UserDefaults 前綴和更新來源。

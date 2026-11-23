@@ -298,6 +298,10 @@ A Preview build ships alongside the stable release and carries the same feature 
 - **Download**: [RunProcess-Preview.zip](https://downloads.caohaoran.dpdns.org/downloads/runprocess/RunProcess-Preview.zip)
 - **Details**: [About Preview Version](Docs/en/About-Preview-Version.md)
 
+### Nightly Build
+
+Preview builds are also packaged by the [Night Build workflow](https://github.com/CaoHaoran-Dev/RunProcess/actions/workflows/nightly.yml) — scheduled for 22:00 Beijing time and runnable on demand. Each run uploads `RunProcess-Preview.YYYY.MM.DD.zip` (date in Beijing time) to its **Artifacts**; GitHub sign-in is required to download.
+
 ### Homebrew
 
 ```bash

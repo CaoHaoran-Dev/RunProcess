@@ -32,6 +32,12 @@ You can also browse older versions on [GitHub Releases](https://github.com/CaoHa
 
 ---
 
+## Nightly Build
+
+Preview is also packaged by the [Night Build workflow](https://github.com/CaoHaoran-Dev/RunProcess/actions/workflows/nightly.yml): it builds `dev` and uploads `RunProcess-Preview.YYYY.MM.DD.zip` (date in Beijing time). Download it from the latest run's **Artifacts**; GitHub sign-in is required.
+
+---
+
 ## Notes
 
 - The Preview build comes from the same sources; the `BETA` compile flag only selects the data directory, the UserDefaults prefix and the update feed.
